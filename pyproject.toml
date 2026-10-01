@@ -1,0 +1,31 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "sc-poincare"
+version = "0.1.0"
+description = "Poincaré-disk embeddings for hierarchical single-cell structure, with a Scanpy/AnnData interface."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Hyein Cho" }]
+dependencies = [
+  "numpy>=1.24",
+  "scipy>=1.10",
+  "scikit-learn>=1.2",
+  "anndata>=0.9",
+  "matplotlib>=3.7",
+]
+
+[project.optional-dependencies]
+scanpy = ["scanpy>=1.9"]
+dev = ["pytest>=7.0", "scanpy>=1.9"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/sc_poincare"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"
