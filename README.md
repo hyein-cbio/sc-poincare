@@ -32,6 +32,13 @@ dr.tl.poincare_recenter(adata, root="HSC_1")
 dr.tl.poincare_pseudotime(adata, root="HSC_1")
 dr.tl.poincare_lineages(adata, n_lineages=4, root="HSC_1")
 
+# spread=0 is exactly X_poincare. spread=1 fans dendrogram leaves.
+dr.tl.poincare_fan(adata, groupby="cell_type", spread=0.0)
+# repel=0 is exactly X_poincare.
+dr.tl.poincare_repel(adata, repel=0.0)
+# jitter=0 is exactly X_poincare. Positive values are radians.
+dr.tl.poincare_jitter(adata, jitter=0.0)
+
 sc.pl.embedding(adata, basis="poincare", color=["poincare_pseudotime", "poincare_lineage"])
 ```
 
