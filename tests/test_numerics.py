@@ -65,6 +65,42 @@ def test_exact_duplicates_have_zero_distance_and_finite_subgradient():
     assert torch.isfinite(coords.grad).all()
 
 
+@pytest.mark.parametrize('cap', [None, .25, 2.5])
+def test_clipping_is_in_riemannian_norm_and_matches_numpy(cap):
+    torch = pytest.importorskip('torch')
+    points = np.array([[0., 0.], [.5, 0.], [.99, 0.]])
+    # Same Riemannian gradient norm (=10) at every radius.
+    inverse_lambda = (1 - np.sum(points**2, axis=1, keepdims=True)) / 2
+    gradient = np.column_stack([np.zeros(3), 10 / inverse_lambda[:, 0]])
+    expected = inverse_lambda**2 * gradient
+    if cap is not None:
+        expected *= min(1., cap / 10.)
+    step = 1e-4
+    got_np = _fitting._riemannian_retract_numpy(points, gradient, step, cap)
+    got_torch = _fitting._riemannian_retract(torch.tensor(points), torch.tensor(gradient), step, cap).numpy()
+    np.testing.assert_allclose(got_np, points - step * expected, rtol=1e-12, atol=1e-15)
+    np.testing.assert_allclose(got_torch, got_np, atol=1e-15)
+    actual_norm = np.linalg.norm((points - got_np) / step, axis=1) / inverse_lambda[:, 0]
+    np.testing.assert_allclose(actual_norm, 10. if cap is None else cap, rtol=1e-12)
+
+
+@pytest.mark.parametrize('value', [np.nan, np.inf, -np.inf])
+def test_nonfinite_gradients_fail_instead_of_becoming_zero(value):
+    points = np.zeros((2, 2))
+    gradient = np.array([[value, 0.], [1., 1.]])
+    with pytest.raises(FloatingPointError, match='gradient'):
+        _fitting._riemannian_retract_numpy(points, gradient, .01)
+    torch = pytest.importorskip('torch')
+    with pytest.raises(FloatingPointError, match='gradient'):
+        _fitting._riemannian_retract(torch.tensor(points), torch.tensor(gradient), .01)
+
+
+@pytest.mark.parametrize('cap', [0., -1., np.nan, np.inf, True])
+def test_invalid_metric_clip_cap_is_rejected(cap):
+    with pytest.raises(ValueError, match='max_grad_norm'):
+        _fitting.fit_disk_embedding(np.eye(4), max_grad_norm=cap)
+
+
 def test_recenter_does_not_apply_optimizer_radius_cap():
     points = np.array([[.999, 0.], [-.999, 0.], [.0, .7], [.2, .1]])
     distances = pairwise_disk_length(points)
@@ -110,3 +146,15 @@ def test_geometry_rejects_invalid_points_instead_of_hiding_them(point):
     torch = pytest.importorskip('torch')
     with pytest.raises(ValueError):
         _fitting._torch_disk_length(torch.tensor(points))
+
+
+def test_numpy_and_torch_fits_agree_on_small_problem(monkeypatch):
+    pytest.importorskip('torch')
+    rng = np.random.default_rng(42)
+    target = rng.uniform(.1, 1., size=(5, 5))
+    target /= target.sum(axis=1, keepdims=True)
+    torch_fit = _fitting.fit_disk_embedding(target, n_epochs=3, random_state=6, max_grad_norm=.1)
+    monkeypatch.setattr(_fitting, 'torch', None)
+    numpy_fit = _fitting.fit_disk_embedding(target, n_epochs=3, random_state=6, max_grad_norm=.1)
+    np.testing.assert_allclose(numpy_fit.coordinates, torch_fit.coordinates, atol=1e-8, rtol=1e-6)
+    np.testing.assert_allclose(numpy_fit.loss_trace, torch_fit.loss_trace, atol=1e-7, rtol=1e-6)

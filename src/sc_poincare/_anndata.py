@@ -103,6 +103,7 @@ def layout_cells(
     key_added: str | None = None,
     copy: bool = False,
     verbose: bool = False,
+    max_grad_norm: float | None = 2.5,
 ):
     """Embed cells on the Poincaré disk and store the result on ``adata``.
 
@@ -125,13 +126,19 @@ def layout_cells(
         Optional column cap when the representation is a PCA (or similar) matrix.
     metric
         Local distance used to build the neighborhood (``euclidean``, ``cosine``, ...).
-    n_epochs, learning_rate, batch_size, burn_in_epochs, min_delta, patience
-        Riemannian fitting controls. Training stops early when the loss stalls.
+    n_epochs, learning_rate, burn_in_epochs, min_delta, patience
+        Riemannian fitting controls. After burn-in, patience counts epochs since
+        the last cumulative improvement of at least min_delta in the global loss.
+    batch_size
+        Row workspace size. All comparison columns are retained; gradients
+        accumulate at the same coordinates before one global update per epoch.
+    max_grad_norm
+        Riemannian gradient norm cap, default 2.5; None disables clipping.
     root
         Optional cell (integer position or ``obs_names`` label) placed at the origin
         after fitting, via a distance-preserving disk translation.
     random_state
-        Seed for the initial cloud and any mini-batch shuffling.
+        Seed for the initial coordinates.
     key_added
         Storage prefix. Default writes ``adata.obsm['X_poincare']`` and
         ``adata.uns['poincare']``.
@@ -177,6 +184,7 @@ def layout_cells(
         patience=patience,
         random_state=random_state,
         verbose=verbose,
+        max_grad_norm=max_grad_norm,
     )
     coordinates = report.coordinates
     root_index = _resolve_cell_index(adata, root)
@@ -199,7 +207,10 @@ def layout_cells(
             "n_epochs_requested": int(n_epochs),
             "n_epochs_run": int(report.n_epochs),
             "learning_rate": float(learning_rate),
-            "batch_size": batch_size,
+            "batch_size": int(report.batch_size),
+            "optimization": "exact_global_row_chunks",
+            "gradient_clipping": "riemannian_norm",
+            "max_grad_norm": None if max_grad_norm is None else float(max_grad_norm),
             "burn_in_epochs": int(burn_in_epochs),
             "root": None if root is None else (int(root) if isinstance(root, (int, np.integer)) else str(root)),
             "random_state": None if isinstance(random_state, np.random.Generator) else random_state,
@@ -207,6 +218,8 @@ def layout_cells(
         },
         "connectivities_key": connectivities_key,
         "loss": np.asarray(report.loss_trace, dtype=np.float64),
+        "best_loss": float(report.best_loss),
+        "stop_reason": report.stop_reason,
     }
     return adata if copy else None
 
