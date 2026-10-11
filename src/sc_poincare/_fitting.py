@@ -72,26 +72,28 @@ def _shrink_torch(points, margin: float = 1e-5):
     return points * scale
 
 
-def _torch_disk_length(left, right=None, margin: float = 1e-5, pair_floor: float = 1e-8):
-    """Pairwise Poincaré length via ``2 arcsinh(sqrt(α))``.
+def _torch_disk_length(left, right=None, self_columns=None):
+    """Pairwise length from direct Euclidean separations, with no distance floor.
 
-    Self-distances are written as the constant 0 so the non-differentiable
-    kink of a metric at the origin never enters the autograd tape.
+    Use the direct cdist kernel: the matrix-multiplication kernel loses small
+    separations to cancellation. At exact coincidences cdist uses a zero
+    subgradient; distinct arbitrarily close points retain their gradients.
     """
     square = right is None
-    left = _shrink_torch(left, margin=margin)
-    right = left if square else _shrink_torch(right, margin=margin)
+    right = left if square else right
     left_sq = (left * left).sum(dim=-1)
     right_sq = (right * right).sum(dim=-1)
-    gram = left @ right.T
-    sep_sq = (left_sq[:, None] + right_sq[None, :] - 2.0 * gram).clamp_min(0.0)
-    denom = (1.0 - left_sq[:, None]).clamp_min(1e-12) * (1.0 - right_sq[None, :]).clamp_min(1e-12)
-    alpha = sep_sq / denom
-    dist = 2.0 * torch.asinh(torch.sqrt(alpha.clamp_min(pair_floor)))
+    if (not torch.isfinite(left_sq).all() or not torch.isfinite(right_sq).all()
+            or torch.any(left_sq >= 1.0) or torch.any(right_sq >= 1.0)):
+        raise ValueError("Disk coordinates must be finite and strictly inside the unit ball.")
+    separation = torch.cdist(left, right, p=2, compute_mode="donot_use_mm_for_euclid_dist")
+    denom = (1.0 - left_sq[:, None]) * (1.0 - right_sq[None, :])
+    dist = 2.0 * torch.asinh(separation / torch.sqrt(denom))
     if square:
-        n = dist.shape[0]
+        self_columns = torch.arange(dist.shape[0], device=dist.device)
+    if self_columns is not None:
         dist = dist.clone()
-        dist[torch.arange(n, device=dist.device), torch.arange(n, device=dist.device)] = 0.0
+        dist[torch.arange(dist.shape[0], device=dist.device), self_columns] = 0.0
     return dist
 
 

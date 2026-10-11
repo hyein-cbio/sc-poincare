@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import numpy as np
+from scipy.spatial.distance import cdist
 
 _BOUNDARY_MARGIN = 1e-5
 
@@ -18,11 +19,14 @@ def confine_to_open_disk(points: np.ndarray, margin: float = _BOUNDARY_MARGIN) -
     return points * scale
 
 
-def _alpha_from_sq(sep_sq: np.ndarray, left_sq: np.ndarray, right_sq: np.ndarray) -> np.ndarray:
-    denom = np.clip(1.0 - left_sq[:, None], a_min=1e-12, a_max=None) * np.clip(
-        1.0 - right_sq[None, :], a_min=1e-12, a_max=None
-    )
-    return np.clip(sep_sq / denom, 0.0, None)
+def _checked_disk_points(points: np.ndarray) -> np.ndarray:
+    """Validate geometry inputs without applying the optimizer's radius margin."""
+    points = np.asarray(points, dtype=np.float64)
+    if points.ndim < 1 or points.shape[-1] == 0 or not np.all(np.isfinite(points)):
+        raise ValueError("Disk coordinates must be finite nonempty vectors.")
+    if np.any(np.sum(points * points, axis=-1) >= 1.0):
+        raise ValueError("Disk coordinates must lie strictly inside the unit ball.")
+    return points
 
 
 def pairwise_disk_length(left: np.ndarray, right: np.ndarray | None = None) -> np.ndarray:
@@ -33,18 +37,19 @@ def pairwise_disk_length(left: np.ndarray, right: np.ndarray | None = None) -> n
     ``d(u, v) = 2 arcsinh(sqrt(α))`` with ``α = ||u-v||^2 / ((1-||u||^2)(1-||v||^2))``.
     The ``arcsinh`` form is used because it is exact at zero distance.
     """
-    left = confine_to_open_disk(np.asarray(left, dtype=np.float64))
+    left = _checked_disk_points(left)
     square = right is None
-    if square:
-        right = left
-    else:
-        right = confine_to_open_disk(np.asarray(right, dtype=np.float64))
+    right = left if square else _checked_disk_points(right)
+    if left.ndim != 2 or right.ndim != 2 or left.shape[1] != right.shape[1]:
+        raise ValueError("Pairwise coordinates must be matrices with matching dimensions.")
 
     left_sq = np.sum(left * left, axis=-1)
     right_sq = np.sum(right * right, axis=-1)
-    gram = left @ right.T
-    sep_sq = np.clip(left_sq[:, None] + right_sq[None, :] - 2.0 * gram, 0.0, None)
-    dist = 2.0 * np.arcsinh(np.sqrt(_alpha_from_sq(sep_sq, left_sq, right_sq)))
+    # Direct differences avoid cancellation of nearly equal squared norms.
+    # cdist needs only a pair matrix, not an N×M×dimension temporary.
+    separation = cdist(left, right, metric="euclidean")
+    denom = np.sqrt((1.0 - left_sq[:, None]) * (1.0 - right_sq[None, :]))
+    dist = 2.0 * np.arcsinh(separation / denom)
     if square:
         np.fill_diagonal(dist, 0.0)
     return dist
@@ -52,10 +57,11 @@ def pairwise_disk_length(left: np.ndarray, right: np.ndarray | None = None) -> n
 
 def length_from_origin(points: np.ndarray) -> np.ndarray:
     """Hyperbolic distance from the disk origin to each point."""
-    points = confine_to_open_disk(np.asarray(points, dtype=np.float64))
+    points = _checked_disk_points(points)
     radii = np.linalg.norm(points, axis=-1)
-    # 2 artanh(r) == 2 arcsinh(r / sqrt(1-r^2))
-    return 2.0 * np.arctanh(np.clip(radii, 0.0, 1.0 - 1e-12))
+    # Valid translated points may be closer to the boundary than the optimizer
+    # margin. Clipping them would change pseudotime and break isometry.
+    return 2.0 * np.arctanh(radii)
 
 
 def translate_origin_to(points: np.ndarray, new_origin: np.ndarray) -> np.ndarray:
@@ -66,15 +72,29 @@ def translate_origin_to(points: np.ndarray, new_origin: np.ndarray) -> np.ndarra
     ``τ(x, v) = [(1 + 2⟨v,x⟩ + ||x||²) v + (1 - ||v||²) x]
                  / [1 + 2⟨v,x⟩ + ||v||² ||x||²]``
     """
-    points = np.asarray(points, dtype=np.float64)
-    v = confine_to_open_disk(np.asarray(new_origin, dtype=np.float64).reshape(1, -1))[0]
-    x = confine_to_open_disk(points)
+    x = _checked_disk_points(points)
+    v = _checked_disk_points(np.asarray(new_origin, dtype=np.float64).reshape(-1))
+    if x.ndim != 2 or x.shape[1] != len(v):
+        raise ValueError("Translation requires a matrix and a matching origin vector.")
     v_sq = float(np.dot(v, v))
-    x_sq = np.sum(x * x, axis=-1, keepdims=True)
-    inner = (x @ v.reshape(-1, 1))
-    numerator = (1.0 + 2.0 * inner + x_sq) * v + (1.0 - v_sq) * x
-    denominator = 1.0 + 2.0 * inner + v_sq * x_sq
-    return confine_to_open_disk(numerator / np.clip(denominator, a_min=1e-12, a_max=None))
+    if v_sq == 0.0:
+        return x.copy()
+    # Algebraically equivalent to the formula above, expanded around x=-v.
+    # The root then maps to exact zero without subtracting large numerators.
+    delta = x + v
+    delta_sq = np.sum(delta * delta, axis=-1, keepdims=True)
+    inner = delta @ v.reshape(-1, 1)
+    one_minus = 1.0 - v_sq
+    numerator = one_minus * delta + delta_sq * v
+    perpendicular = delta - (inner / v_sq) * v
+    denominator = (one_minus + inner)**2 + v_sq * np.sum(perpendicular**2, axis=-1, keepdims=True)
+    translated = numerator / denominator
+    if not np.all(np.isfinite(translated)) or np.any(np.sum(translated**2, axis=-1) >= 1.0):
+        raise FloatingPointError(
+            "Disk translation exceeded floating-point boundary precision. "
+            "Use unshifted coordinates; silently clipping would change hyperbolic distances."
+        )
+    return translated
 
 
 def place_point_at_origin(points: np.ndarray, index: int) -> np.ndarray:
