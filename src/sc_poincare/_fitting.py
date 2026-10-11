@@ -3,8 +3,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import warnings
 
 import numpy as np
+from scipy import sparse
+from scipy.sparse.linalg import ArpackNoConvergence, eigsh
 
 from sc_poincare._disk import confine_to_open_disk, pairwise_disk_length
 from sc_poincare._resources import DEFAULT_MAX_DENSE_BYTES, check_dense_budget
@@ -54,6 +57,70 @@ def _seed_coordinates(n_obs: int, n_components: int, rng: np.random.Generator) -
     directions /= np.clip(np.linalg.norm(directions, axis=1, keepdims=True), 1e-12, None)
     radii = rng.uniform(0.03, 0.12, size=(n_obs, 1))
     return confine_to_open_disk(directions * radii)
+
+
+def _seed_from_connectivities(
+    connectivities,
+    n_components: int,
+    rng: np.random.Generator,
+    radius: float = 0.2,
+    *,
+    status: dict[str, str] | None = None,
+) -> np.ndarray:
+    """Start from a spectral layout of the connectivity graph.
+
+    Spectral initialization can preserve local structure better than random
+    angles, but does not guarantee a good optimum. Non-trivial eigenvectors
+    of symmetric normalized adjacency provide the starting layout. This is
+    the same spectral principle as UMAP, not a reuse of its graph or code.
+    """
+    graph = sparse.csr_matrix(connectivities, dtype=np.float64)
+    n_obs = graph.shape[0]
+    if status is not None:
+        status.update(initialization="spectral", initialization_reason="")
+
+    def random_fallback(reason: str, message: str | None = None):
+        if status is not None:
+            status.update(initialization="random_fallback", initialization_reason=reason)
+        if message:
+            warnings.warn(message, UserWarning, stacklevel=3)
+        return _seed_coordinates(n_obs, n_components, rng)
+
+    if graph.shape[0] != graph.shape[1]:
+        raise ValueError("connectivities must be square.")
+    if not np.all(np.isfinite(graph.data)) or np.any(graph.data < 0):
+        raise ValueError("connectivities must be finite and nonnegative.")
+    if n_obs <= n_components + 1:
+        return random_fallback("too_few_cells")
+    graph = (0.5 * (graph + graph.T)).tocsr()
+    graph.setdiag(0.0)
+    graph.eliminate_zeros()
+    degree = np.asarray(graph.sum(axis=1)).reshape(-1)
+    if graph.nnz == 0 or np.any(degree <= 0.0):
+        return random_fallback("isolated_cells", "Spectral initialization has isolated cells; using seeded random coordinates.")
+    inverse_sqrt = sparse.diags(1.0 / np.sqrt(degree))
+    normalized = (inverse_sqrt @ graph @ inverse_sqrt).tocsr()
+    n_vectors = n_components + 1
+    try:
+        if n_obs <= 2000:
+            evals, evecs = np.linalg.eigh(normalized.toarray())
+        else:
+            # Largest algebraic, not magnitude: negative modes of nearly
+            # bipartite graphs are not the lowest Laplacian eigenmodes.
+            evals, evecs = eigsh(normalized, k=n_vectors, which="LA", v0=rng.normal(size=n_obs))
+    except (np.linalg.LinAlgError, ArpackNoConvergence):
+        return random_fallback("eigensolver_failure", "Spectral eigensolver did not converge; using seeded random coordinates.")
+    order = np.argsort(evals)[::-1]
+    coords = np.asarray(evecs[:, order][:, 1:n_vectors], dtype=np.float64)
+    if coords.shape[1] < n_components or not np.all(np.isfinite(coords)):
+        return random_fallback("invalid_eigenvectors", "Invalid spectral coordinates; using seeded random initialization.")
+    coords = coords - coords.mean(axis=0, keepdims=True)
+    max_radius = float(np.linalg.norm(coords, axis=1).max())
+    if not np.isfinite(max_radius) or max_radius < 1e-12:
+        return random_fallback("degenerate_coordinates", "Degenerate spectral coordinates; using seeded random initialization.")
+    coords = coords / max_radius * radius
+    coords = coords + rng.normal(scale=radius * 1e-3, size=coords.shape)
+    return confine_to_open_disk(coords)
 
 
 def evaluate_alignment(
@@ -159,13 +226,17 @@ def _fit_with_torch(
     patience: int,
     rng: np.random.Generator,
     verbose: bool,
+    connectivities=None,
     max_grad_norm: float | None = 2.5,
 ) -> FitReport:
     n_obs = target.shape[0]
     device = torch.device("cpu")
     target_t = torch.as_tensor(target, dtype=torch.float64, device=device)
     init_status = {"initialization": "random", "initialization_reason": ""}
-    seed = _seed_coordinates(n_obs, n_components, rng)
+    if connectivities is None:
+        seed = _seed_coordinates(n_obs, n_components, rng)
+    else:
+        seed = _seed_from_connectivities(connectivities, n_components, rng, status=init_status)
     coords = torch.tensor(
         seed,
         dtype=torch.float64,
@@ -285,11 +356,15 @@ def _fit_with_numpy(
     patience: int,
     rng: np.random.Generator,
     verbose: bool,
+    connectivities=None,
     max_grad_norm: float | None = 2.5,
 ) -> FitReport:
     n_obs = target.shape[0]
     init_status = {"initialization": "random", "initialization_reason": ""}
-    coords = _seed_coordinates(n_obs, n_components, rng)
+    if connectivities is None:
+        coords = _seed_coordinates(n_obs, n_components, rng)
+    else:
+        coords = _seed_from_connectivities(connectivities, n_components, rng, status=init_status)
     # Exact finite differences are cubic; this fallback is only for tiny inputs.
     chunk_size = min(batch_size or 32, n_obs)
     loss_trace: list[float] = []
@@ -348,12 +423,14 @@ def fit_disk_embedding(
     patience: int = 50,
     random_state: int | np.random.Generator | None = 0,
     verbose: bool = False,
-    max_grad_norm: float | None = 2.5,
+    connectivities=None,
     max_dense_bytes: int | None = DEFAULT_MAX_DENSE_BYTES,
+    max_grad_norm: float | None = 2.5,
 ) -> FitReport:
     """Match the exact global proximity objective, with row-chunked gradients.
 
-    ``batch_size`` bounds row workspace, NOT the set of comparison cells: all columns
+    ``connectivities`` provides spectral initialization. ``batch_size``
+    bounds row workspace, NOT the set of comparison cells: all columns
     are always retained and a single global update is made per epoch.
     The target remains dense and this is not an approximate large-N method.
     ``max_grad_norm`` clips each accumulated gradient's Riemannian norm;
@@ -381,6 +458,8 @@ def fit_disk_embedding(
         raise ValueError("learning_rate must be positive and min_delta nonnegative, both finite.")
     if batch_size is not None and (isinstance(batch_size, bool) or not isinstance(batch_size, (int, np.integer)) or batch_size < 1):
         raise ValueError("batch_size must be a positive integer or None.")
+    if connectivities is not None and np.shape(connectivities) != target.shape:
+        raise ValueError("connectivities and target must have the same shape.")
     if max_grad_norm is not None and (isinstance(max_grad_norm, bool) or not np.isfinite(max_grad_norm) or max_grad_norm <= 0):
         raise ValueError("max_grad_norm must be finite and positive, or None.")
     if isinstance(random_state, np.random.Generator):
@@ -403,6 +482,7 @@ def fit_disk_embedding(
         patience=patience,
         rng=rng,
         verbose=verbose,
+        connectivities=connectivities,
         max_grad_norm=max_grad_norm,
     )
     if torch is not None:

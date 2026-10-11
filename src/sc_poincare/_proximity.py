@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import warnings
 
 import numpy as np
 from scipy import sparse
@@ -23,6 +24,11 @@ class ManifoldProximity:
     metric: str
     n_neighbors: int
     kernel_width: float
+    diagnostics: dict[str, float | int]
+
+
+class ProximityWarning(UserWarning):
+    """The chosen feature scale / sigma gives a numerically weak target."""
 
 
 def _union_find(n: int) -> tuple[np.ndarray, callable, callable]:
@@ -119,21 +125,46 @@ def _stitch_components(
     ).tocsr()
 
 
+def _resolve_kernel_width(lengths: sparse.csr_matrix, kernel_width: float | str) -> float:
+    """Resolve an explicitly requested global bandwidth; never change features."""
+    if isinstance(kernel_width, str):
+        if kernel_width != "median":
+            raise ValueError("sigma / kernel_width must be positive or 'median'.")
+        positive = lengths.data[lengths.data > 0.0]
+        if not positive.size:
+            raise ValueError("Cannot infer median sigma: all graph edge distances are zero. Supply a positive numeric sigma.")
+        width = float(np.median(positive))
+    else:
+        if isinstance(kernel_width, (bool, np.bool_)) or not np.isscalar(kernel_width):
+            raise ValueError("sigma / kernel_width must be positive or 'median'.")
+        try:
+            width = float(kernel_width)
+        except (TypeError, ValueError):
+            raise ValueError("sigma / kernel_width must be positive or 'median'.") from None
+    if not np.isfinite(width) or width <= 0:
+        raise ValueError("sigma / kernel_width must be finite and positive.")
+    return width
+
+
 def local_affinity(
     features: np.ndarray,
     n_neighbors: int,
-    kernel_width: float,
+    kernel_width: float | str,
     metric: str = "euclidean",
 ) -> tuple[sparse.csr_matrix, sparse.csr_matrix]:
     """Return local affinities and sparse stitched edge lengths (not all pairs)."""
     features = np.asarray(features, dtype=np.float64)
+    if features.ndim != 2 or features.shape[1] == 0 or not np.all(np.isfinite(features)):
+        raise ValueError("features must be a finite 2-D matrix with at least one feature.")
     n_obs = features.shape[0]
     if n_obs < 3:
         raise ValueError("Need at least 3 observations to build a neighborhood graph.")
-    if n_neighbors < 1:
-        raise ValueError("n_neighbors must be positive.")
-    if kernel_width <= 0:
-        raise ValueError("sigma / kernel_width must be positive.")
+    if isinstance(n_neighbors, bool) or not isinstance(n_neighbors, (int, np.integer)) or n_neighbors < 1:
+        raise ValueError("n_neighbors must be a positive integer.")
+    if isinstance(kernel_width, str) and kernel_width == "median":
+        pass  # Resolve after constructing the graph's edge lengths.
+    else:
+        _resolve_kernel_width(sparse.csr_matrix((0, 0)), kernel_width)
 
     k = min(n_neighbors, n_obs - 1)
     knn = NearestNeighbors(n_neighbors=k + 1, metric=metric, algorithm="auto")
@@ -162,30 +193,29 @@ def local_affinity(
 
     length_graph = sparse.coo_matrix((data, (rows, cols)), shape=(n_obs, n_obs)).tocsr()
     stitched = _stitch_components(length_graph, features, metric=metric)
+    width = _resolve_kernel_width(stitched, kernel_width)
 
-    # Kernelize local edges first. Bridges added to restore connectivity can sit
-    # far beyond σ and would otherwise vanish numerically, leaving the graph
-    # disconnected for all practical purposes. Give those bridges a weight just
-    # below the weakest local affinity so RFA still sees a single component.
-    local = length_graph.tocoo()
-    local_w = np.exp(-(local.data**2) / (2.0 * kernel_width**2))
-    affinity = sparse.coo_matrix(
-        (local_w, (local.row, local.col)),
-        shape=(n_obs, n_obs),
-    ).tocsr()
-
-    stitched_topology = stitched.copy()
-    stitched_topology.data[:] = 1.0
-    local_topology = length_graph.copy()
-    local_topology.data[:] = 1.0
-    bridge = stitched_topology - local_topology
-    bridge.eliminate_zeros()
-    if bridge.nnz:
-        floor = float(np.min(local_w)) if local_w.size else 1e-6
-        bridge = bridge.tocoo()
-        bridge.data = np.full(bridge.data.shape, 0.5 * max(floor, 1e-6))
-        affinity = (affinity + bridge.tocsr()).tocsr()
-
+    # Paper Eq. 1: ALL edges, including bridges, use their actual distance.
+    # Preserve explicit zero distances (duplicates -> affinity 1), but never
+    # manufacture a bridge strength to hide an unsuitable feature scale.
+    affinity = stitched.copy()
+    with np.errstate(over="ignore", under="ignore"):
+        affinity.data = np.exp(-0.5 * (affinity.data / width)**2)
+    n_underflow = int(np.count_nonzero(affinity.data == 0.0))
+    affinity.eliminate_zeros()
+    n_parts = connected_components(affinity, directed=False)[0]
+    if n_parts > 1:
+        raise ValueError(
+            f"Gaussian affinity underflow disconnected the graph into {n_parts} components. "
+            f"Resolved sigma = {width:.6g}. Check feature units/preprocessing or increase sigma explicitly; "
+            "bridge weights are not artificially floored."
+        )
+    if n_underflow:
+        warnings.warn(
+            f"{n_underflow // 2} undirected Gaussian edge weights underflowed to zero. "
+            "The graph is still connected; inspect feature scale and sigma.",
+            ProximityWarning, stacklevel=2,
+        )
     return affinity, stitched
 
 
@@ -225,18 +255,44 @@ def forest_accessibility(
 def estimate_proximity(
     features: np.ndarray,
     n_neighbors: int,
-    kernel_width: float,
+    kernel_width: float | str,
     metric: str = "euclidean",
     *,
     max_dense_bytes: int | None = DEFAULT_MAX_DENSE_BYTES,
 ) -> ManifoldProximity:
     check_dense_budget(features.shape[0], max_dense_bytes)
-    weights, _ = local_affinity(features, n_neighbors, kernel_width, metric=metric)
+    weights, lengths = local_affinity(features, n_neighbors, kernel_width, metric=metric)
+    width = _resolve_kernel_width(lengths, kernel_width)
     accessibility = forest_accessibility(weights, max_dense_bytes=max_dense_bytes)
+    self_mass = np.diag(accessibility)
+    n_self_dominated = int(np.count_nonzero(self_mass > 0.99))
+    diagnostics = {
+        "n_obs": int(weights.shape[0]),
+        "n_edges": int(weights.nnz // 2),
+        "edge_weight_min": float(weights.data.min()),
+        "edge_weight_median": float(np.median(weights.data)),
+        "edge_weight_max": float(weights.data.max()),
+        "edge_distance_median": float(np.median(lengths.data)),
+        "edge_distance_over_sigma_median": float(np.median(lengths.data) / width),
+        "sigma_effective": width,
+        "self_mass_median": float(np.median(self_mass)),
+        "self_mass_gt_0_99_count": n_self_dominated,
+        "self_mass_gt_0_99_fraction": float(n_self_dominated / weights.shape[0]),
+    }
+    if diagnostics["self_mass_gt_0_99_fraction"] >= 0.1:
+        warnings.warn(
+            f"RFA is self-dominated: {n_self_dominated}/{weights.shape[0]} cells assign "
+            "more than 99% mass to themselves. This weakens the trajectory signal. "
+            f"Median edge distance / sigma = {diagnostics['edge_distance_over_sigma_median']:.3g}. "
+            "Inspect feature units/preprocessing and sigma before interpreting the embedding. "
+            "No automatic rescaling has been applied.",
+            ProximityWarning, stacklevel=2,
+        )
     return ManifoldProximity(
         weights=weights,
         accessibility=accessibility,
         metric=metric,
         n_neighbors=n_neighbors,
-        kernel_width=kernel_width,
+        kernel_width=width,
+        diagnostics=diagnostics,
     )

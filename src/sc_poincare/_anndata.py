@@ -87,7 +87,7 @@ def layout_cells(
     adata,
     *,
     n_neighbors: int = 15,
-    sigma: float = 2.0,
+    sigma: float | str = 2.0,
     gamma: float = 2.0,
     n_components: int = 2,
     use_rep: str | None = None,
@@ -104,8 +104,8 @@ def layout_cells(
     key_added: str | None = None,
     copy: bool = False,
     verbose: bool = False,
-    max_grad_norm: float | None = 2.5,
     max_dense_bytes: int | None = DEFAULT_MAX_DENSE_BYTES,
+    max_grad_norm: float | None = 2.5,
 ):
     """Embed cells on the Poincaré disk and store the result on ``adata``.
 
@@ -117,6 +117,9 @@ def layout_cells(
         Size of the mutual neighborhood used for the local graph (paper: ``k``).
     sigma
         Gaussian kernel width on neighborhood edge lengths (paper: ``σ``).
+        Explicitly opt into ``'median'`` to use the median positive stitched
+        graph edge length. This chooses one global bandwidth without labels
+        or feature rescaling; it is not a reproduction of the paper's settings.
     gamma
         Softmax temperature on hyperbolic distances (paper: ``γ``).
     n_components
@@ -132,18 +135,20 @@ def layout_cells(
         Riemannian fitting controls. After burn-in, patience counts epochs since
         the last cumulative improvement of at least min_delta in the global loss.
     batch_size
-        Row workspace size. All comparison columns are retained; gradients
-        accumulate at the same coordinates before one global update per epoch.
+        Row chunk size (default at most 256 with PyTorch). All comparison cells
+        remain in every row; gradients accumulate before one update per epoch.
     max_grad_norm
-        Riemannian gradient norm cap, default 2.5; None disables clipping.
+        Positive cap on each gradient's Riemannian norm (default 2.5); None
+        disables clipping. Applied after global gradient accumulation.
     max_dense_bytes
-        Dense working-array budget (default 512 MiB). Not a process RSS limit.
-        Increase explicitly or set None to disable; RFA still needs O(N²) storage.
+        Dense working-array budget, default 512 MiB, estimated as four float64
+        N×N arrays. Checked before feature densification. This is not a total RSS
+        limit. Increase explicitly or use None to disable; RFA is still O(N²).
     root
         Optional cell (integer position or ``obs_names`` label) placed at the origin
         after fitting, via a distance-preserving disk translation.
     random_state
-        Seed for the initial coordinates.
+        Seed for spectral initialization and its small noise (or random fallback).
     key_added
         Storage prefix. Default writes ``adata.obsm['X_poincare']`` and
         ``adata.uns['poincare']``.
@@ -172,6 +177,7 @@ def layout_cells(
     if features.shape[0] != adata.n_obs:
         raise ValueError("Feature matrix must have one row per observation.")
 
+    root_index = _resolve_cell_index(adata, root)
     proximity = estimate_proximity(
         features,
         n_neighbors=n_neighbors,
@@ -181,6 +187,7 @@ def layout_cells(
     )
     report = fit_disk_embedding(
         proximity.accessibility,
+        connectivities=proximity.weights,
         n_components=n_components,
         temperature=gamma,
         n_epochs=n_epochs,
@@ -191,11 +198,10 @@ def layout_cells(
         patience=patience,
         random_state=random_state,
         verbose=verbose,
-        max_grad_norm=max_grad_norm,
         max_dense_bytes=max_dense_bytes,
+        max_grad_norm=max_grad_norm,
     )
     coordinates = report.coordinates
-    root_index = _resolve_cell_index(adata, root)
     if root_index is not None:
         coordinates = place_point_at_origin(coordinates, root_index)
 
@@ -206,7 +212,8 @@ def layout_cells(
     adata.uns[uns_key] = {
         "params": {
             "n_neighbors": int(n_neighbors),
-            "sigma": float(sigma),
+            "sigma": float(proximity.kernel_width),
+            "sigma_requested": sigma if isinstance(sigma, str) else float(sigma),
             "gamma": float(gamma),
             "n_components": int(n_components),
             "use_rep": resolved_rep,
@@ -219,13 +226,17 @@ def layout_cells(
             "optimization": "exact_global_row_chunks",
             "gradient_clipping": "riemannian_norm",
             "max_grad_norm": None if max_grad_norm is None else float(max_grad_norm),
+            "affinity_kernel": "gaussian_all_edges",
             "max_dense_bytes": None if max_dense_bytes is None else int(max_dense_bytes),
             "burn_in_epochs": int(burn_in_epochs),
             "root": None if root is None else (int(root) if isinstance(root, (int, np.integer)) else str(root)),
             "random_state": None if isinstance(random_state, np.random.Generator) else random_state,
             "backend": report.backend,
+            "initialization": report.initialization,
+            "initialization_reason": report.initialization_reason,
         },
         "connectivities_key": connectivities_key,
+        "proximity_diagnostics": proximity.diagnostics,
         "loss": np.asarray(report.loss_trace, dtype=np.float64),
         "best_loss": float(report.best_loss),
         "stop_reason": report.stop_reason,

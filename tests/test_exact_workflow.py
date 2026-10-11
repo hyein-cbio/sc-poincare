@@ -210,3 +210,30 @@ def test_invalid_chunk_size_is_rejected(batch_size):
 def test_invalid_target_is_rejected(target):
     with pytest.raises(ValueError):
         _fitting.fit_disk_embedding(target)
+
+
+def test_nested_connectivity_lists_are_validated_without_attribute_error():
+    target = _target(5)
+    graph = (np.ones((5, 5)) - np.eye(5)).tolist()
+    report = _fitting.fit_disk_embedding(target, connectivities=graph, n_epochs=1)
+    assert report.coordinates.shape == (5, 2)
+    with pytest.raises(ValueError, match='same shape'):
+        _fitting.fit_disk_embedding(target, connectivities=[[0., 1.], [1., 0.]])
+
+
+def test_sparse_spectral_seed_uses_low_laplacian_modes_and_seeded_solver(monkeypatch):
+    seen = {}
+    n = 2001
+    def fake_solver(matrix, *, k, which, v0):
+        seen.update(k=k, which=which, v0=v0.copy())
+        x = np.linspace(-1., 1., n)
+        return np.array([.8, .9, 1.]), np.column_stack([x**2, x, np.ones(n)])
+    monkeypatch.setattr(_fitting, 'eigsh', fake_solver)
+    graph = sparse.diags([np.ones(n - 1), np.ones(n - 1)], [-1, 1], shape=(n, n), format='csr')
+    first = _fitting._seed_from_connectivities(graph, 2, np.random.default_rng(4))
+    v0 = seen['v0'].copy()
+    second = _fitting._seed_from_connectivities(graph, 2, np.random.default_rng(4))
+    assert seen['which'] == 'LA'
+    assert seen['k'] == 3
+    np.testing.assert_array_equal(v0, seen['v0'])
+    np.testing.assert_array_equal(first, second)

@@ -101,6 +101,76 @@ def test_invalid_metric_clip_cap_is_rejected(cap):
         _fitting.fit_disk_embedding(np.eye(4), max_grad_norm=cap)
 
 
+def test_real_bridge_distance_controls_gaussian_weight():
+    x = np.array([[0.], [.1], [4.], [4.1]])
+    weights, lengths = _proximity.local_affinity(x, 1, 1.)
+    assert connected_components(weights, directed=False)[0] == 1
+    assert weights[1, 2] == pytest.approx(np.exp(-.5 * 3.9**2), rel=1e-12)
+    assert weights[1, 2] < .001  # Not half the local edge weight (~0.5).
+    edge = lengths.tocoo()
+    np.testing.assert_allclose(weights.toarray()[edge.row, edge.col], np.exp(-.5 * edge.data**2), rtol=1e-12, atol=0.)
+
+
+def test_kernel_underflow_disconnects_fail_before_rfa(monkeypatch):
+    def forbidden(*args, **kwargs):
+        raise AssertionError('Do not solve RFA for an underflow-disconnected graph')
+    monkeypatch.setattr(_proximity, 'forest_accessibility', forbidden)
+    with pytest.raises(ValueError, match='underflow disconnected'):
+        _proximity.estimate_proximity(np.array([[0.], [.1], [100.], [100.1]]), 1, 1.)
+
+
+def test_noncritical_underflow_warns_without_fabricating_weights():
+    # Complete graph: endpoint edge underflows, but intermediate point connects it.
+    with pytest.warns(_proximity.ProximityWarning, match='still connected'):
+        weights, _ = _proximity.local_affinity(np.array([[0.], [25.], [50.]]), 2, 1.)
+    assert weights[0, 2] == 0.
+    assert weights[0, 1] == pytest.approx(np.exp(-.5 * 25**2), rel=1e-12, abs=0.)
+
+
+def test_diagnostics_warn_and_do_not_change_features_or_kernel():
+    x = np.array([[0.], [5.], [10.], [15.]])
+    before = x.copy()
+    with pytest.warns(_proximity.ProximityWarning, match='RFA is self-dominated'):
+        prox = _proximity.estimate_proximity(x, 2, 1.)
+    assert prox.diagnostics['self_mass_gt_0_99_count'] == len(x)
+    assert prox.diagnostics['self_mass_median'] > .99
+    np.testing.assert_array_equal(x, before)
+    w = prox.weights.toarray()
+    expected = np.linalg.inv(np.eye(len(x)) + np.diag(w.sum(axis=1)) - w)
+    np.testing.assert_allclose(prox.accessibility, expected, rtol=1e-12, atol=1e-12)
+    # The user can correct feature units or bandwidth explicitly, equivalently.
+    with warnings.catch_warnings():
+        warnings.simplefilter('error', _proximity.ProximityWarning)
+        wider = _proximity.estimate_proximity(x, 2, 10.)
+        scaled = _proximity.estimate_proximity(x / 10., 2, 1.)
+    np.testing.assert_allclose(wider.accessibility, scaled.accessibility, atol=1e-12)
+    assert wider.diagnostics['self_mass_gt_0_99_count'] == 0
+
+
+def test_anndata_persists_target_diagnostics_and_metric_clip(tmp_path):
+    ad = pytest.importorskip('anndata')
+    from sc_poincare._anndata import layout_cells
+    data = ad.AnnData(np.array([[0., 0.], [.1, .2], [.2, .1], [.3, .2], [.4, .1]]))
+    original = data.X.copy()
+    layout_cells(data, n_neighbors=3, n_epochs=2, max_grad_norm=.7)
+    stored = data.uns['poincare']
+    assert stored['params']['gradient_clipping'] == 'riemannian_norm'
+    assert stored['params']['max_grad_norm'] == .7
+    assert stored['params']['affinity_kernel'] == 'gaussian_all_edges'
+    assert stored['proximity_diagnostics']['n_obs'] == data.n_obs
+    np.testing.assert_array_equal(data.X, original)
+    path = tmp_path / 'result.h5ad'
+    data.write_h5ad(path)
+    loaded = ad.read_h5ad(path)
+    assert loaded.uns['poincare']['proximity_diagnostics']['self_mass_median'] == stored['proximity_diagnostics']['self_mass_median']
+
+
+@pytest.mark.parametrize('sigma', [0., -1., np.nan, np.inf, True])
+def test_bad_kernel_width_rejected(sigma):
+    with pytest.raises(ValueError, match='kernel_width'):
+        _proximity.local_affinity(np.arange(4.)[:, None], 2, sigma)
+
+
 def test_recenter_does_not_apply_optimizer_radius_cap():
     points = np.array([[.999, 0.], [-.999, 0.], [.0, .7], [.2, .1]])
     distances = pairwise_disk_length(points)

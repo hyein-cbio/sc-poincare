@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+from scipy.sparse.csgraph import connected_components
 
 from sc_poincare._proximity import estimate_proximity, forest_accessibility, local_affinity
 
@@ -10,16 +11,15 @@ def test_affinity_graph_is_symmetric_connected_and_nonnegative():
     left = rng.normal(loc=0.0, scale=0.2, size=(12, 4))
     right = rng.normal(loc=5.0, scale=0.2, size=(10, 4))
     features = np.vstack([left, right])
-    weights, _ = local_affinity(features, n_neighbors=3, kernel_width=1.0)
+    weights, lengths = local_affinity(features, n_neighbors=3, kernel_width=1.0)
     dense = weights.toarray()
     assert np.allclose(dense, dense.T, atol=1e-12)
     assert np.all(dense >= 0)
-    # One connected component via the Laplacian nullspace.
-    degree = dense.sum(axis=1)
-    lap = np.diag(degree) - dense
-    evals = np.sort(np.linalg.eigvalsh(lap))
-    assert evals[0] == 0 or evals[0] < 1e-10
-    assert evals[1] > 1e-8
+    # A very weak but positive bridge is connected; its algebraic connectivity
+    # need not exceed an arbitrary threshold. Check the actual paper kernel.
+    assert connected_components(weights, directed=False)[0] == 1
+    edges = lengths.tocoo()
+    np.testing.assert_allclose(dense[edges.row, edges.col], np.exp(-0.5 * edges.data**2), rtol=1e-12, atol=0.)
 
 
 def test_forest_accessibility_is_row_stochastic():
