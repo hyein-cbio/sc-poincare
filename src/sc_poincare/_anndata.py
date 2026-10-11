@@ -17,6 +17,7 @@ from sc_poincare._disk import (
 )
 from sc_poincare._fitting import fit_disk_embedding
 from sc_poincare._proximity import estimate_proximity
+from sc_poincare._resources import DEFAULT_MAX_DENSE_BYTES, check_dense_budget
 
 DEFAULT_BASIS = "X_poincare"
 DEFAULT_UNS = "poincare"
@@ -104,6 +105,7 @@ def layout_cells(
     copy: bool = False,
     verbose: bool = False,
     max_grad_norm: float | None = 2.5,
+    max_dense_bytes: int | None = DEFAULT_MAX_DENSE_BYTES,
 ):
     """Embed cells on the Poincaré disk and store the result on ``adata``.
 
@@ -134,6 +136,9 @@ def layout_cells(
         accumulate at the same coordinates before one global update per epoch.
     max_grad_norm
         Riemannian gradient norm cap, default 2.5; None disables clipping.
+    max_dense_bytes
+        Dense working-array budget (default 512 MiB). Not a process RSS limit.
+        Increase explicitly or set None to disable; RFA still needs O(N²) storage.
     root
         Optional cell (integer position or ``obs_names`` label) placed at the origin
         after fitting, via a distance-preserving disk translation.
@@ -159,6 +164,7 @@ def layout_cells(
       * ``adata.obsp['poincare_connectivities']`` — local Gaussian affinities,
       * ``adata.uns['poincare']`` — hyperparameters and the loss trace.
     """
+    check_dense_budget(adata.n_obs, max_dense_bytes)
     if copy:
         adata = adata.copy()
 
@@ -171,6 +177,7 @@ def layout_cells(
         n_neighbors=n_neighbors,
         kernel_width=sigma,
         metric=metric,
+        max_dense_bytes=max_dense_bytes,
     )
     report = fit_disk_embedding(
         proximity.accessibility,
@@ -185,6 +192,7 @@ def layout_cells(
         random_state=random_state,
         verbose=verbose,
         max_grad_norm=max_grad_norm,
+        max_dense_bytes=max_dense_bytes,
     )
     coordinates = report.coordinates
     root_index = _resolve_cell_index(adata, root)
@@ -211,6 +219,7 @@ def layout_cells(
             "optimization": "exact_global_row_chunks",
             "gradient_clipping": "riemannian_norm",
             "max_grad_norm": None if max_grad_norm is None else float(max_grad_norm),
+            "max_dense_bytes": None if max_dense_bytes is None else int(max_dense_bytes),
             "burn_in_epochs": int(burn_in_epochs),
             "root": None if root is None else (int(root) if isinstance(root, (int, np.integer)) else str(root)),
             "random_state": None if isinstance(random_state, np.random.Generator) else random_state,

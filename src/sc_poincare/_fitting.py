@@ -7,6 +7,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from sc_poincare._disk import confine_to_open_disk, pairwise_disk_length
+from sc_poincare._resources import DEFAULT_MAX_DENSE_BYTES, check_dense_budget
 
 try:
     import torch
@@ -348,6 +349,7 @@ def fit_disk_embedding(
     random_state: int | np.random.Generator | None = 0,
     verbose: bool = False,
     max_grad_norm: float | None = 2.5,
+    max_dense_bytes: int | None = DEFAULT_MAX_DENSE_BYTES,
 ) -> FitReport:
     """Match the exact global proximity objective, with row-chunked gradients.
 
@@ -360,6 +362,7 @@ def fit_disk_embedding(
     shape = np.shape(target)
     if len(shape) != 2 or shape[0] != shape[1]:
         raise ValueError("target proximity must be a square matrix.")
+    check_dense_budget(shape[0], max_dense_bytes)
     target = np.asarray(target, dtype=np.float64)
     if target.shape[0] < 2 or not np.all(np.isfinite(target)) or np.any(target < 0):
         raise ValueError("target must have at least two rows and finite nonnegative entries.")

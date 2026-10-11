@@ -8,6 +8,7 @@ from scipy.sparse.csgraph import connected_components
 from sklearn.metrics import pairwise_distances
 
 from sc_poincare import _fitting, _proximity
+from sc_poincare._resources import check_dense_budget
 
 
 def _target(n=9):
@@ -15,6 +16,124 @@ def _target(n=9):
     matrix = rng.uniform(0.01, 1.0, (n, n))
     matrix = (matrix + matrix.T) / 2
     return matrix / matrix.sum(axis=1, keepdims=True)
+
+
+@pytest.mark.parametrize('metric', ['euclidean', 'cosine'])
+def test_chunked_bridges_match_dense_kruskal(metric):
+    rng = np.random.default_rng(12)
+    features = rng.normal(size=(21, 5))
+    # Three internally connected components. The test reference sorts all pairs.
+    graph = sparse.block_diag([sparse.csr_matrix(np.ones((7, 7)))] * 3, format='csr')
+    graph.setdiag(0)
+    graph.eliminate_zeros()
+    stitched = _proximity._stitch_components(graph, features, metric=metric, block_size=3)
+    distances = pairwise_distances(features, metric=metric)
+    labels = np.repeat(np.arange(3), 7)
+    expected = set()
+    pairs = sorted((float(distances[i, j]), i, j) for i in range(21) for j in range(i + 1, 21))
+    for distance, i, j in pairs:
+        if labels[i] != labels[j]:
+            old, new = labels[j], labels[i]
+            labels[labels == old] = new
+            expected.add((i, j))
+    actual = set()
+    for i, j in zip(*stitched.nonzero()):
+        if i < j and i // 7 != j // 7:
+            actual.add((i, j))
+    assert actual == expected
+    for i, j in actual:
+        assert stitched[i, j] == pytest.approx(distances[i, j], abs=1e-12)
+    assert connected_components(stitched, directed=False)[0] == 1
+
+
+def test_zero_length_bridge_is_retained():
+    features = np.array([[0.], [1.], [0.], [-1.]])
+    graph = sparse.coo_matrix(([1., 1., 1., 1.], ([0, 1, 2, 3], [1, 0, 3, 2])), shape=(4, 4)).tocsr()
+    stitched = _proximity._stitch_components(graph, features, block_size=1)
+    assert 2 in stitched.indices[stitched.indptr[0]:stitched.indptr[1]]
+    assert stitched[0, 2] == 0
+    assert connected_components(stitched, directed=False)[0] == 1
+
+
+def test_connected_graph_needs_no_all_pair_distance_matrix(monkeypatch):
+    def forbidden(*args, **kwargs):
+        raise AssertionError('No pairwise distances are needed for a connected kNN graph')
+    monkeypatch.setattr(_proximity, 'pairwise_distances', forbidden)
+    features = np.random.default_rng(0).normal(size=(12, 3))
+    affinity, lengths = _proximity.local_affinity(features, 11, 2.)
+    assert sparse.issparse(lengths)
+    assert affinity.nnz == 12 * 11
+
+
+def test_duplicate_cells_keep_zero_length_neighbors():
+    n = 7
+    affinity, _ = _proximity.local_affinity(np.zeros((n, 2)), n - 1, 2.)
+    expected = np.ones((n, n)) - np.eye(n)
+    np.testing.assert_allclose(affinity.toarray(), expected)
+    assert np.all(affinity.diagonal() == 0)
+
+
+@pytest.mark.parametrize('block_size', [1, 4, 30])
+def test_blocked_rfa_matches_direct_inverse(block_size):
+    rng = np.random.default_rng(3)
+    adjacency = rng.uniform(0.01, 1., (15, 15))
+    adjacency = (adjacency + adjacency.T) / 2
+    np.fill_diagonal(adjacency, 0.)
+    laplacian = np.diag(adjacency.sum(axis=1)) - adjacency
+    expected = np.linalg.inv(np.eye(15) + laplacian)
+    actual = _proximity.forest_accessibility(sparse.csr_matrix(adjacency), block_size=block_size)
+    np.testing.assert_allclose(actual, expected, atol=1e-12, rtol=1e-12)
+
+
+def test_rfa_factorizes_once_and_solves_only_small_rhs(monkeypatch):
+    original = _proximity.splu
+    shapes = []
+    factorizations = []
+    def factor(matrix):
+        factorizations.append(matrix.shape)
+        solver = original(matrix)
+        class Solver:
+            def solve(self, rhs):
+                shapes.append(rhs.shape)
+                return solver.solve(rhs)
+        return Solver()
+    monkeypatch.setattr(_proximity, 'splu', factor)
+    _proximity.forest_accessibility(sparse.csr_matrix(np.ones((11, 11))), block_size=3)
+    assert factorizations == [(11, 11)]
+    assert shapes == [(11, 3), (11, 3), (11, 3), (11, 2)]
+
+
+def test_dense_guard_runs_before_graph_or_factorization(monkeypatch):
+    def forbidden(*args, **kwargs):
+        raise AssertionError('Guard should run before allocating or solving')
+    monkeypatch.setattr(_proximity, 'local_affinity', forbidden)
+    monkeypatch.setattr(_proximity, 'splu', forbidden)
+    with pytest.raises(MemoryError, match=r'O\(N²\)'):
+        _proximity.estimate_proximity(np.zeros((10000, 1)), 15, 2.)
+    with pytest.raises(MemoryError):
+        _proximity.forest_accessibility(sparse.eye(10000, format='csr'))
+
+
+def test_anndata_guard_precedes_feature_densification(monkeypatch):
+    ad = pytest.importorskip('anndata')
+    from sc_poincare import _anndata
+    def forbidden(*args, **kwargs):
+        raise AssertionError('Features must not be densified before the guard')
+    monkeypatch.setattr(_anndata, '_choose_features', forbidden)
+    data = ad.AnnData(sparse.csr_matrix((10000, 1)))
+    with pytest.raises(MemoryError):
+        _anndata.layout_cells(data)
+
+
+@pytest.mark.parametrize('limit', [0, -1, True, 3.5])
+def test_invalid_memory_budget_is_rejected(limit):
+    with pytest.raises(ValueError):
+        check_dense_budget(5, limit)
+
+
+def test_explicit_memory_budget_can_be_increased_or_disabled():
+    check_dense_budget(10000, 4 * 8 * 10000**2)
+    check_dense_budget(10000, None)
 
 
 @pytest.mark.parametrize('chunk_size', [1, 4, 20])

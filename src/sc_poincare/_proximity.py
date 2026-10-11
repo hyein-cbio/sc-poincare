@@ -6,9 +6,12 @@ from dataclasses import dataclass
 
 import numpy as np
 from scipy import sparse
-from scipy.sparse.linalg import spsolve
+from scipy.sparse.csgraph import connected_components
+from scipy.sparse.linalg import splu
 from sklearn.metrics import pairwise_distances
 from sklearn.neighbors import NearestNeighbors
+
+from sc_poincare._resources import DEFAULT_MAX_DENSE_BYTES, check_dense_budget
 
 
 @dataclass(frozen=True)
@@ -60,39 +63,60 @@ def _mutual_knn_mask(neighbor_index: np.ndarray) -> list[set[int]]:
 
 def _stitch_components(
     adjacency: sparse.csr_matrix,
-    sample_distance: np.ndarray,
+    features: np.ndarray,
+    metric: str = "euclidean",
+    block_size: int = 256,
 ) -> sparse.csr_matrix:
-    """Add the shortest inter-component links until the graph is connected."""
+    """Exact component MST bridges via bounded-memory Borůvka rounds.
+
+    Each component proposes its shortest outgoing edge. This preserves the
+    minimum total bridge length without allocating and sorting all pairs.
+    Distance work can still be quadratic; it is skipped for connected graphs.
+    """
     n = adjacency.shape[0]
-    _, find, union = _union_find(n)
-    coo = adjacency.tocoo()
-    n_parts = n
-    for i, j in zip(coo.row.tolist(), coo.col.tolist()):
-        if i < j and union(i, j):
-            n_parts -= 1
+    n_parts, labels = connected_components(adjacency, directed=False)
     if n_parts <= 1:
         return adjacency.tocsr()
-
-    tri_i, tri_j = np.triu_indices(n, k=1)
-    order = np.argsort(sample_distance[tri_i, tri_j], kind="mergesort")
+    if block_size < 1:
+        raise ValueError("block_size must be positive.")
+    _, find, union = _union_find(n_parts)
     extra_i: list[int] = []
     extra_j: list[int] = []
     extra_d: list[float] = []
-    for pos in order:
-        i = int(tri_i[pos])
-        j = int(tri_j[pos])
-        if union(i, j):
-            extra_i.extend((i, j))
-            extra_j.extend((j, i))
-            extra_d.extend((float(sample_distance[i, j]), float(sample_distance[i, j])))
-            n_parts -= 1
-            if n_parts <= 1:
-                break
-
-    if not extra_i:
-        return adjacency.tocsr()
-    extra = sparse.coo_matrix((extra_d, (extra_i, extra_j)), shape=(n, n))
-    return (adjacency + extra).tocsr()
+    while n_parts > 1:
+        components = np.array([find(int(label)) for label in labels])
+        candidates: dict[int, tuple[float, int, int]] = {}
+        for start in range(0, n, block_size):
+            stop = min(start + block_size, n)
+            distances = pairwise_distances(features[start:stop], features, metric=metric)
+            distances[components[start:stop, None] == components[None, :]] = np.inf
+            nearest = np.argmin(distances, axis=1)
+            for offset, j in enumerate(nearest):
+                i = start + offset
+                distance = float(distances[offset, j])
+                if not np.isfinite(distance):
+                    continue
+                edge = (distance, min(i, int(j)), max(i, int(j)))
+                component = int(components[i])
+                if component not in candidates or edge < candidates[component]:
+                    candidates[component] = edge
+        added = 0
+        for distance, i, j in sorted(set(candidates.values())):
+            if union(int(labels[i]), int(labels[j])):
+                extra_i.extend((i, j))
+                extra_j.extend((j, i))
+                extra_d.extend((distance, distance))
+                n_parts -= 1
+                added += 1
+        if not added:
+            raise ValueError("Cannot connect graph components with finite distances.")
+    # Construct directly: sparse addition can drop explicit zero-length bridges.
+    edges = adjacency.tocoo()
+    return sparse.coo_matrix(
+        (np.concatenate([edges.data, extra_d]),
+         (np.concatenate([edges.row, extra_i]), np.concatenate([edges.col, extra_j]))),
+        shape=(n, n),
+    ).tocsr()
 
 
 def local_affinity(
@@ -100,8 +124,8 @@ def local_affinity(
     n_neighbors: int,
     kernel_width: float,
     metric: str = "euclidean",
-) -> tuple[sparse.csr_matrix, np.ndarray]:
-    """Connected mutual kNN graph with a Gaussian kernel on edge lengths."""
+) -> tuple[sparse.csr_matrix, sparse.csr_matrix]:
+    """Return local affinities and sparse stitched edge lengths (not all pairs)."""
     features = np.asarray(features, dtype=np.float64)
     n_obs = features.shape[0]
     if n_obs < 3:
@@ -114,10 +138,16 @@ def local_affinity(
     k = min(n_neighbors, n_obs - 1)
     knn = NearestNeighbors(n_neighbors=k + 1, metric=metric, algorithm="auto")
     knn.fit(features)
-    neighbor_index = knn.kneighbors(features, return_distance=False)[:, 1:]
+    distances, indices = knn.kneighbors(features)
+    # Remove self by index, not position: duplicate cells can precede self.
+    neighbor_index = np.empty((n_obs, k), dtype=np.int64)
+    neighbor_lengths = []
+    for i in range(n_obs):
+        keep = indices[i] != i
+        neighbor_index[i] = indices[i, keep][:k]
+        neighbor_lengths.append(dict(zip(neighbor_index[i], distances[i, keep][:k])))
     mutual = _mutual_knn_mask(neighbor_index)
 
-    sample_distance = pairwise_distances(features, metric=metric)
     rows: list[int] = []
     cols: list[int] = []
     data: list[float] = []
@@ -125,13 +155,13 @@ def local_affinity(
         for j in partners:
             if j <= i:
                 continue
-            length = float(sample_distance[i, j])
+            length = float(neighbor_lengths[i][j])
             rows.extend((i, j))
             cols.extend((j, i))
             data.extend((length, length))
 
     length_graph = sparse.coo_matrix((data, (rows, cols)), shape=(n_obs, n_obs)).tocsr()
-    stitched = _stitch_components(length_graph, sample_distance)
+    stitched = _stitch_components(length_graph, features, metric=metric)
 
     # Kernelize local edges first. Bridges added to restore connectivity can sit
     # far beyond σ and would otherwise vanish numerically, leaving the graph
@@ -144,7 +174,11 @@ def local_affinity(
         shape=(n_obs, n_obs),
     ).tocsr()
 
-    bridge = (stitched > 0).astype(np.float64) - (length_graph > 0).astype(np.float64)
+    stitched_topology = stitched.copy()
+    stitched_topology.data[:] = 1.0
+    local_topology = length_graph.copy()
+    local_topology.data[:] = 1.0
+    bridge = stitched_topology - local_topology
     bridge.eliminate_zeros()
     if bridge.nnz:
         floor = float(np.min(local_w)) if local_w.size else 1e-6
@@ -152,24 +186,39 @@ def local_affinity(
         bridge.data = np.full(bridge.data.shape, 0.5 * max(floor, 1e-6))
         affinity = (affinity + bridge.tocsr()).tocsr()
 
-    return affinity, sample_distance
+    return affinity, stitched
 
 
-def forest_accessibility(affinity: sparse.spmatrix) -> np.ndarray:
-    """Relative forest accessibility ``P = (I + L)^{-1}``, ``L = D - A``."""
+def forest_accessibility(
+    affinity: sparse.spmatrix,
+    *,
+    block_size: int = 128,
+    max_dense_bytes: int | None = DEFAULT_MAX_DENSE_BYTES,
+) -> np.ndarray:
+    """Exact ``P = (I + L)^{-1}`` with blocked RHS solves; output is dense."""
+    if affinity.shape[0] != affinity.shape[1] or affinity.shape[0] == 0:
+        raise ValueError("affinity must be a nonempty square matrix.")
+    check_dense_budget(affinity.shape[0], max_dense_bytes)
+    if isinstance(block_size, bool) or not isinstance(block_size, (int, np.integer)) or block_size < 1:
+        raise ValueError("block_size must be a positive integer.")
     affinity = affinity.tocsr().astype(np.float64)
+    if not np.all(np.isfinite(affinity.data)) or np.any(affinity.data < 0):
+        raise ValueError("affinity must be finite and nonnegative.")
     n_obs = affinity.shape[0]
     degree = np.asarray(affinity.sum(axis=1)).reshape(-1)
     laplacian = sparse.diags(degree) - affinity
     shifted = (sparse.eye(n_obs, format="csc") + laplacian.tocsc()).tocsc()
-    identity = np.eye(n_obs, dtype=np.float64)
-    accessibility = np.asarray(spsolve(shifted, identity), dtype=np.float64)
-    if accessibility.ndim == 1:
-        accessibility = accessibility.reshape(n_obs, n_obs)
+    factorization = splu(shifted)
+    accessibility = np.empty((n_obs, n_obs), dtype=np.float64)
+    for start in range(0, n_obs, block_size):
+        stop = min(start + block_size, n_obs)
+        rhs = np.zeros((n_obs, stop - start), dtype=np.float64)
+        rhs[np.arange(start, stop), np.arange(stop - start)] = 1.0
+        accessibility[:, start:stop] = factorization.solve(rhs)
     # Tiny negative values can appear from round-off; they break the KL.
-    accessibility = np.clip(accessibility, 0.0, None)
+    np.maximum(accessibility, 0.0, out=accessibility)
     row_mass = accessibility.sum(axis=1, keepdims=True)
-    accessibility = accessibility / np.clip(row_mass, a_min=1e-12, a_max=None)
+    accessibility /= np.clip(row_mass, a_min=1e-12, a_max=None)
     return accessibility
 
 
@@ -178,9 +227,12 @@ def estimate_proximity(
     n_neighbors: int,
     kernel_width: float,
     metric: str = "euclidean",
+    *,
+    max_dense_bytes: int | None = DEFAULT_MAX_DENSE_BYTES,
 ) -> ManifoldProximity:
+    check_dense_budget(features.shape[0], max_dense_bytes)
     weights, _ = local_affinity(features, n_neighbors, kernel_width, metric=metric)
-    accessibility = forest_accessibility(weights)
+    accessibility = forest_accessibility(weights, max_dense_bytes=max_dense_bytes)
     return ManifoldProximity(
         weights=weights,
         accessibility=accessibility,
