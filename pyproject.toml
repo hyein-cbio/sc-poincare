@@ -19,6 +19,8 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+torch = ["torch>=2.0"]
+benchmark = ["pandas>=1.5", "threadpoolctl>=3.1"]
 scanpy = ["scanpy>=1.9"]
 dev = ["pytest>=7.0", "scanpy>=1.9"]
 

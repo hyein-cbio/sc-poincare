@@ -9,5 +9,9 @@ build/
 .venv/
 *.png
 .DS_Store
+# Local datasets, reference artifacts, plots, and exploratory scripts.
 data/
+# Private session exports may contain local paths or credentials.
 pi-session-*.html
+# Generated local semantic-search index; not package source.
+.cocoindex_code/
