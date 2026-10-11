@@ -110,6 +110,8 @@ warnings.filterwarnings("error", category=ProximityWarning)
 
 Install `pip install -e '.[torch,benchmark]'` for the benchmark's explicit dependencies. See [the small-data benchmark protocol](docs/benchmarking.md) and `examples/benchmark_small.py`. No general superiority over the authors' implementation has been established. Compare unmodified learned coordinates, not jittered or repelled display layouts.
 
+A [dataset-specific reference-condition search](docs/reference-parity.md) found recipes that pass two graph-distance diagnostics on six datasets across three seeds. **Five recipes use an experimental geodesic-regularized objective**, not the paper's pure RFA KL. This is not full analysis equivalence or a generalization claim. `examples/run_selected_conditions.py` reproduces those opt-in conditions from local input CSVs; the default Scanpy API is unchanged.
+
 ## Tests
 
 ```bash
