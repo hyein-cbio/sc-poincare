@@ -1,5 +1,15 @@
 # Reference-condition search: scope, recipes, and limitations
 
+## Historical numerical policy
+
+The results below were measured before the log-domain KL correction, on the
+source preserved in commit `9993dd0` (with the former `1e-12` probability floor).
+They are historical evidence, not a guarantee that the same recipes reproduce
+these values on current code. The stress-based research fitter remains separate
+from both the default and new conditional KL objective. See
+[objective definitions](objectives.md) and the later
+[objective validation study](objective-validation.md).
+
 ## What was reached
 
 A search on the six previously selected small/medium datasets found conditions
