@@ -106,6 +106,22 @@ from sc_poincare._proximity import ProximityWarning
 warnings.filterwarnings("error", category=ProximityWarning)
 ```
 
+## Long-fit progress and warm starts
+
+The low-level `sc_poincare._fitting.fit_disk_embedding` accepts an optional
+`progress_callback` and `initial_coordinates`. A callback receives independent
+copies of the evaluated current and best coordinates, their losses, epoch number
+(including epoch 0), and initialization provenance. Mutating the copies or returning
+a value does not alter fitting; exceptions abort the run. Checkpoint I/O is synchronous
+and belongs to the caller, so include its overhead in timing measurements.
+
+Warm-start coordinates must be finite, have shape `(n_obs, n_components)`, and fit
+inside the optimizer's safety margin. Use raw training coordinates, not root-translated
+display coordinates. A warm start is a **new run**: it does not restore patience,
+burn-in position or prior best-checkpoint history. Explicitly configure the new
+schedule. These options do not change the default Scanpy API or default fitting
+trajectory, and do not remove dense RFA's quadratic memory requirement.
+
 ## Benchmarks
 
 Install `pip install -e '.[torch,benchmark]'` for the benchmark's explicit dependencies. See [the small-data benchmark protocol](docs/benchmarking.md) and `examples/benchmark_small.py`. No general superiority over the authors' implementation has been established. Compare unmodified learned coordinates, not jittered or repelled display layouts.

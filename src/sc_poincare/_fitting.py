@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import Callable
 import warnings
 
 import numpy as np
@@ -29,6 +30,28 @@ class FitReport:
     stop_reason: str
     initialization: str
     initialization_reason: str
+
+
+@dataclass(frozen=True)
+class FitProgress:
+    """Independent checkpoint copies at an evaluated epoch (including epoch 0)."""
+
+    epoch: int
+    coordinates: np.ndarray
+    loss: float
+    best_loss: float
+    best_coordinates: np.ndarray
+    initialization: str
+    initialization_reason: str
+
+
+def _emit_progress(callback, epoch, coordinates, loss, best_loss, best_coordinates, init_status):
+    if callback is not None:
+        callback(FitProgress(
+            epoch=epoch, coordinates=np.array(coordinates, copy=True), loss=float(loss),
+            best_loss=float(best_loss), best_coordinates=np.array(best_coordinates, copy=True),
+            **init_status,
+        ))
 
 
 def _row_softmax_neg_distance(distance: np.ndarray, temperature: float) -> np.ndarray:
@@ -228,12 +251,17 @@ def _fit_with_torch(
     verbose: bool,
     connectivities=None,
     max_grad_norm: float | None = 2.5,
+    initial_coordinates: np.ndarray | None = None,
+    progress_callback: Callable[[FitProgress], None] | None = None,
 ) -> FitReport:
     n_obs = target.shape[0]
     device = torch.device("cpu")
     target_t = torch.as_tensor(target, dtype=torch.float64, device=device)
     init_status = {"initialization": "random", "initialization_reason": ""}
-    if connectivities is None:
+    if initial_coordinates is not None:
+        seed = initial_coordinates.copy()
+        init_status["initialization"] = "provided"
+    elif connectivities is None:
         seed = _seed_coordinates(n_obs, n_components, rng)
     else:
         seed = _seed_from_connectivities(connectivities, n_components, rng, status=init_status)
@@ -278,6 +306,8 @@ def _fit_with_torch(
         if total_loss < best_loss:
             best_loss = total_loss
             best_coords = coords.detach().cpu().numpy().copy()
+        _emit_progress(progress_callback, epoch, coords.detach().cpu().numpy(),
+                       total_loss, best_loss, best_coords, init_status)
         # Keep the checkpoint optimum separate from the last significant
         # improvement. Several small improvements can add up to min_delta.
         if epoch <= burn_in_epochs or total_loss + min_delta < stopping_loss:
@@ -358,10 +388,15 @@ def _fit_with_numpy(
     verbose: bool,
     connectivities=None,
     max_grad_norm: float | None = 2.5,
+    initial_coordinates: np.ndarray | None = None,
+    progress_callback: Callable[[FitProgress], None] | None = None,
 ) -> FitReport:
     n_obs = target.shape[0]
     init_status = {"initialization": "random", "initialization_reason": ""}
-    if connectivities is None:
+    if initial_coordinates is not None:
+        coords = initial_coordinates.copy()
+        init_status["initialization"] = "provided"
+    elif connectivities is None:
         coords = _seed_coordinates(n_obs, n_components, rng)
     else:
         coords = _seed_from_connectivities(connectivities, n_components, rng, status=init_status)
@@ -372,6 +407,7 @@ def _fit_with_numpy(
     best_coords = coords.copy()
     stopping_loss = best_loss
     stall = 0
+    _emit_progress(progress_callback, 0, coords, best_loss, best_loss, best_coords, init_status)
 
     for epoch in range(n_epochs):
         grad = np.zeros_like(coords)
@@ -390,6 +426,7 @@ def _fit_with_numpy(
         if total_loss < best_loss:
             best_loss = total_loss
             best_coords = coords.copy()
+        _emit_progress(progress_callback, epoch + 1, coords, total_loss, best_loss, best_coords, init_status)
         if epoch + 1 <= burn_in_epochs or total_loss + min_delta < stopping_loss:
             stopping_loss = total_loss
             stall = 0
@@ -426,6 +463,8 @@ def fit_disk_embedding(
     connectivities=None,
     max_dense_bytes: int | None = DEFAULT_MAX_DENSE_BYTES,
     max_grad_norm: float | None = 2.5,
+    initial_coordinates: np.ndarray | None = None,
+    progress_callback: Callable[[FitProgress], None] | None = None,
 ) -> FitReport:
     """Match the exact global proximity objective, with row-chunked gradients.
 
@@ -435,6 +474,13 @@ def fit_disk_embedding(
     The target remains dense and this is not an approximate large-N method.
     ``max_grad_norm`` clips each accumulated gradient's Riemannian norm;
     None disables clipping. It does not cap coordinate radii.
+
+    ``initial_coordinates`` explicitly warm-starts a new run; it must match
+    the target's row count and fit within the optimizer margin (radius <=
+    1-1e-5). This is not a complete restoration of the stopping/schedule state.
+    ``progress_callback`` receives independent current/best coordinate copies
+    after evaluation, including epoch 0. Exceptions propagate to the caller.
+    Callbacks are observational and their return values are ignored.
     """
     shape = np.shape(target)
     if len(shape) != 2 or shape[0] != shape[1]:
@@ -462,6 +508,16 @@ def fit_disk_embedding(
         raise ValueError("connectivities and target must have the same shape.")
     if max_grad_norm is not None and (isinstance(max_grad_norm, bool) or not np.isfinite(max_grad_norm) or max_grad_norm <= 0):
         raise ValueError("max_grad_norm must be finite and positive, or None.")
+    if initial_coordinates is not None:
+        initial_coordinates = np.asarray(initial_coordinates, dtype=np.float64)
+        if (initial_coordinates.shape != (target.shape[0], n_components)
+                or not np.all(np.isfinite(initial_coordinates))):
+            raise ValueError("initial_coordinates must be finite with shape (n_obs, n_components).")
+        margin_limit = 1.0 - 1e-5 + 8.0 * np.finfo(np.float64).eps
+        if np.any(np.linalg.norm(initial_coordinates, axis=1) > margin_limit):
+            raise ValueError("initial_coordinates exceed the optimizer radius margin; use raw training coordinates, not recentered display coordinates.")
+    if progress_callback is not None and not callable(progress_callback):
+        raise ValueError("progress_callback must be callable or None.")
     if isinstance(random_state, np.random.Generator):
         rng = random_state
     else:
@@ -484,6 +540,8 @@ def fit_disk_embedding(
         verbose=verbose,
         connectivities=connectivities,
         max_grad_norm=max_grad_norm,
+        initial_coordinates=initial_coordinates,
+        progress_callback=progress_callback,
     )
     if torch is not None:
         return _fit_with_torch(**kwargs)
