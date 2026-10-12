@@ -11,6 +11,10 @@ from scipy import sparse
 from scipy.sparse.linalg import ArpackNoConvergence, eigsh
 
 from sc_poincare._disk import confine_to_open_disk, pairwise_disk_length
+from sc_poincare._objectives import (
+    _numpy_alignment_loss, _numpy_kl_from_logs, _numpy_log_probabilities,
+    _torch_alignment_loss, _torch_kl_from_logs,
+)
 from sc_poincare._resources import DEFAULT_MAX_DENSE_BYTES, check_dense_budget
 
 try:
@@ -55,19 +59,14 @@ def _emit_progress(callback, epoch, coordinates, loss, best_loss, best_coordinat
 
 
 def _row_softmax_neg_distance(distance: np.ndarray, temperature: float) -> np.ndarray:
-    scaled = -distance / temperature
-    scaled = scaled - scaled.max(axis=1, keepdims=True)
-    unnormalized = np.exp(scaled)
-    return unnormalized / np.clip(unnormalized.sum(axis=1, keepdims=True), a_min=1e-12, a_max=None)
+    return np.exp(_numpy_log_probabilities(distance, temperature))
 
 
 def _sym_kl(target: np.ndarray, predicted: np.ndarray) -> float:
-    floor = 1e-12
-    p = np.clip(target, floor, None)
-    q = np.clip(predicted, floor, None)
-    p = p / p.sum(axis=1, keepdims=True)
+    q = np.asarray(predicted, dtype=np.float64)
     q = q / q.sum(axis=1, keepdims=True)
-    return float(np.sum(p * np.log(p / q) + q * np.log(q / p)))
+    logq = np.log(np.where(q > 0, q, np.finfo(q.dtype).tiny))
+    return _numpy_kl_from_logs(target, logq)
 
 
 def _seed_coordinates(n_obs: int, n_components: int, rng: np.random.Generator) -> np.ndarray:
@@ -161,18 +160,14 @@ def evaluate_alignment(
         stop = min(start + block_size, len(coordinates))
         distance = pairwise_disk_length(coordinates[start:stop], coordinates)
         distance[np.arange(stop - start), np.arange(start, stop)] = 0.0
-        predicted = _row_softmax_neg_distance(distance, temperature)
-        total += _sym_kl(target[start:stop], predicted)
+        total += _numpy_alignment_loss(target[start:stop], distance, temperature)
     return total
 
 
 def _torch_sym_kl(target, predicted):
-    floor = 1e-12
-    p = target.clamp_min(floor)
-    q = predicted.clamp_min(floor)
-    p = p / p.sum(dim=1, keepdim=True)
-    q = q / q.sum(dim=1, keepdim=True)
-    return torch.sum(p * (p.log() - q.log()) + q * (q.log() - p.log()))
+    q = predicted / predicted.sum(dim=1, keepdim=True)
+    logq = torch.where(q > 0, q, torch.finfo(q.dtype).tiny).log()
+    return _torch_kl_from_logs(target, logq)
 
 
 def _shrink_torch(points, margin: float = 1e-5):
@@ -289,8 +284,7 @@ def _fit_with_torch(
                 stop = min(start + chunk_size, n_obs)
                 self_columns = torch.arange(start, stop, device=device)
                 distance = _torch_disk_length(coords[start:stop], coords, self_columns=self_columns)
-                predicted = torch.softmax(-distance / temperature, dim=1)
-                loss = _torch_sym_kl(target_t[start:stop], predicted)
+                loss = _torch_alignment_loss(target_t[start:stop], distance, temperature)
                 if not torch.isfinite(loss):
                     raise FloatingPointError("Non-finite global Poincaré fitting loss.")
                 total_loss += float(loss.detach().cpu())
@@ -489,8 +483,10 @@ def fit_disk_embedding(
     target = np.asarray(target, dtype=np.float64)
     if target.shape[0] < 2 or not np.all(np.isfinite(target)) or np.any(target < 0):
         raise ValueError("target must have at least two rows and finite nonnegative entries.")
-    if np.any(target.sum(axis=1) <= 0):
-        raise ValueError("target rows must have positive mass.")
+    with np.errstate(over="ignore"):
+        row_mass = target.sum(axis=1)
+    if np.any(row_mass <= 0) or not np.all(np.isfinite(row_mass)):
+        raise ValueError("target rows must have finite positive mass.")
     if n_components < 2:
         raise ValueError("n_components must be at least 2.")
     if not np.isfinite(temperature) or temperature <= 0:
@@ -525,6 +521,13 @@ def fit_disk_embedding(
 
     if torch is None and target.shape[0] > 128:
         raise ImportError("Install PyTorch for more than 128 cells; the exact NumPy fallback uses cubic finite differences.")
+
+    if np.any(target == 0):
+        warnings.warn(
+            "Zero target probabilities use machine-tiny values in logarithms only. "
+            "The reverse KL is numerically regularized, not exact for these zeros.",
+            UserWarning, stacklevel=2,
+        )
 
     kwargs = dict(
         target=target,

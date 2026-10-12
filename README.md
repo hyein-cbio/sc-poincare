@@ -106,6 +106,14 @@ from sc_poincare._proximity import ProximityWarning
 warnings.filterwarnings("error", category=ProximityWarning)
 ```
 
+## Probability calculation
+
+The default remains symmetric RFA KL with self included. Fitting now uses
+log-softmax and retains positive target probabilities instead of flooring them
+to `1e-12`. Exact-zero target logs alone use a documented machine-tiny numerical
+regularization, with a warning. Losses and stopping trajectories can change.
+See [objective definitions and numerical policy](docs/objectives.md).
+
 ## Long-fit progress and warm starts
 
 The low-level `sc_poincare._fitting.fit_disk_embedding` accepts an optional
