@@ -14,6 +14,7 @@ from sc_poincare._disk import confine_to_open_disk, pairwise_disk_length
 from sc_poincare._objectives import (
     _numpy_alignment_loss, _numpy_kl_from_logs, _numpy_log_probabilities,
     _torch_alignment_loss, _torch_kl_from_logs,
+    DEFAULT_OBJECTIVE, CONDITIONAL_OBJECTIVE, _validate_objective,
 )
 from sc_poincare._resources import DEFAULT_MAX_DENSE_BYTES, check_dense_budget
 
@@ -34,6 +35,9 @@ class FitReport:
     stop_reason: str
     initialization: str
     initialization_reason: str
+    objective: str = DEFAULT_OBJECTIVE
+    probability_computation: str = "log_softmax"
+    zero_target_policy: str = "machine_tiny_logs_only"
 
 
 @dataclass(frozen=True)
@@ -151,8 +155,10 @@ def evaluate_alignment(
     temperature: float,
     *,
     block_size: int = 256,
+    objective: str = DEFAULT_OBJECTIVE,
 ) -> float:
-    """Global symmetric KL in row blocks, using the same distances as fitting."""
+    """Evaluate the selected global KL in row blocks, as used during fitting."""
+    _validate_objective(objective)
     if block_size < 1:
         raise ValueError("block_size must be positive.")
     total = 0.0
@@ -160,7 +166,8 @@ def evaluate_alignment(
         stop = min(start + block_size, len(coordinates))
         distance = pairwise_disk_length(coordinates[start:stop], coordinates)
         distance[np.arange(stop - start), np.arange(start, stop)] = 0.0
-        total += _numpy_alignment_loss(target[start:stop], distance, temperature)
+        total += _numpy_alignment_loss(target[start:stop], distance, temperature,
+                                       objective=objective, self_columns=np.arange(start, stop))
     return total
 
 
@@ -248,6 +255,7 @@ def _fit_with_torch(
     max_grad_norm: float | None = 2.5,
     initial_coordinates: np.ndarray | None = None,
     progress_callback: Callable[[FitProgress], None] | None = None,
+    objective: str = DEFAULT_OBJECTIVE,
 ) -> FitReport:
     n_obs = target.shape[0]
     device = torch.device("cpu")
@@ -284,7 +292,8 @@ def _fit_with_torch(
                 stop = min(start + chunk_size, n_obs)
                 self_columns = torch.arange(start, stop, device=device)
                 distance = _torch_disk_length(coords[start:stop], coords, self_columns=self_columns)
-                loss = _torch_alignment_loss(target_t[start:stop], distance, temperature)
+                loss = _torch_alignment_loss(target_t[start:stop], distance, temperature,
+                                             objective=objective, self_columns=self_columns)
                 if not torch.isfinite(loss):
                     raise FloatingPointError("Non-finite global Poincaré fitting loss.")
                 total_loss += float(loss.detach().cpu())
@@ -320,6 +329,7 @@ def _fit_with_torch(
         loss_trace=loss_trace,
         n_epochs=len(loss_trace),
         backend="torch",
+        objective=objective,
         batch_size=chunk_size,
         best_loss=best_loss,
         stop_reason="epoch_limit" if len(loss_trace) == n_epochs else "patience",
@@ -333,6 +343,8 @@ def _numeric_row_grad(
     temperature: float,
     rows: np.ndarray,
     eps: float = 1e-5,
+    *,
+    objective: str = DEFAULT_OBJECTIVE,
 ) -> np.ndarray:
     """Central-difference Euclidean gradient on a subset of rows (numpy fallback)."""
     if not np.isfinite(eps) or eps <= 0:
@@ -341,7 +353,7 @@ def _numeric_row_grad(
 
     def _loss(pos: np.ndarray) -> float:
         # rows selects coordinates to differentiate, not a conditional target.
-        return evaluate_alignment(pos, target, temperature)
+        return evaluate_alignment(pos, target, temperature, objective=objective)
 
     for i in rows:
         separation = np.linalg.norm(coordinates - coordinates[i], axis=1)
@@ -384,6 +396,7 @@ def _fit_with_numpy(
     max_grad_norm: float | None = 2.5,
     initial_coordinates: np.ndarray | None = None,
     progress_callback: Callable[[FitProgress], None] | None = None,
+    objective: str = DEFAULT_OBJECTIVE,
 ) -> FitReport:
     n_obs = target.shape[0]
     init_status = {"initialization": "random", "initialization_reason": ""}
@@ -397,7 +410,7 @@ def _fit_with_numpy(
     # Exact finite differences are cubic; this fallback is only for tiny inputs.
     chunk_size = min(batch_size or 32, n_obs)
     loss_trace: list[float] = []
-    best_loss = evaluate_alignment(coords, target, temperature)
+    best_loss = evaluate_alignment(coords, target, temperature, objective=objective)
     best_coords = coords.copy()
     stopping_loss = best_loss
     stall = 0
@@ -407,11 +420,11 @@ def _fit_with_numpy(
         grad = np.zeros_like(coords)
         for start in range(0, n_obs, chunk_size):
             rows = np.arange(start, min(start + chunk_size, n_obs))
-            grad += _numeric_row_grad(coords, target, temperature, rows)
+            grad += _numeric_row_grad(coords, target, temperature, rows, objective=objective)
         step = learning_rate / 10.0 if epoch < burn_in_epochs else learning_rate
         coords = _riemannian_retract_numpy(coords, grad, step, max_grad_norm)
 
-        total_loss = evaluate_alignment(coords, target, temperature)
+        total_loss = evaluate_alignment(coords, target, temperature, objective=objective)
         if not np.isfinite(total_loss):
             raise FloatingPointError("Non-finite global Poincaré fitting loss.")
         loss_trace.append(total_loss)
@@ -434,6 +447,7 @@ def _fit_with_numpy(
         loss_trace=loss_trace,
         n_epochs=len(loss_trace),
         backend="numpy",
+        objective=objective,
         batch_size=chunk_size,
         best_loss=best_loss,
         stop_reason="epoch_limit" if len(loss_trace) == n_epochs else "patience",
@@ -459,6 +473,7 @@ def fit_disk_embedding(
     max_grad_norm: float | None = 2.5,
     initial_coordinates: np.ndarray | None = None,
     progress_callback: Callable[[FitProgress], None] | None = None,
+    objective: str = DEFAULT_OBJECTIVE,
 ) -> FitReport:
     """Match the exact global proximity objective, with row-chunked gradients.
 
@@ -466,6 +481,10 @@ def fit_disk_embedding(
     bounds row workspace, NOT the set of comparison cells: all columns
     are always retained and a single global update is made per epoch.
     The target remains dense and this is not an approximate large-N method.
+    ``objective='symmetric_kl'`` includes self probabilities (default).
+    Experimental ``'conditional_symmetric_kl'`` excludes self from both
+    distributions but keeps all other columns. It requires positive off-diagonal
+    target mass in every row and does not preserve isolation/self-accessibility.
     ``max_grad_norm`` clips each accumulated gradient's Riemannian norm;
     None disables clipping. It does not cap coordinate radii.
 
@@ -476,6 +495,7 @@ def fit_disk_embedding(
     after evaluation, including epoch 0. Exceptions propagate to the caller.
     Callbacks are observational and their return values are ignored.
     """
+    _validate_objective(objective)
     shape = np.shape(target)
     if len(shape) != 2 or shape[0] != shape[1]:
         raise ValueError("target proximity must be a square matrix.")
@@ -522,7 +542,21 @@ def fit_disk_embedding(
     if torch is None and target.shape[0] > 128:
         raise ImportError("Install PyTorch for more than 128 cells; the exact NumPy fallback uses cubic finite differences.")
 
-    if np.any(target == 0):
+    has_zero = False
+    if objective == CONDITIONAL_OBJECTIVE:
+        # Sum off-diagonal mass directly: total-minus-diagonal cancels when
+        # self mass rounds to 1 while other entries remain tiny and positive.
+        for start in range(0, len(target), 256):
+            stop = min(start + 256, len(target))
+            block = target[start:stop].copy()
+            block[np.arange(stop - start), np.arange(start, stop)] = 0.
+            mass = block.sum(axis=1)
+            if np.any(mass <= 0):
+                raise ValueError("Conditional objective requires positive off-diagonal mass in every target row.")
+            has_zero |= np.count_nonzero(block == 0) > stop - start
+    else:
+        has_zero = bool(np.any(target == 0))
+    if has_zero:
         warnings.warn(
             "Zero target probabilities use machine-tiny values in logarithms only. "
             "The reverse KL is numerically regularized, not exact for these zeros.",
@@ -545,6 +579,7 @@ def fit_disk_embedding(
         max_grad_norm=max_grad_norm,
         initial_coordinates=initial_coordinates,
         progress_callback=progress_callback,
+        objective=objective,
     )
     if torch is not None:
         return _fit_with_torch(**kwargs)

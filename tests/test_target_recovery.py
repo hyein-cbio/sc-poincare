@@ -73,7 +73,7 @@ def test_early_stopping_accumulates_small_improvements(monkeypatch, backend):
         monkeypatch.setattr(_fitting, '_numeric_row_grad', lambda coords, *a, **k: np.zeros_like(coords))
     else:
         pytest.importorskip('torch')
-        monkeypatch.setattr(_fitting, '_torch_alignment_loss', lambda p, d, t: d.sum() * 0. + 10 - .06 * next(count))
+        monkeypatch.setattr(_fitting, '_torch_alignment_loss', lambda p, d, t, **k: d.sum() * 0. + 10 - .06 * next(count))
     report = _fitting.fit_disk_embedding(np.full((4, 4), .25), n_epochs=6, patience=2,
                                         min_delta=.1, burn_in_epochs=0, batch_size=4)
     assert report.n_epochs == 6
@@ -89,7 +89,7 @@ def test_patience_starts_after_burn_in(monkeypatch, backend):
         monkeypatch.setattr(_fitting, '_numeric_row_grad', lambda coords, *a, **k: np.zeros_like(coords))
     else:
         pytest.importorskip('torch')
-        monkeypatch.setattr(_fitting, '_torch_alignment_loss', lambda p, d, t: d.sum() * 0. + 10.)
+        monkeypatch.setattr(_fitting, '_torch_alignment_loss', lambda p, d, t, **k: d.sum() * 0. + 10.)
     report = _fitting.fit_disk_embedding(np.full((4, 4), .25), n_epochs=12, patience=2,
                                         min_delta=.1, burn_in_epochs=5, batch_size=4)
     assert report.n_epochs == 7

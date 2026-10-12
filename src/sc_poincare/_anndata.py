@@ -16,6 +16,7 @@ from sc_poincare._disk import (
     polar_angles,
 )
 from sc_poincare._fitting import fit_disk_embedding
+from sc_poincare._objectives import DEFAULT_OBJECTIVE, CONDITIONAL_OBJECTIVE, _validate_objective
 from sc_poincare._proximity import estimate_proximity
 from sc_poincare._resources import DEFAULT_MAX_DENSE_BYTES, check_dense_budget
 
@@ -106,6 +107,7 @@ def layout_cells(
     verbose: bool = False,
     max_dense_bytes: int | None = DEFAULT_MAX_DENSE_BYTES,
     max_grad_norm: float | None = 2.5,
+    objective: str = DEFAULT_OBJECTIVE,
 ):
     """Embed cells on the Poincaré disk and store the result on ``adata``.
 
@@ -122,6 +124,11 @@ def layout_cells(
         or feature rescaling; it is not a reproduction of the paper's settings.
     gamma
         Softmax temperature on hyperbolic distances (paper: ``γ``).
+    objective
+        ``'symmetric_kl'`` (default) includes self probabilities. Experimental
+        ``'conditional_symmetric_kl'`` excludes self from BOTH target and
+        prediction and retains every other cell. This changes the objective,
+        may lose isolation information, and is not the paper's self-inclusive KL.
     n_components
         Embedding dimension. Two is the usual visualization setting.
     use_rep
@@ -169,6 +176,7 @@ def layout_cells(
       * ``adata.obsp['poincare_connectivities']`` — local Gaussian affinities,
       * ``adata.uns['poincare']`` — hyperparameters and the loss trace.
     """
+    _validate_objective(objective)
     check_dense_budget(adata.n_obs, max_dense_bytes)
     if copy:
         adata = adata.copy()
@@ -200,6 +208,7 @@ def layout_cells(
         verbose=verbose,
         max_dense_bytes=max_dense_bytes,
         max_grad_norm=max_grad_norm,
+        objective=objective,
     )
     coordinates = report.coordinates
     if root_index is not None:
@@ -224,6 +233,10 @@ def layout_cells(
             "learning_rate": float(learning_rate),
             "batch_size": int(report.batch_size),
             "optimization": "exact_global_row_chunks",
+            "objective": report.objective,
+            "objective_experimental": report.objective == CONDITIONAL_OBJECTIVE,
+            "probability_computation": report.probability_computation,
+            "zero_target_policy": report.zero_target_policy,
             "gradient_clipping": "riemannian_norm",
             "max_grad_norm": None if max_grad_norm is None else float(max_grad_norm),
             "affinity_kernel": "gaussian_all_edges",

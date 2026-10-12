@@ -114,6 +114,19 @@ to `1e-12`. Exact-zero target logs alone use a documented machine-tiny numerical
 regularization, with a warning. Losses and stopping trajectories can change.
 See [objective definitions and numerical policy](docs/objectives.md).
 
+An opt-in **experimental** variant excludes self from both distributions while
+retaining all other cells:
+
+```python
+dr.tl.poincare_map(adata, objective="conditional_symmetric_kl")
+```
+
+This is a different objective, not the paper's self-inclusive symmetric KL.
+It can lose isolation information and has local/global trade-offs; it is not
+an unconditional improvement or a claim of biological equivalence. The default
+is still `objective="symmetric_kl"`. The selected objective and numerical policy
+are saved in `adata.uns['poincare']['params']`; RFA self-mass diagnostics remain.
+
 ## Long-fit progress and warm starts
 
 The low-level `sc_poincare._fitting.fit_disk_embedding` accepts an optional

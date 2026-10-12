@@ -31,6 +31,8 @@ def main():
     parser.add_argument("--sigma", type=lambda value: "median" if value == "median" else float(value), default=2.,
                         help="Numeric bandwidth or explicit median positive graph-edge distance")
     parser.add_argument("--gamma", type=float, default=2.)
+    parser.add_argument("--objective", choices=["symmetric_kl", "conditional_symmetric_kl"],
+                        default="symmetric_kl", help="Conditional mode is experimental and changes the objective")
     parser.add_argument("--epochs", type=int, default=200)
     parser.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     parser.add_argument("--initialization", choices=["spectral", "random"], default="spectral")
@@ -65,10 +67,11 @@ def main():
                 proximity.accessibility,
                 connectivities=proximity.weights if args.initialization == "spectral" else None,
                 temperature=args.gamma, n_epochs=args.epochs, patience=args.epochs,
-                random_state=seed, batch_size=args.batch_size,
+                random_state=seed, batch_size=args.batch_size, objective=args.objective,
             )
             fitting_seconds = time.perf_counter() - started
-            loss = evaluate_alignment(report.coordinates, proximity.accessibility, args.gamma)
+            loss = evaluate_alignment(report.coordinates, proximity.accessibility, args.gamma,
+                                      objective=args.objective)
             coordinates = report.coordinates
             root = np.flatnonzero(labels == args.root_label)
             if len(root) == 1:
@@ -119,7 +122,8 @@ def main():
     result = {
         "input_sha256": hashlib.sha256(args.csv.read_bytes()).hexdigest(),
         "n_cells": len(features), "n_features": features.shape[1],
-        "configuration": {"n_neighbors": args.n_neighbors, "sigma": proximity.kernel_width, "sigma_requested": args.sigma, "gamma": args.gamma,
+        "configuration": {"objective": args.objective, "probability_computation": "log_softmax",
+                          "zero_target_policy": "machine_tiny_logs_only", "n_neighbors": args.n_neighbors, "sigma": proximity.kernel_width, "sigma_requested": args.sigma, "gamma": args.gamma,
                           "epochs": args.epochs, "initialization": args.initialization,
                           "batch_size": args.batch_size, "threads": args.threads,
                           "max_grad_norm": 2.5, "gradient_clipping": "riemannian_norm",
