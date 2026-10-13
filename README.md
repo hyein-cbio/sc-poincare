@@ -154,6 +154,13 @@ Install `pip install -e '.[torch,benchmark]'` for the benchmark's explicit depen
 
 A [dataset-specific reference-condition search](docs/reference-parity.md) found recipes that pass two graph-distance diagnostics on six datasets across three seeds. **Five recipes use an experimental geodesic-regularized objective**, not the paper's pure RFA KL. This is not full analysis equivalence or a generalization claim. `examples/run_selected_conditions.py` reproduces those opt-in conditions from local input CSVs; the default Scanpy API is unchanged.
 
+## Development priorities
+
+See the [development roadmap](docs/development-roadmap.md) for planned validation,
+conditional-objective promotion criteria and research candidates. It links to the
+method and benchmark documents without duplicating their results. Proposed work
+is not a claim of implemented or validated behavior.
+
 ## Tests
 
 ```bash
