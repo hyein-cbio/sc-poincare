@@ -89,6 +89,42 @@ KL weakened global structure in the screen and was not promoted to full data.
 Self-accessibility can be meaningful isolation information, so ignoring it is
 not an unconditional improvement. Original RFA self-mass diagnostics remain.
 
+## Historical long-run and landmark controls
+
+An earlier scale-stability study used the former `1e-12` probability floor,
+not the corrected self-inclusive default or conditional KL. On full Planaria,
+1,000-update runs reached global rank .355–.414 and local overlap .470–.485.
+For seed 0, global rank fell from .6939 at 300 updates to .4136 at 1,000 while
+the best training loss continued to improve. This motivates trajectory checks,
+but does **not** establish how either current objective behaves at 1,000 updates.
+
+A separate input-graph landmark experiment used 128 farthest-point-sampled
+landmarks, spatial-coordinate Adam and a geodesic stress term of weight 10 for
+600 updates across three seeds. Global rank was .358–.370 despite seed
+agreement of .980–.994. A further 100 updates for seed 0 with weight 100 and reset
+Adam state reached .5060, still below the reference. Stability is not accuracy,
+and increasing stress weight did not resolve the problem in these tests.
+These are separate research conditions, not conditional-KL results.
+
+Those scores used a k15 graph and 128 anchors with seed 41; reference global was
+.7723. They must not be treated as the primary seed 714 ablation above. Seed 1/2
+long runs were continued from 300-update raw checkpoints, with thread count
+changing from 12 to 6 and stopping history reset. Their common 300-update runs
+are the cleaner identical-condition seed comparison.
+
+The archived raw-coordinate audit and source/harness snapshots remain under
+ignored `data/scale_stability/`. No C. elegans 40k run was performed. Completing
+full Planaria is not an atlas-scale or general biological-quality validation.
+
+## Package integration check
+
+At the published integration baseline (`494367a`), the package's self-inclusive
+and conditional 400-update Planaria3000 runs each matched their archived
+fixed-condition experiment with maximum raw-coordinate difference 0. The record
+is kept locally in `data/publish_validation/production_parity.json`. This checks
+package/prototype agreement under those conditions, not independent biological
+validation or byte-identical reproduction in arbitrary environments.
+
 ## Reproduce comparisons on your own inputs
 
 Install `pip install -e '.[torch,benchmark]'`. The driver takes numeric feature
