@@ -104,3 +104,74 @@ The tests compare bridges to a small dense Kruskal reference, RFA to a direct
 matrix inverse, and chunked losses, gradients and trajectories to full-batch
 calculations. These verify numerical correctness; biological superiority still
 requires the reference benchmark described above.
+
+## Long-run preparation and recovery
+
+1. Verify `pwd`, `git rev-parse --show-toplevel`, `git status -sb`, the recent
+   commits and `git worktree list`. Confirm the Python import source with an
+   editable install or `PYTHONPATH=src`. A directory name is not proof that a
+   particular revision or environment is being used.
+2. Prefer the generic [objective comparison driver](objective-validation.md#reproduce-comparisons-on-your-own-inputs)
+   for new ablations. Freeze the protocol, input hashes, feature/PCA choices,
+   graph, initialization, seeds, update counts, primary evaluation and thread
+   policy before fitting. Save the source revision, local diff and runtime
+   dependency versions; use a fixed source snapshot for long jobs.
+3. Reassess available RAM, runtime and worker limits for the current machine.
+   Agree on limits before execution. The dense-array budget is not an RSS cap;
+   monitor process RSS and system memory/swap separately. Past deadlines and
+   successful runs do not authorize new jobs or establish their safety.
+4. Keep inputs, references, raw current/best checkpoints, loss traces and partial
+   or failed results under ignored `data/`. Use new output paths instead of
+   overwriting previous runs. Do not restart an old controller until its source,
+   inputs, scheduling and output behavior have been checked.
+5. Inspect archived JSON/checkpoint metadata for obsolete absolute paths after
+   moving repositories. Preserve historical provenance; add a relocation mapping
+   or root-relative resolution in the new consumer rather than replacing every
+   historical path. A fresh clone does not include ignored artifacts.
+6. Follow the [low-level progress and warm-start contract](../README.md#long-fit-progress-and-warm-starts).
+   Warm starts use raw training coordinates and start a new run, without restoring
+   burn-in position, patience or best-checkpoint history. A constant post-burn-in
+   RSGD update can continue statelessly from the same raw checkpoint only with a
+   matched target and update policy; this is not general optimizer-state recovery.
+   Record the original/continuation mapping, durable checkpoint, recomputed
+   updates, thread changes and the best checkpoint across stages separately.
+7. Report improvements, failures, unexecuted checks and selection bias together.
+   Keep seed consistency separate from accuracy and do not infer global or
+   biological improvement from a decreasing training loss alone.
+
+## Historical resource observations
+
+These measurements came from the earlier full Planaria scale-stability study
+on a machine with 48 GiB RAM and 15 logical CPUs. The fitting runs used the former
+probability-floor policy, not the current log-domain or conditional objective.
+They are sizing context, not current performance guarantees or equal-compute
+reference comparisons. Archived evidence lives under ignored
+`data/scale_stability/` (`REPORT.md`, `final_audit.json`, source/harness snapshots
+and `runtime_environment.json`). The runtime-environment record describes the
+actual computation; a manifest writer's Python version alone does not.
+
+| Observation | Historical measurement |
+|---|---:|
+| Full Planaria graph, 21,612 cells | about 3.9 s |
+| RFA build plus cache write | about 10.4 s |
+| One float64 target matrix | 3.48 GiB |
+| Seed0, 1,000 fitting updates, 12 threads | about 2 h 37 min |
+| Seed0 peak process RSS | about 5.10 GiB |
+| Full-data fitting peak RSS range, including additional experiments | about 4.8–5.5 GiB |
+| Maximum RFA row-mass error | 4.44e-16 |
+| Sampled inverse residual (8 columns) | 1.33e-15 |
+
+The sampled residual does not independently certify every inverse entry.
+System-wide swap grew to about 3.8–4.3 GiB; other applications and OS effects
+were not separated. Absence of OOM or a resource-limit stop is not evidence of
+absence of memory pressure. That study used an 8 GiB per-worker RSS limit, a
+3 GiB available-memory reserve and an explicit 16 GiB dense-array budget; those
+were run-specific policies, not recommended defaults. Additional two-worker
+runs with 6 threads each are not directly comparable to serial throughput.
+
+A sigma2 control took about 913 s to reach its initial checkpoint. A separate
+spectral probe with `tol=1e-4, maxiter=1000` took about .387 s with maximum eigen
+residual about 9.24e-6; `tol=1e-6, maxiter=1000` failed to converge after about
+4 s. These bounded settings were **not applied to the main initializer**.
+Initial-distance structure, seed stability and final quality still need checking
+before adopting them; a faster initialization is not necessarily equivalent.
