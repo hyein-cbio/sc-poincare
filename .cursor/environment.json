@@ -1,0 +1,4 @@
+{
+  "name": "sc-poincare",
+  "install": "bash .cursor/cloud-install.sh"
+}
