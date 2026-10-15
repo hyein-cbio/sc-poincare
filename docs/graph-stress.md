@@ -1,13 +1,11 @@
 # Experimental graph stress embeddings
 
-The `sc_poincare.experimental` API combines a graph-distance target with a local
-neighborhood distribution. It is a different method from RFA symmetric KL. The
-operator has selected its fixed MU recipe as the provisional public
-`tl.poincare_map` default; `method="rfa"` preserves the previous fitter/defaults.
-See the [migration guide](mu-default-migration.md) for method-specific arguments.
-The low-level numerical/checkpoint implementation described here is unchanged.
+The optional `sc_poincare.experimental` API combines a graph-distance target
+with a local neighborhood distribution. It is a different method from the
+package's default RFA symmetric KL. The default `tl.poincare_map` and its
+parameters remain unchanged.
 
-The [source-branch development study](https://github.com/hyein-cbio/sc-poincare/blob/3489e586caaa5b0408a0751220d6349426457bfe/docs/embedding-study.md) found limited improvements in
+The [development study](embedding-study.md) found limited improvements in
 Moignard neighborhood diagnostics and terminal visibility. Paul retains
 population-level losses, and the Euclidean controls also improve. This API
 does not establish a general biological advantage or a hyperbolic-specific
@@ -97,22 +95,6 @@ Row chunks retain every column and accumulate both endpoint contributions
 before each update. They change fitting workspace, not the objective or its
 quadratic target storage. No negative sampling is used.
 
-## Teacher diagnostics
-
-Preparation includes `teacher_entropy_mean` (nats), entropy and incoming-mass
-quantiles at `teacher_diagnostic_quantiles=[0,.1,.5,.9,1]`, maximum asymmetry and
-maximum row-normalization error. The keys are `teacher_entropy_quantiles`,
-`teacher_incoming_mass_quantiles`, `teacher_max_asymmetry` and
-`teacher_max_row_sum_error`. These describe the prepared teacher, not biological
-balance; the weights, initializer, targets and fit are not changed.
-
-Row-normalized symmetric affinities generally produce a reversible but
-asymmetric teacher. Mean entropy lower-bounds local cross entropy; subtracting
-it yields teacher-specific KL, not a common biological score across teachers.
-The [latest upstream adoption report](astra-mechanism-adoption.md) records the
-analytic checks and the 37-execution research evidence, including failed
-promotion criteria and cancelled work. No candidate target rule was promoted.
-
 ## Results, progress and state recovery
 
 The returned `coordinates` select the lowest **training** objective, including
@@ -142,10 +124,7 @@ configuration and source hashes with the checkpoint. A disk-recentered display
 is not an optimizer checkpoint.
 
 This Adam-state resume contract is separate from the existing RFA fitter's
-coordinate-only warm start. The later [display API extraction](display-layout-deprecation.md)
-changes the `_disk.py` source fingerprint; pre-extraction states are not silently
-migrated, even though retained fitting/geometry calculations pass parity checks.
-Caller checkpoint I/O and external storage remain
+coordinate-only warm start. Caller checkpoint I/O and external storage remain
 the caller's responsibility; a progress callback is not durable storage.
 
 ## Resource limits and reproducibility
@@ -165,28 +144,15 @@ numerical port checks establish computation agreement, not new biological
 validation. Review input hashes, package versions, graph construction, update
 counts and stopping state when reproducing results.
 
-Adding teacher metadata at upstream `9f369a9` changes `experimental.py` source,
-metadata and checkpoint digests. Historical states still need their original
-sources; numerical equality does not bypass strict resume checks. Separate
-main before/after processes matched 262 array/tensor/scalar checks on full Paul
-PCA20 over 20 updates in both geometries/bandwidths. These are software regression
-checks, not new independent biological fits.
-
-The earlier source branch reported that its port verification used the full Paul CSV,
-explicit label exclusion and PCA20.
+Port verification used the full Paul CSV, explicit label exclusion and PCA20.
 For both bandwidth rules, the first 20 updates matched the frozen research
 implementation exactly in coordinates, initialization and loss trace (maximum
 absolute difference 0.0); input, target and teacher hashes also matched. The
 43 experimental tests cover an independent objective, both geometries, chunk
 gradients, persisted Adam resume, input validation and CLI checkpoint recovery.
-The source branch's complete suite passed 207 tests; one optional Scanpy test
-was skipped because Scanpy was unavailable. These are historical source-branch
-claims, not the current main suite count. In this integration, both bandwidth
-rules also match the frozen branch exactly over 20 updates on the fixed Paul
-subset (coordinates, initial arrays, current/best and loss trace). The
-[bounded MU scale-up study](mu-scaleup-study.md) defines the frozen protocol and
-records its completed results, including exact control continuations. Neither
-set of numerical checks by itself proves biological superiority.
+The complete suite passed 207 tests; one optional Scanpy test was skipped
+because Scanpy was unavailable. These checks do not repeat the 1,500-update
+biological comparison with the maintained port.
 
 For long jobs, follow the [recovery protocol](benchmarking.md#long-run-preparation-and-recovery).
 Archive externally accessible copies of inputs or their pinned download

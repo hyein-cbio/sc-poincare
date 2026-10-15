@@ -1,134 +1,137 @@
 # Development roadmap
 
-This document separates implemented software, measured evidence and proposed
-research. It does not authorize experiments, carry forward old runtime budgets,
-or imply that local tests are remote CI or biological validation.
+This roadmap separates proposed work from validated behavior. It does not
+authorize new experiments, resume previous jobs, or carry forward their runtime
+budgets. Agree on a protocol and resource limits before starting long runs.
 
-## Current public baseline
+## Current baseline and evidence
 
-The operator selected **MU fixed** as the provisional AnnData default after the
-[MU study](mu-scaleup-study.md). Local-radius is selectable, not automatically
-chosen by dataset. `method="rfa"` preserves the corrected legacy defaults and
-conditional-KL / union-only variants. This selection is not a claim of unseen
-performance, biological equivalence, or hyperbolic-specific superiority.
+The default remains corrected, self-inclusive `symmetric_kl`.
+`conditional_symmetric_kl` is an opt-in experimental model, not merely a numerical
+fix. The existing evidence is promising but does not establish unseen-data
+performance or biological equivalence to the reference method.
 
-- [Migration/compatibility](mu-default-migration.md): intentional default change,
-  method-specific defaults and old-pipeline preservation.
-- [MU API](graph-stress.md): target/optimizer definitions and unchanged bare-state recovery.
-- [RFA objectives](objectives.md): legacy formulas and log-domain numerical policy.
-- [MU results](mu-scaleup-study.md): small/full comparisons and exact resumed controls.
-- [Astra adoption status](astra-adoption-status.md): completed, deferred and rejected work.
-- [Benchmark/recovery protocol](benchmarking.md): resource, provenance and evaluation contracts.
+Use these documents as the sources of truth rather than duplicating their
+results or API details here:
 
-## Completed software integration
+- [README](../README.md): supported APIs, numerical safeguards, progress callbacks
+  and warm starts.
+- [Objective definitions](objectives.md): default/conditional formulas and the
+  exact-zero numerical policy.
+- [Objective validation](objective-validation.md): fixed-budget ablations,
+  historical failed approaches, integration checks and selection limitations.
+- [Benchmark protocol](benchmarking.md): evaluation, safe run preparation and
+  historical resource observations.
+- [Reference-condition search](reference-parity.md): historical dataset-specific
+  recipes, separate from the default and conditional objectives.
+- [Graph stress API](graph-stress.md): opt-in input-only mutual-global/union-local
+  stress and local-distribution fitting, including local-radius bandwidth and
+  Adam-state recovery. It leaves the RFA defaults unchanged.
+- [Measured-data study](embedding-study.md): preserved 18-fit evidence, failed
+  alternatives, native Euclidean controls, display/intrinsic distinctions and
+  population-level counterexamples.
 
-- [x] Preserve the corrected RFA numerical path behind an explicit selector.
-- [x] Integrate mutual-global / union-local stress, tangent Adam, fixed and
-  local-radius teacher rules, and native Euclidean controls.
-- [x] Retain exact all-column row chunks, gradient checks, best/current separation,
-  source/target integrity and persisted Adam-state recovery.
-- [x] Add graph fragmentation, local/population/global-feature and screen/intrinsic
-  diagnostics; do not treat reconstructed tie choices as certified fitted edges.
-- [x] Expose independent AnnData progress snapshots and cell-order-bound MU
-  recovery without putting Torch optimizer tensors into H5AD uns.
-- [x] Deprecate display jitter/fan/repel in one removable legacy module, retain numerical
-  initialization jitter, and explicitly record the checkpoint source boundary.
-- [x] Record method/graph semantics, effective parameters and raw/display provenance.
-  Preserve old files; never fabricate freshness for missing provenance.
-- [x] Configure [CPU-Torch / Torch-free / wheel CI](../.github/workflows/tests.yml)
-  and local install/serialization tests. Consult workflow results for actual CI status.
-- [x] Complete the bounded MU study and its separately budgeted optimizer-state
-  continuation; keep initial resource stops as history, not failed geometry evidence.
-- [x] Expose experimental scalar forest tau and bounded spectral controls without
-  changing numerical defaults; record convergence/fallback and fixed probe losses.
-- [x] Add optional per-gene reconstruction and predeclared-stage ordering diagnostics.
-  Their software availability is not independent biological validation.
-- [x] Audit upstream code/evidence before reapplication; see the
-  [deduplicated Astra follow-up](astra-followup.md).
-- [x] Integrate latest teacher entropy/incoming-mass/normalization observability
-  and analytic/integration tests; retain failed mechanism criteria and historical
-  global cancellation. The later [authorized completion](algorithm-continuation-results.md)
-  finishes the global protocol with receiver-reconstructed new fits, not exact
-  old-state resume; neither global variant passes joint transfer. No promotion.
-- [x] Inspect common-objective/gradient mechanisms and try the single power2-to1
-  stress pilot. Retain its mixed/negative outcomes.
-- [x] Complete the separately authorized [stage3/4 small-input study](stress-validation-34.md):
-  three seeds/1500 updates, raw/native views and one isolated k-sensitivity
-  weighting rule. Neither candidate passes the necessary joint gate. This does
-  not close the independent-data, full-size or arbitrary-initialization tasks.
+## P0 — Establish a reproducible starting point
 
-## P0 — Maintain a reproducible starting point
+- [ ] Establish the current repository, Python import source and artifact paths,
+  then freeze a new comparison protocol using the
+  [long-run preparation and recovery checklist](benchmarking.md#long-run-preparation-and-recovery).
+- [ ] Complete the external review of the benchmark/docs changes in `494367a`
+  when review access is available. The original review was rate-limited; local
+  checks are not evidence of a completed external review.
 
-- [ ] Freeze new comparisons before fitting: input representation/IDs, primary
-  and sensitivity metrics, own-objective selection and execution limits.
-- [ ] Complete the specifically scoped external review of historical commit
-  `494367a` if needed; a current uncommitted-diff review does not prove that older
-  committed scope was reviewed. Preserve that distinction.
-- [ ] Keep one latest small result tree with checksum/config manifests rather
-  than source/cache duplicates. Long or unique jobs still need external backup
-  and an actual restore/re-evaluation check.
+## P1 — Validate conditional KL before considering a default change
 
-## P1 — Independent biological validation
+- [ ] Extend full Planaria from 300 to 1,000 updates under fixed conditions and
+  multiple seeds. Check whether global quality degrades while training loss
+  continues to decrease.
+- [ ] Compare against the **corrected self-inclusive default**, not only the
+  historical probability-floor baseline.
+- [ ] Select checkpoints by the training objective, not evaluation scores.
+  Preserve raw current/best coordinates, loss, gradient norm, radius and stop
+  reason throughout the trajectory.
+- [ ] Check evaluation graphs at k=15/20/30, alternative anchors and direct
+  feature-distance diagnostics. Declare primary and sensitivity checks before
+  fitting rather than selecting favorable evaluations afterward.
+- [ ] Evaluate seed consistency separately from accuracy; plan more than three
+  seeds and uncertainty estimates.
+- [ ] Inspect isolated, rare and outlier populations for artificial mixing or
+  loss of terminal-state information when the RFA diagonal is discarded.
+- [ ] Evaluate biological markers, branch continuity, root distances and
+  pseudotime. Good graph scores alone do not establish central branching.
+- [ ] Apply a frozen hyperparameter rule to independent biological data not used
+  in prior development. Keep labels out of fitting, initialization and condition
+  selection; use them only for evaluation and optional root selection.
 
-The [metadata/readiness audit](validation-readiness-audit.md) verifies Paul and
-Moignard gene-header mappings and identifies LARRY as a candidate with no local
-fit evidence, not a certified blind holdout. Pancreas and Nestorowa were already
-used. Row-order, data-use, subset feasibility and external-backup gates remain
-before a new long run.
+**Decision gate:** explain global/local/biological/stability trade-offs and unmet
+criteria under a fixed protocol. Reaching an epoch limit is not sufficient.
+Changing the public default requires a separate decision after these checks;
+conditional KL remains experimental in the meantime.
 
-- [ ] Freeze input-only rules and test measured datasets not used in development.
-  No labels enter fitting, initialization, bandwidth/condition selection.
-- [ ] Inspect every rare/outlier population, marker continuity, branching order,
-  root distances and pseudotime. Purity and graph scores are not sufficient.
-- [ ] Compare arbitrary initialization policies and more seeds, with uncertainty
-  estimates distinct from small jitter around one classical layout.
-- [ ] Compare convergence/compute budgets, not only equal update counts. Retain
-  population losses and native Euclidean successes as well as improvements.
-- [ ] Check sensitivity to graph k/anchors, representation, bandwidth, marker size
-  and declared display roots. Do not choose a favorable picture after fitting.
+## P2 — Bound spectral initialization cost
 
-The earlier RFA conditional-KL work remains experimental. Its pending fixed-rule
-corrected-self-inclusive comparison, longer Planaria runs and isolation checks
-have not been satisfied merely by selecting MU as the new provisional default.
+- [ ] Consider generic, explicit `tol` and `maxiter` controls and record the actual
+  initialization policy and provenance.
+- [ ] Record and warn on non-convergence, preserving a seeded fallback rather
+  than silently lowering accuracy.
+- [ ] Compare initial distance structure, seed stability and final quality, not
+  just initialization speed.
 
-## P2 — Bound initialization and scale-up cost
+The [historical initialization probe](benchmarking.md#historical-resource-observations)
+identified a runtime bottleneck and a faster bounded setting. That setting has
+not been applied to the main initializer; faster does not imply equivalent quality.
 
-- [x] For RFA, expose explicit spectral `tol` / `maxiter` controls with recorded
-  convergence/residuals and seeded fallback; complete the fixed small quality probe.
-- [ ] Extend initialization/convergence budgets on independent inputs before
-  changing spectral defaults. Short-run gains and residuals are not equivalence.
-- [ ] For MU, benchmark alternatives to dense classical scaling and dense global
-  targets. Validate landmark/matrix-free/sparse approximations against the exact
-  few-thousand-cell reference, including normalization and endpoint gradients.
-- [ ] Treat full Planaria as a separate protocol. No exact large-data claim follows
-  from the source branch's lost observations or this study's n<=3934 results.
-- [ ] Do not disable the default memory guard to claim scalability. Measure process
-  RSS and preparation, fitting, evaluation and checkpoint I/O separately.
+## P3 — Investigate general mechanisms, not dataset-specific patches
 
-## P3 — Research mechanisms, not dataset-specific patches
+The graph stress/local-distribution experiment is now implemented separately
+from the default RFA pipeline. Its measured-data evidence supports limited
+visibility and neighborhood gains, with substantial counterexamples. It does
+not satisfy the independent-data or general biological decision gates above.
 
-These are not default changes and require their own controlled experiments:
+- [x] Provide an explicit experimental input-only graph stress implementation
+  with mutual global and union local targets, fixed/local-radius bandwidth,
+  tangent Adam, exact row chunks and checked optimizer-state resume.
+- [x] Compare the same development targets with native Euclidean controls and
+  retain failed temperature calibration and population-level losses.
+- [ ] Validate a frozen rule on genuinely independent measured data before
+  considering broader API promotion or a default change.
+- [ ] Resolve rare-population/macro-purity and developmental-order trade-offs;
+  do not optimize only training-related graph metrics.
 
-- [x] Expose scalar RFA forest time `P_tau=(I+tau L)^-1` distinctly from sigma;
-  probe fixed .1/1/10 conditions without selecting a new default.
-- [ ] Validate fixed multiscale mixtures or degree-aware rules separately.
-- [ ] Hybrid graph/bridge and local/global trade-offs; do not optimize only a
-  training-derived metric or maximize visual spread without semantic checks.
-- [ ] Objective-versus-optimizer ablation, intrinsic adaptive updates, alternative
-  coordinate charts/Lorentz geometry, curvature or dimension. Numerical range
-  and biological quality are separate questions.
-- [ ] Temperature/global-scale changes under a frozen input-only rule. The failed
-  source row-temperature alternative is not promoted because one score improved.
+Remaining research candidates are unvalidated:
 
-## P4 — Software/publication readiness
+- [ ] Forest time scale `P_tau = (I + tau L)^-1`: distinguish the propagation
+  range controlled by tau from relative edge weights controlled by kernel sigma.
+  Consider fixed multiscale mixtures or degree-aware rules; freeze input-only
+  rules and control protocols before searching for a Planaria-specific best tau.
+- [ ] Test robustness to mutual versus union kNN, long MST bridges, local
+  bandwidth and rare-population coverage. Do not normalize provided PCA scores
+  as if they were raw gene counts.
+- [ ] Compare optimizers and coordinate charts under the same objective and
+  initial distances. Intrinsic adaptive updates, Lorentz coordinates and
+  Euclidean parameterizations are candidates; distinguish float64 representation
+  limits from optimization and do not assume Lorentz is always better.
+- [ ] Investigate temperature/global scale and, if justified mechanistically,
+  dimension or curvature.
+- [ ] Explore matrix-free, row-solve or sparse approximations for scalability.
+  Validate against an exact reference because approximation can change global
+  normalization and gradients.
 
-- [ ] Keep policy/mechanism changes separate from numerical fixes and data parsing.
-- [ ] Review privacy, licenses, installation, documentation and reproducibility
-  before external publication; package MIT does not relicense input artifacts.
-- [ ] Check any publication eligibility against current rules when submitting.
-- [ ] Obtain explicit approval for commits/pushes and new expensive experiments.
-  Earlier approval does not silently authorize future jobs.
+## P4 — Software and publication readiness
 
-The next algorithm-scale priority is an independently validated approximation
-against the exact MU reference, not unlimited brute-force N-by-N storage.
-The next scientific priority is independent biology/initialization validation.
+- [ ] Keep objective redesign separate from numerical corrections. Do not add
+  dataset-name branches to core code.
+- [ ] Test and review public changes and inspect their privacy, artifact and
+  license implications. Follow the [provenance constraints](benchmarking.md#scope-and-provenance);
+  local inputs and reference artifacts are not automatically covered by MIT.
+- [ ] Establish CI, installation, documentation and benchmark reproducibility
+  before considering JOSS or similar publication. Check eligibility against the
+  rules in force at submission time rather than promising it now.
+- [ ] Obtain explicit approval for new commits or pushes; previous approval does
+  not automatically cover future changes or expensive experiments.
+
+The next scientific priority is a fixed-condition comparison of corrected
+self-inclusive and conditional KL, followed by long-run, independent-data and
+isolation/branch-continuity validation. Preserve unsuccessful and partial runs
+alongside improvements; do not substitute attractive display layouts for learned
+embedding quality.
