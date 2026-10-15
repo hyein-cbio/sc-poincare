@@ -138,6 +138,23 @@ requires the reference benchmark described above.
 7. Report improvements, failures, unexecuted checks and selection bias together.
    Keep seed consistency separate from accuracy and do not infer global or
    biological improvement from a decreasing training loss alone.
+8. Copy milestones to storage outside the execution container and confirm file
+   access. An ignored directory or a ZIP inside that same container is not a
+   durable backup. Preserve a checksum inventory and a clear restore order.
+   Separate caches and regenerable dense targets from unique source snapshots,
+   checkpoint history, logs and failed results.
+9. Test recovery from the actual archives into an empty directory. Include
+   fitted feature matrices, or an explicit deterministic reconstruction and
+   hash check: raw CSV/PCA arguments alone do not make an evaluator's required
+   per-run input file appear. Verify coordinate/optimizer hashes and execute a
+   re-evaluation. Record whether this tested a new environment or only a new
+   directory; do not infer that a successful smoke test guarantees persistence.
+
+The [graph stress experiment](graph-stress.md) has a separate Adam-state resume
+contract. Do not confuse it with the default RFA fitter's coordinate-only warm
+start described above. Its [development evidence](embedding-study.md) separates
+intrinsic distance preservation, normalized display visibility, aggregate and
+rare-population behavior, and native Euclidean controls.
 
 ## Historical resource observations
 

@@ -156,6 +156,18 @@ A [dataset-specific reference-condition search](docs/reference-parity.md) found 
 
 ## Development priorities
 
+An opt-in [experimental graph stress API](docs/graph-stress.md) now combines a
+mutual-graph global distance target with a union-graph local distribution.
+It offers fixed and local-radius bandwidth rules, tangent-coordinate Adam,
+row-chunked exact gradients and optimizer-state recovery. It does not change
+`tl.poincare_map` or the default RFA objective.
+
+The [measured-data development study](docs/embedding-study.md) documents
+limited Moignard visibility/neighborhood improvements, Paul's population-level
+losses, failed alternatives and same-objective Euclidean controls. It does not
+establish a general biological or hyperbolic-specific advantage. The exact
+implementation remains quadratic and has no validated full-Planaria result.
+
 See the [development roadmap](docs/development-roadmap.md) for planned validation,
 conditional-objective promotion criteria and research candidates. It links to the
 method and benchmark documents without duplicating their results. Proposed work

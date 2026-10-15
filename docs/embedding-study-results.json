@@ -1,0 +1,882 @@
+{
+  "study": "2026-10-15 measured-data graph stress development comparison",
+  "frozen_core_revision": "9b05bc6b383599389d5d9d33075a5a23fef25bde",
+  "upstream_reference_commit": "7ffa518cabe6e6424a875d480c4298bda3bd9678",
+  "final_report_sha256": "c556999e4d7717406f2502407861388d00dc1cfc5509ce05127fab79dd136499",
+  "metrics": "See embedding-study.md for definitions, counts, provenance and limitations. Development data, fixed classical-init jitter, no general biological or hyperbolic-specific superiority claim.",
+  "rows": [
+    {
+      "dataset": "Moignard2015",
+      "condition": "published_reference",
+      "geometry": "poincare",
+      "seed": null,
+      "n_cells": 3934,
+      "k15": {
+        "overall_purity": 0.6171496356549737,
+        "macro_purity": 0.5801131170154763,
+        "all_gene_zscore_mse": 0.3966050474056428
+      },
+      "k30": {
+        "overall_purity": 0.6106846297237757,
+        "macro_purity": 0.5736212946240539,
+        "all_gene_zscore_mse": 0.3962602349946155
+      },
+      "primary128_graph_diagnostics": {
+        "mutual15": {
+          "global_rank": 0.9261903501455054,
+          "local15": 0.22447916666666667
+        },
+        "mutual20": {
+          "global_rank": 0.9415526070672068,
+          "local15": 0.22812500000000002
+        },
+        "mutual30": {
+          "global_rank": 0.9420154241330522,
+          "local15": 0.22916666666666669
+        },
+        "union15": {
+          "global_rank": 0.9509337585348762,
+          "local15": 0.2510416666666667
+        },
+        "union20": {
+          "global_rank": 0.950561819867152,
+          "local15": 0.2510416666666667
+        },
+        "union30": {
+          "global_rank": 0.9487651448758552,
+          "local15": 0.2510416666666667
+        },
+        "feature": {
+          "global_rank": 0.8557370893072422,
+          "local15": 0.2510416666666667
+        }
+      },
+      "medoid_stage_rank": 0.33303242284389295
+    },
+    {
+      "dataset": "Moignard2015",
+      "condition": "fixed_global_bandwidth",
+      "geometry": "poincare",
+      "seed": 0,
+      "n_cells": 3934,
+      "k15": {
+        "overall_purity": 0.625521098118963,
+        "macro_purity": 0.5893280642123924,
+        "all_gene_zscore_mse": 0.3958039020340847
+      },
+      "k30": {
+        "overall_purity": 0.6193102863921369,
+        "macro_purity": 0.5831068389460834,
+        "all_gene_zscore_mse": 0.3989851693258124
+      },
+      "primary128_graph_diagnostics": {
+        "mutual15": {
+          "global_rank": 0.9619892611555891,
+          "local15": 0.23958333333333337
+        },
+        "mutual20": {
+          "global_rank": 0.9586858654486685,
+          "local15": 0.2526041666666667
+        },
+        "mutual30": {
+          "global_rank": 0.9574336772162406,
+          "local15": 0.2567708333333334
+        },
+        "union15": {
+          "global_rank": 0.9544775559032859,
+          "local15": 0.25625000000000003
+        },
+        "union20": {
+          "global_rank": 0.9522161114241908,
+          "local15": 0.25625000000000003
+        },
+        "union30": {
+          "global_rank": 0.9454532812190117,
+          "local15": 0.25625000000000003
+        },
+        "feature": {
+          "global_rank": 0.8669956835542388,
+          "local15": 0.25625000000000003
+        }
+      },
+      "medoid_stage_rank": 0.3170952969576256
+    },
+    {
+      "dataset": "Moignard2015",
+      "condition": "fixed_global_bandwidth",
+      "geometry": "poincare",
+      "seed": 1,
+      "n_cells": 3934,
+      "k15": {
+        "overall_purity": 0.6263853584138281,
+        "macro_purity": 0.5902492161274042,
+        "all_gene_zscore_mse": 0.3959109496316787
+      },
+      "k30": {
+        "overall_purity": 0.6191154041687851,
+        "macro_purity": 0.5829264567652701,
+        "all_gene_zscore_mse": 0.3985830188551053
+      },
+      "primary128_graph_diagnostics": {
+        "mutual15": {
+          "global_rank": 0.9622213070387495,
+          "local15": 0.2416666666666667
+        },
+        "mutual20": {
+          "global_rank": 0.9586038911005619,
+          "local15": 0.2515625
+        },
+        "mutual30": {
+          "global_rank": 0.9576075065168499,
+          "local15": 0.2557291666666667
+        },
+        "union15": {
+          "global_rank": 0.9549497830334591,
+          "local15": 0.2520833333333333
+        },
+        "union20": {
+          "global_rank": 0.9526754621739614,
+          "local15": 0.2520833333333333
+        },
+        "union30": {
+          "global_rank": 0.9461453296444818,
+          "local15": 0.2520833333333333
+        },
+        "feature": {
+          "global_rank": 0.868111583042101,
+          "local15": 0.2520833333333333
+        }
+      },
+      "medoid_stage_rank": 0.31635546434800316
+    },
+    {
+      "dataset": "Moignard2015",
+      "condition": "fixed_global_bandwidth",
+      "geometry": "poincare",
+      "seed": 2,
+      "n_cells": 3934,
+      "k15": {
+        "overall_purity": 0.6267242840196576,
+        "macro_purity": 0.5908307383614928,
+        "all_gene_zscore_mse": 0.3956043014124788
+      },
+      "k30": {
+        "overall_purity": 0.6179969496695474,
+        "macro_purity": 0.5814772033724736,
+        "all_gene_zscore_mse": 0.3987123709580929
+      },
+      "primary128_graph_diagnostics": {
+        "mutual15": {
+          "global_rank": 0.9615955156921929,
+          "local15": 0.24270833333333336
+        },
+        "mutual20": {
+          "global_rank": 0.9595497524569513,
+          "local15": 0.2515625
+        },
+        "mutual30": {
+          "global_rank": 0.9580291227278454,
+          "local15": 0.2515625
+        },
+        "union15": {
+          "global_rank": 0.9553510232259582,
+          "local15": 0.25312500000000004
+        },
+        "union20": {
+          "global_rank": 0.9516135306893895,
+          "local15": 0.25312500000000004
+        },
+        "union30": {
+          "global_rank": 0.945412233629076,
+          "local15": 0.25312500000000004
+        },
+        "feature": {
+          "global_rank": 0.8696023964805345,
+          "local15": 0.25312500000000004
+        }
+      },
+      "medoid_stage_rank": 0.32357301721461246
+    },
+    {
+      "dataset": "Moignard2015",
+      "condition": "fixed_global_bandwidth",
+      "geometry": "euclidean",
+      "seed": 0,
+      "n_cells": 3934,
+      "k15": {
+        "overall_purity": 0.6240467717336045,
+        "macro_purity": 0.587509969614566,
+        "all_gene_zscore_mse": 0.39506616260155514
+      },
+      "k30": {
+        "overall_purity": 0.616658193526521,
+        "macro_purity": 0.5801485393277671,
+        "all_gene_zscore_mse": 0.397842314826295
+      },
+      "primary128_graph_diagnostics": {
+        "mutual15": {
+          "global_rank": 0.9590029250281723,
+          "local15": 0.23958333333333337
+        },
+        "mutual20": {
+          "global_rank": 0.9561029229206944,
+          "local15": 0.25520833333333337
+        },
+        "mutual30": {
+          "global_rank": 0.9554680383527328,
+          "local15": 0.2567708333333334
+        },
+        "union15": {
+          "global_rank": 0.9529890665868191,
+          "local15": 0.25052083333333336
+        },
+        "union20": {
+          "global_rank": 0.9508438178477839,
+          "local15": 0.25052083333333336
+        },
+        "union30": {
+          "global_rank": 0.9444455160633926,
+          "local15": 0.25052083333333336
+        },
+        "feature": {
+          "global_rank": 0.8697576638368278,
+          "local15": 0.25052083333333336
+        }
+      },
+      "medoid_stage_rank": 0.29872589887086254
+    },
+    {
+      "dataset": "Moignard2015",
+      "condition": "local_radius",
+      "geometry": "poincare",
+      "seed": 0,
+      "n_cells": 3934,
+      "k15": {
+        "overall_purity": 0.6268090154211151,
+        "macro_purity": 0.5908883164640695,
+        "all_gene_zscore_mse": 0.3940314389436863
+      },
+      "k30": {
+        "overall_purity": 0.6210981189628877,
+        "macro_purity": 0.5850441098194008,
+        "all_gene_zscore_mse": 0.39744283622793686
+      },
+      "primary128_graph_diagnostics": {
+        "mutual15": {
+          "global_rank": 0.961949492475337,
+          "local15": 0.2546875
+        },
+        "mutual20": {
+          "global_rank": 0.9584315512052367,
+          "local15": 0.26145833333333335
+        },
+        "mutual30": {
+          "global_rank": 0.9575132906337,
+          "local15": 0.2604166666666667
+        },
+        "union15": {
+          "global_rank": 0.9545470103054468,
+          "local15": 0.259375
+        },
+        "union20": {
+          "global_rank": 0.952232737385833,
+          "local15": 0.259375
+        },
+        "union30": {
+          "global_rank": 0.9456656111920503,
+          "local15": 0.259375
+        },
+        "feature": {
+          "global_rank": 0.8677750307487393,
+          "local15": 0.259375
+        }
+      },
+      "medoid_stage_rank": 0.31844187987008
+    },
+    {
+      "dataset": "Moignard2015",
+      "condition": "local_radius",
+      "geometry": "poincare",
+      "seed": 1,
+      "n_cells": 3934,
+      "k15": {
+        "overall_purity": 0.6272157261481105,
+        "macro_purity": 0.591204928685938,
+        "all_gene_zscore_mse": 0.3937209308411506
+      },
+      "k30": {
+        "overall_purity": 0.6211404846636163,
+        "macro_purity": 0.5851714758108331,
+        "all_gene_zscore_mse": 0.3970594663546351
+      },
+      "primary128_graph_diagnostics": {
+        "mutual15": {
+          "global_rank": 0.9625840105841824,
+          "local15": 0.2515625
+        },
+        "mutual20": {
+          "global_rank": 0.9584010255691495,
+          "local15": 0.2588541666666667
+        },
+        "mutual30": {
+          "global_rank": 0.9580958524285189,
+          "local15": 0.2598958333333334
+        },
+        "union15": {
+          "global_rank": 0.9541589712820686,
+          "local15": 0.25833333333333336
+        },
+        "union20": {
+          "global_rank": 0.9517435747978575,
+          "local15": 0.25833333333333336
+        },
+        "union30": {
+          "global_rank": 0.9452264986424966,
+          "local15": 0.25833333333333336
+        },
+        "feature": {
+          "global_rank": 0.8670229715438436,
+          "local15": 0.25833333333333336
+        }
+      },
+      "medoid_stage_rank": 0.3178190424100092
+    },
+    {
+      "dataset": "Moignard2015",
+      "condition": "local_radius",
+      "geometry": "poincare",
+      "seed": 2,
+      "n_cells": 3934,
+      "k15": {
+        "overall_purity": 0.6257922386036265,
+        "macro_purity": 0.5898548751325905,
+        "all_gene_zscore_mse": 0.39366389965202775
+      },
+      "k30": {
+        "overall_purity": 0.6200728690052534,
+        "macro_purity": 0.5838837397660994,
+        "all_gene_zscore_mse": 0.3980090693907447
+      },
+      "primary128_graph_diagnostics": {
+        "mutual15": {
+          "global_rank": 0.9615665263990801,
+          "local15": 0.26041666666666674
+        },
+        "mutual20": {
+          "global_rank": 0.959663776854656,
+          "local15": 0.26197916666666665
+        },
+        "mutual30": {
+          "global_rank": 0.9582874429964959,
+          "local15": 0.259375
+        },
+        "union15": {
+          "global_rank": 0.9549689127005722,
+          "local15": 0.2635416666666667
+        },
+        "union20": {
+          "global_rank": 0.9514378294800879,
+          "local15": 0.2635416666666667
+        },
+        "union30": {
+          "global_rank": 0.9451998403584301,
+          "local15": 0.2635416666666667
+        },
+        "feature": {
+          "global_rank": 0.8693334379484956,
+          "local15": 0.2635416666666667
+        }
+      },
+      "medoid_stage_rank": 0.32629485699053473
+    },
+    {
+      "dataset": "Moignard2015",
+      "condition": "local_radius",
+      "geometry": "euclidean",
+      "seed": 0,
+      "n_cells": 3934,
+      "k15": {
+        "overall_purity": 0.625097441111676,
+        "macro_purity": 0.5887721037690892,
+        "all_gene_zscore_mse": 0.3953826412063843
+      },
+      "k30": {
+        "overall_purity": 0.616658193526521,
+        "macro_purity": 0.5800085151191788,
+        "all_gene_zscore_mse": 0.39824564113805605
+      },
+      "primary128_graph_diagnostics": {
+        "mutual15": {
+          "global_rank": 0.959250374946691,
+          "local15": 0.23802083333333335
+        },
+        "mutual20": {
+          "global_rank": 0.9567891235614379,
+          "local15": 0.25312500000000004
+        },
+        "mutual30": {
+          "global_rank": 0.9562497767977962,
+          "local15": 0.2557291666666667
+        },
+        "union15": {
+          "global_rank": 0.9535405829915793,
+          "local15": 0.2557291666666667
+        },
+        "union20": {
+          "global_rank": 0.9513618736274556,
+          "local15": 0.2557291666666667
+        },
+        "union30": {
+          "global_rank": 0.9450218499986063,
+          "local15": 0.2557291666666667
+        },
+        "feature": {
+          "global_rank": 0.8704952726539404,
+          "local15": 0.2557291666666667
+        }
+      },
+      "medoid_stage_rank": 0.2984146690514894
+    },
+    {
+      "dataset": "Paul",
+      "condition": "published_reference",
+      "geometry": "poincare",
+      "seed": null,
+      "n_cells": 2730,
+      "k15": {
+        "overall_purity": 0.5946275946275947,
+        "macro_purity": 0.5774342493966675,
+        "all_gene_zscore_mse": 0.9089044863512626
+      },
+      "k30": {
+        "overall_purity": 0.5827716727716727,
+        "macro_purity": 0.5407625436757819,
+        "all_gene_zscore_mse": 0.8847847239340431
+      },
+      "primary128_graph_diagnostics": {
+        "mutual15": {
+          "global_rank": 0.9068820491216742,
+          "local15": 0.259375
+        },
+        "mutual20": {
+          "global_rank": 0.8956667586786855,
+          "local15": 0.2651041666666667
+        },
+        "mutual30": {
+          "global_rank": 0.8967381795257199,
+          "local15": 0.27031250000000007
+        },
+        "union15": {
+          "global_rank": 0.9343739921631724,
+          "local15": 0.27656250000000004
+        },
+        "union20": {
+          "global_rank": 0.9314272981473652,
+          "local15": 0.27656250000000004
+        },
+        "union30": {
+          "global_rank": 0.9216446912761069,
+          "local15": 0.27656250000000004
+        },
+        "feature": {
+          "global_rank": 0.8228707064918808,
+          "local15": 0.27656250000000004
+        }
+      },
+      "medoid_stage_rank": null
+    },
+    {
+      "dataset": "Paul",
+      "condition": "fixed_global_bandwidth",
+      "geometry": "poincare",
+      "seed": 0,
+      "n_cells": 2730,
+      "k15": {
+        "overall_purity": 0.5973626373626374,
+        "macro_purity": 0.5654233377015653,
+        "all_gene_zscore_mse": 0.9075848767991647
+      },
+      "k30": {
+        "overall_purity": 0.5791819291819291,
+        "macro_purity": 0.5241903646642159,
+        "all_gene_zscore_mse": 0.8857448623406431
+      },
+      "primary128_graph_diagnostics": {
+        "mutual15": {
+          "global_rank": 0.9506357812760672,
+          "local15": 0.29635416666666664
+        },
+        "mutual20": {
+          "global_rank": 0.9452463258348509,
+          "local15": 0.31562500000000004
+        },
+        "mutual30": {
+          "global_rank": 0.9445498853480578,
+          "local15": 0.31562500000000004
+        },
+        "union15": {
+          "global_rank": 0.9612624584811151,
+          "local15": 0.3182291666666667
+        },
+        "union20": {
+          "global_rank": 0.9619301327139574,
+          "local15": 0.3182291666666667
+        },
+        "union30": {
+          "global_rank": 0.9587111704146037,
+          "local15": 0.3182291666666667
+        },
+        "feature": {
+          "global_rank": 0.8864048683643487,
+          "local15": 0.3182291666666667
+        }
+      },
+      "medoid_stage_rank": null
+    },
+    {
+      "dataset": "Paul",
+      "condition": "fixed_global_bandwidth",
+      "geometry": "poincare",
+      "seed": 1,
+      "n_cells": 2730,
+      "k15": {
+        "overall_purity": 0.5972649572649572,
+        "macro_purity": 0.5653852675520955,
+        "all_gene_zscore_mse": 0.9075310635616768
+      },
+      "k30": {
+        "overall_purity": 0.5792673992673993,
+        "macro_purity": 0.5243801610245071,
+        "all_gene_zscore_mse": 0.8857430332440592
+      },
+      "primary128_graph_diagnostics": {
+        "mutual15": {
+          "global_rank": 0.9508759810446551,
+          "local15": 0.2963541666666667
+        },
+        "mutual20": {
+          "global_rank": 0.9454453311034386,
+          "local15": 0.31562500000000004
+        },
+        "mutual30": {
+          "global_rank": 0.9447343369983391,
+          "local15": 0.31510416666666674
+        },
+        "union15": {
+          "global_rank": 0.9613637717360101,
+          "local15": 0.31927083333333334
+        },
+        "union20": {
+          "global_rank": 0.9619647077557826,
+          "local15": 0.31927083333333334
+        },
+        "union30": {
+          "global_rank": 0.958779041514378,
+          "local15": 0.31927083333333334
+        },
+        "feature": {
+          "global_rank": 0.8865679648979065,
+          "local15": 0.31927083333333334
+        }
+      },
+      "medoid_stage_rank": null
+    },
+    {
+      "dataset": "Paul",
+      "condition": "fixed_global_bandwidth",
+      "geometry": "poincare",
+      "seed": 2,
+      "n_cells": 2730,
+      "k15": {
+        "overall_purity": 0.5975335775335776,
+        "macro_purity": 0.5634228032311188,
+        "all_gene_zscore_mse": 0.9077464911283016
+      },
+      "k30": {
+        "overall_purity": 0.58002442002442,
+        "macro_purity": 0.524366224258153,
+        "all_gene_zscore_mse": 0.8857655309921592
+      },
+      "primary128_graph_diagnostics": {
+        "mutual15": {
+          "global_rank": 0.9507364296204862,
+          "local15": 0.296875
+        },
+        "mutual20": {
+          "global_rank": 0.9451809305987808,
+          "local15": 0.3145833333333333
+        },
+        "mutual30": {
+          "global_rank": 0.94433002161475,
+          "local15": 0.31614583333333335
+        },
+        "union15": {
+          "global_rank": 0.961070681175322,
+          "local15": 0.3197916666666667
+        },
+        "union20": {
+          "global_rank": 0.9616841038751544,
+          "local15": 0.3197916666666667
+        },
+        "union30": {
+          "global_rank": 0.958473325040173,
+          "local15": 0.3197916666666667
+        },
+        "feature": {
+          "global_rank": 0.8860971773310076,
+          "local15": 0.3197916666666667
+        }
+      },
+      "medoid_stage_rank": null
+    },
+    {
+      "dataset": "Paul",
+      "condition": "fixed_global_bandwidth",
+      "geometry": "euclidean",
+      "seed": 0,
+      "n_cells": 2730,
+      "k15": {
+        "overall_purity": 0.596947496947497,
+        "macro_purity": 0.5632221306772236,
+        "all_gene_zscore_mse": 0.9077703083892976
+      },
+      "k30": {
+        "overall_purity": 0.5764224664224664,
+        "macro_purity": 0.52031935822052,
+        "all_gene_zscore_mse": 0.886623274239937
+      },
+      "primary128_graph_diagnostics": {
+        "mutual15": {
+          "global_rank": 0.9415660103055822,
+          "local15": 0.29375000000000007
+        },
+        "mutual20": {
+          "global_rank": 0.9348899437108092,
+          "local15": 0.3104166666666667
+        },
+        "mutual30": {
+          "global_rank": 0.934312163371762,
+          "local15": 0.30520833333333336
+        },
+        "union15": {
+          "global_rank": 0.9534463250016937,
+          "local15": 0.31614583333333335
+        },
+        "union20": {
+          "global_rank": 0.9541697517040011,
+          "local15": 0.31614583333333335
+        },
+        "union30": {
+          "global_rank": 0.9527575082457979,
+          "local15": 0.31614583333333335
+        },
+        "feature": {
+          "global_rank": 0.8770781672776417,
+          "local15": 0.31614583333333335
+        }
+      },
+      "medoid_stage_rank": null
+    },
+    {
+      "dataset": "Paul",
+      "condition": "local_radius",
+      "geometry": "poincare",
+      "seed": 0,
+      "n_cells": 2730,
+      "k15": {
+        "overall_purity": 0.5973137973137973,
+        "macro_purity": 0.5667763912204355,
+        "all_gene_zscore_mse": 0.9071210510275521
+      },
+      "k30": {
+        "overall_purity": 0.5794505494505495,
+        "macro_purity": 0.5257277480492281,
+        "all_gene_zscore_mse": 0.8855232438749715
+      },
+      "primary128_graph_diagnostics": {
+        "mutual15": {
+          "global_rank": 0.9527347063709066,
+          "local15": 0.30208333333333337
+        },
+        "mutual20": {
+          "global_rank": 0.9472344799334667,
+          "local15": 0.3197916666666667
+        },
+        "mutual30": {
+          "global_rank": 0.9466781388069152,
+          "local15": 0.3166666666666667
+        },
+        "union15": {
+          "global_rank": 0.9610735316160759,
+          "local15": 0.3203125
+        },
+        "union20": {
+          "global_rank": 0.9617940820371245,
+          "local15": 0.3203125
+        },
+        "union30": {
+          "global_rank": 0.957496777626625,
+          "local15": 0.3203125
+        },
+        "feature": {
+          "global_rank": 0.8858238991060119,
+          "local15": 0.3203125
+        }
+      },
+      "medoid_stage_rank": null
+    },
+    {
+      "dataset": "Paul",
+      "condition": "local_radius",
+      "geometry": "poincare",
+      "seed": 1,
+      "n_cells": 2730,
+      "k15": {
+        "overall_purity": 0.5984615384615385,
+        "macro_purity": 0.566578314055819,
+        "all_gene_zscore_mse": 0.9069834906311428
+      },
+      "k30": {
+        "overall_purity": 0.5805616605616606,
+        "macro_purity": 0.52578600226807,
+        "all_gene_zscore_mse": 0.8857230783428829
+      },
+      "primary128_graph_diagnostics": {
+        "mutual15": {
+          "global_rank": 0.9530437246362494,
+          "local15": 0.3041666666666667
+        },
+        "mutual20": {
+          "global_rank": 0.9471807878795901,
+          "local15": 0.3203125
+        },
+        "mutual30": {
+          "global_rank": 0.9463649452700289,
+          "local15": 0.315625
+        },
+        "union15": {
+          "global_rank": 0.9604450626927307,
+          "local15": 0.32395833333333335
+        },
+        "union20": {
+          "global_rank": 0.9612492433732017,
+          "local15": 0.32395833333333335
+        },
+        "union30": {
+          "global_rank": 0.9569684960496474,
+          "local15": 0.32395833333333335
+        },
+        "feature": {
+          "global_rank": 0.8846734603831529,
+          "local15": 0.32395833333333335
+        }
+      },
+      "medoid_stage_rank": null
+    },
+    {
+      "dataset": "Paul",
+      "condition": "local_radius",
+      "geometry": "poincare",
+      "seed": 2,
+      "n_cells": 2730,
+      "k15": {
+        "overall_purity": 0.5983882783882783,
+        "macro_purity": 0.5673295611049342,
+        "all_gene_zscore_mse": 0.9068553788809529
+      },
+      "k30": {
+        "overall_purity": 0.5805128205128206,
+        "macro_purity": 0.5262144914395778,
+        "all_gene_zscore_mse": 0.8856674991002701
+      },
+      "primary128_graph_diagnostics": {
+        "mutual15": {
+          "global_rank": 0.9530558909268223,
+          "local15": 0.3041666666666667
+        },
+        "mutual20": {
+          "global_rank": 0.9472533863007981,
+          "local15": 0.3208333333333333
+        },
+        "mutual30": {
+          "global_rank": 0.9463763885571711,
+          "local15": 0.31562500000000004
+        },
+        "union15": {
+          "global_rank": 0.960557100479042,
+          "local15": 0.32343750000000004
+        },
+        "union20": {
+          "global_rank": 0.9613466390198891,
+          "local15": 0.32343750000000004
+        },
+        "union30": {
+          "global_rank": 0.9570561673517246,
+          "local15": 0.32343750000000004
+        },
+        "feature": {
+          "global_rank": 0.8847983928626001,
+          "local15": 0.32343750000000004
+        }
+      },
+      "medoid_stage_rank": null
+    },
+    {
+      "dataset": "Paul",
+      "condition": "local_radius",
+      "geometry": "euclidean",
+      "seed": 0,
+      "n_cells": 2730,
+      "k15": {
+        "overall_purity": 0.598046398046398,
+        "macro_purity": 0.5673073932881084,
+        "all_gene_zscore_mse": 0.9067445418535481
+      },
+      "k30": {
+        "overall_purity": 0.5773382173382173,
+        "macro_purity": 0.5236963792545664,
+        "all_gene_zscore_mse": 0.8857717311395441
+      },
+      "primary128_graph_diagnostics": {
+        "mutual15": {
+          "global_rank": 0.9426580075457474,
+          "local15": 0.2994791666666667
+        },
+        "mutual20": {
+          "global_rank": 0.9359317629713958,
+          "local15": 0.3104166666666667
+        },
+        "mutual30": {
+          "global_rank": 0.9355039825421944,
+          "local15": 0.30625
+        },
+        "union15": {
+          "global_rank": 0.9525772193803501,
+          "local15": 0.3125
+        },
+        "union20": {
+          "global_rank": 0.953290547622519,
+          "local15": 0.3125
+        },
+        "union30": {
+          "global_rank": 0.9520252061631671,
+          "local15": 0.3125
+        },
+        "feature": {
+          "global_rank": 0.8772287029770491,
+          "local15": 0.3125
+        }
+      },
+      "medoid_stage_rank": null
+    }
+  ],
+  "rejected_temperature_controls": {
+    "Paul": {
+      "overall_purity_k15": 0.585348,
+      "macro_purity_k15": 0.548584
+    },
+    "Moignard2015": {
+      "all_gene_zscore_mse_k15": 0.410796
+    }
+  }
+}

@@ -24,6 +24,12 @@ results or API details here:
   historical resource observations.
 - [Reference-condition search](reference-parity.md): historical dataset-specific
   recipes, separate from the default and conditional objectives.
+- [Graph stress API](graph-stress.md): opt-in input-only mutual-global/union-local
+  stress and local-distribution fitting, including local-radius bandwidth and
+  Adam-state recovery. It leaves the RFA defaults unchanged.
+- [Measured-data study](embedding-study.md): preserved 18-fit evidence, failed
+  alternatives, native Euclidean controls, display/intrinsic distinctions and
+  population-level counterexamples.
 
 ## P0 — Establish a reproducible starting point
 
@@ -77,7 +83,22 @@ not been applied to the main initializer; faster does not imply equivalent quali
 
 ## P3 — Investigate general mechanisms, not dataset-specific patches
 
-These are unvalidated research candidates, not implemented improvements:
+The graph stress/local-distribution experiment is now implemented separately
+from the default RFA pipeline. Its measured-data evidence supports limited
+visibility and neighborhood gains, with substantial counterexamples. It does
+not satisfy the independent-data or general biological decision gates above.
+
+- [x] Provide an explicit experimental input-only graph stress implementation
+  with mutual global and union local targets, fixed/local-radius bandwidth,
+  tangent Adam, exact row chunks and checked optimizer-state resume.
+- [x] Compare the same development targets with native Euclidean controls and
+  retain failed temperature calibration and population-level losses.
+- [ ] Validate a frozen rule on genuinely independent measured data before
+  considering broader API promotion or a default change.
+- [ ] Resolve rare-population/macro-purity and developmental-order trade-offs;
+  do not optimize only training-related graph metrics.
+
+Remaining research candidates are unvalidated:
 
 - [ ] Forest time scale `P_tau = (I + tau L)^-1`: distinguish the propagation
   range controlled by tau from relative edge weights controlled by kernel sigma.
