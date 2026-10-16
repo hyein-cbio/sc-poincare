@@ -152,7 +152,7 @@ def test_anndata_persists_target_diagnostics_and_metric_clip(tmp_path):
     from sc_poincare._anndata import layout_cells
     data = ad.AnnData(np.array([[0., 0.], [.1, .2], [.2, .1], [.3, .2], [.4, .1]]))
     original = data.X.copy()
-    layout_cells(data, n_neighbors=3, n_epochs=2, max_grad_norm=.7)
+    layout_cells(data, method='rfa', n_neighbors=3, n_epochs=2, max_grad_norm=.7)
     stored = data.uns['poincare']
     assert stored['params']['gradient_clipping'] == 'riemannian_norm'
     assert stored['params']['max_grad_norm'] == .7
@@ -163,6 +163,9 @@ def test_anndata_persists_target_diagnostics_and_metric_clip(tmp_path):
     data.write_h5ad(path)
     loaded = ad.read_h5ad(path)
     assert loaded.uns['poincare']['proximity_diagnostics']['self_mass_median'] == stored['proximity_diagnostics']['self_mass_median']
+    for key in ('n_components_before_stitching', 'n_isolated_before_stitching', 'n_bridges_added'):
+        assert key in stored['proximity_diagnostics']
+        assert loaded.uns['poincare']['proximity_diagnostics'][key] == stored['proximity_diagnostics'][key]
 
 
 @pytest.mark.parametrize('sigma', [0., -1., np.nan, np.inf, True])

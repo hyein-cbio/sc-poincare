@@ -107,7 +107,7 @@ def test_scanpy_records_method_and_keeps_proximity_diagnostics(tmp_path,objectiv
     ad=pytest.importorskip('anndata')
     from sc_poincare.tl import poincare_map
     data=ad.AnnData(np.random.default_rng(2).normal(size=(10,3)))
-    poincare_map(data,n_neighbors=4,n_epochs=2,objective=objective)
+    poincare_map(data,method='rfa',n_neighbors=4,n_epochs=2,objective=objective)
     saved=data.uns['poincare'];params=saved['params']
     assert params['objective']==objective
     assert params['objective_experimental']==(objective==CONDITIONAL)

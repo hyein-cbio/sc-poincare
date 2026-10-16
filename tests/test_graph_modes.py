@@ -95,7 +95,7 @@ def test_anndata_records_mode_and_roundtrips(tmp_path, mode):
     from sc_poincare.tl import poincare_map
     features = np.random.default_rng(91).normal(size=(9, 3))
     data = ad.AnnData(features)
-    result = poincare_map(data, n_neighbors=2, n_epochs=1, graph_mode=mode, copy=True)
+    result = poincare_map(data, method='rfa', n_neighbors=2, n_epochs=1, graph_mode=mode, copy=True)
     assert 'X_poincare' not in data.obsm
     params = result.uns['poincare']['params']
     assert params['graph_mode'] == mode
@@ -110,4 +110,4 @@ def test_invalid_public_mode_fails_before_graph_work(monkeypatch):
     from sc_poincare import _anndata
     monkeypatch.setattr(_anndata, 'estimate_proximity', lambda *a, **kw: pytest.fail('Graph must not run'))
     with pytest.raises(ValueError, match='graph_mode'):
-        _anndata.layout_cells(ad.AnnData(np.ones((5, 2))), graph_mode='invalid')
+        _anndata.layout_cells(ad.AnnData(np.ones((5, 2))), method='rfa', graph_mode='invalid')

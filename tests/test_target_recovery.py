@@ -137,7 +137,7 @@ def test_anndata_preserves_requested_and_effective_bandwidth_and_stop_reason(tmp
     ad = pytest.importorskip('anndata')
     from sc_poincare._anndata import layout_cells
     data = ad.AnnData(np.random.default_rng(1).normal(size=(12, 3)))
-    layout_cells(data, sigma='median', n_neighbors=4, n_epochs=2)
+    layout_cells(data, method='rfa', sigma='median', n_neighbors=4, n_epochs=2)
     stored = data.uns['poincare']
     assert stored['params']['sigma_requested'] == 'median'
     assert isinstance(stored['params']['sigma'], float)

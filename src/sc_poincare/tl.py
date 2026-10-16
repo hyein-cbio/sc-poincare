@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from sc_poincare._fit_progress import PoincareProgress
 from sc_poincare._anndata import (
     fan_branches,
     infer_lineages,
@@ -21,6 +22,7 @@ poincare_repel = repel_embedding
 poincare_jitter = jitter_embedding
 
 __all__ = [
+    "PoincareProgress",
     "poincare_map",
     "poincare_recenter",
     "poincare_pseudotime",

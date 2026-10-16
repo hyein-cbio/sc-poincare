@@ -82,34 +82,42 @@ def pick_root(adata, color: str | None) -> int:
     return 0
 
 
-def main() -> None:
+def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--dataset",
         default="krumsiek11",
         choices=("krumsiek11", "toggleswitch", "pbmc68k_reduced", "paul15"),
     )
-    parser.add_argument("--n-epochs", type=int, default=200)
-    parser.add_argument("--learning-rate", type=float, default=0.01)
+    parser.add_argument('--method', choices=('mu','rfa'), default='mu')
+    parser.add_argument('--local-bandwidth', choices=('global','local_radius'))
+    parser.add_argument("--n-epochs", type=int, help='Defaults to MU 1500 or legacy-demo RFA 200')
+    parser.add_argument("--learning-rate", type=float, help='Omit to use the selected method default')
     parser.add_argument("--n-lineages", type=int, default=4)
     parser.add_argument("--outdir", type=Path, default=Path("examples/output"))
     parser.add_argument("--show", action="store_true", help="Also open an interactive window.")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    if args.n_epochs is not None and args.n_epochs < 1:
+        parser.error('Demo n-epochs must be positive.')
+    if args.method == 'rfa' and args.local_bandwidth is not None:
+        parser.error('local-bandwidth is MU-only.')
 
     adata, color, fit_kw = load_dataset(args.dataset)
     print(f"loaded {args.dataset}: {adata.n_obs} cells × {adata.n_vars} genes")
     print(f"obs columns: {list(adata.obs.columns)}")
 
-    dr.tl.poincare_map(
-        adata,
-        n_epochs=args.n_epochs,
-        learning_rate=args.learning_rate,
-        burn_in_epochs=30,
-        patience=args.n_epochs,
-        random_state=0,
-        verbose=True,
-        **fit_kw,
-    )
+    options = dict(method=args.method, random_state=0, verbose=True)
+    if args.method == 'rfa':
+        options.update(fit_kw)
+        epochs = 200 if args.n_epochs is None else args.n_epochs
+        options.update(n_epochs=epochs, burn_in_epochs=30, patience=epochs,
+                       learning_rate=.01 if args.learning_rate is None else args.learning_rate)
+    else:
+        options.update({k:v for k,v in fit_kw.items() if k in ('use_rep','n_pcs','n_neighbors')})
+        if args.n_epochs is not None:options['n_epochs']=args.n_epochs
+        if args.learning_rate is not None:options['learning_rate']=args.learning_rate
+        if args.local_bandwidth is not None:options['local_bandwidth']=args.local_bandwidth
+    dr.tl.poincare_map(adata, **options)
 
     coords = adata.obsm["X_poincare"]
     radii = np.linalg.norm(coords, axis=1)

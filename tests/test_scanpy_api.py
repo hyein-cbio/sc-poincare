@@ -35,6 +35,7 @@ def test_layout_writes_scanpy_slots_and_stays_inside_the_disk():
     adata = _branching_anndata()
     out = poincare_map(
         adata,
+        method="rfa",
         n_neighbors=8,
         sigma=1.0,
         gamma=1.5,
@@ -60,6 +61,7 @@ def test_copy_flag_leaves_the_original_untouched():
     adata = _branching_anndata()
     clone = poincare_map(
         adata,
+        method="rfa",
         n_neighbors=6,
         n_epochs=30,
         patience=30,
@@ -72,7 +74,7 @@ def test_copy_flag_leaves_the_original_untouched():
 
 def test_root_translation_and_pseudotime():
     adata = _branching_anndata()
-    poincare_map(adata, n_neighbors=8, n_epochs=60, patience=60, random_state=2)
+    poincare_map(adata, method="rfa", n_neighbors=8, n_epochs=60, patience=60, random_state=2)
     root = "c0"
     before = pairwise_disk_length(adata.obsm["X_poincare"]).copy()
     poincare_recenter(adata, root)
@@ -90,7 +92,7 @@ def test_root_translation_and_pseudotime():
 
 def test_angular_lineages_are_written_as_categories():
     adata = _branching_anndata()
-    poincare_map(adata, n_neighbors=8, n_epochs=50, patience=50, random_state=3)
+    poincare_map(adata, method="rfa", n_neighbors=8, n_epochs=50, patience=50, random_state=3)
     poincare_lineages(adata, n_lineages=3, root="c0")
     assert "poincare_lineage" in adata.obs
     assert str(adata.obs["poincare_lineage"].dtype) == "category"
@@ -102,6 +104,7 @@ def test_use_rep_reads_obsm_and_key_added_renames_slots():
     adata.obsm["X_custom"] = adata.X.copy()
     poincare_map(
         adata,
+        method="rfa",
         use_rep="X_custom",
         n_neighbors=6,
         n_epochs=25,
@@ -120,7 +123,7 @@ def test_plot_function_returns_axes_without_displaying():
     from sc_poincare.pl import poincare_map as plot_map
 
     adata = _branching_anndata()
-    poincare_map(adata, n_neighbors=6, n_epochs=20, patience=20, random_state=5)
+    poincare_map(adata, method="rfa", n_neighbors=6, n_epochs=20, patience=20, random_state=5)
     ax = plot_map(adata, color="branch", show=False)
     assert ax is not None
     assert ax.get_aspect() == 1.0 or ax.get_aspect() == "equal"
@@ -131,6 +134,7 @@ def test_gentle_schedule_keeps_a_radial_gradient():
     adata = _branching_anndata()
     poincare_map(
         adata,
+        method="rfa",
         n_neighbors=8,
         sigma=1.0,
         gamma=2.0,
