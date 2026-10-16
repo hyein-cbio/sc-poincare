@@ -9,9 +9,6 @@ from sklearn.cluster import AgglomerativeClustering
 
 from sc_poincare._disk import (
     circular_gap,
-    fan_dendrogram_angles,
-    jitter_angles,
-    repel_points,
     length_from_origin,
     place_point_at_origin,
     polar_angles,
@@ -490,78 +487,4 @@ def infer_lineages(
     adata.obs[key_added] = labels.astype(str)
     adata.obs[key_added] = adata.obs[key_added].astype("category")
     record_annotation(adata, basis, key_added, 'angular_lineages', n_lineages=int(n_lineages))
-    return adata if copy else None
-
-
-def jitter_embedding(
-    adata,
-    *,
-    jitter: float = 0.0,
-    basis: str = DEFAULT_BASIS,
-    key_added: str = "X_poincare_jitter",
-    random_state: int | np.random.Generator | None = 0,
-    copy: bool = False,
-):
-    """Write a display layout with uniform angular jitter.
-
-    ``jitter=0`` copies ``adata.obsm[basis]`` exactly. Positive values are
-    the half-width, in radians, of a uniform angle shift. Radius is unchanged.
-    """
-    if copy:
-        adata = adata.copy()
-    if basis not in adata.obsm:
-        raise KeyError(f"Embedding {basis!r} is missing. Run sc_poincare.tl.poincare_map first.")
-    adata.obsm[key_added] = jitter_angles(
-        np.asarray(adata.obsm[basis]),
-        jitter=jitter,
-        random_state=random_state,
-    )
-    return adata if copy else None
-
-
-def repel_embedding(
-    adata,
-    *,
-    repel: float = 0.0,
-    basis: str = DEFAULT_BASIS,
-    key_added: str = "X_poincare_repel",
-    copy: bool = False,
-):
-    """Write a display layout that separates overlaps along each ray.
-
-    ``repel=0`` copies ``adata.obsm[basis]`` exactly. Positive values change
-    radius only. Polar angle is left unchanged.
-    """
-    if copy:
-        adata = adata.copy()
-    if basis not in adata.obsm:
-        raise KeyError(f"Embedding {basis!r} is missing. Run sc_poincare.tl.poincare_map first.")
-    adata.obsm[key_added] = repel_points(np.asarray(adata.obsm[basis]), repel=repel)
-    return adata if copy else None
-
-
-def fan_branches(
-    adata,
-    groupby: str,
-    *,
-    spread: float = 0.0,
-    basis: str = DEFAULT_BASIS,
-    key_added: str = "X_poincare_fan",
-    copy: bool = False,
-):
-    """Write a dendrogram-angle layout of an existing Poincaré embedding.
-
-    ``spread=0`` copies ``adata.obsm[basis]`` exactly. Larger values rotate
-    each group about the origin so dendrogram leaves occupy a wider fan.
-    Radii, and therefore hyperbolic distance from the origin, stay put.
-    """
-    if copy:
-        adata = adata.copy()
-    if basis not in adata.obsm:
-        raise KeyError(f"Embedding {basis!r} is missing. Run sc_poincare.tl.poincare_map first.")
-    if groupby not in adata.obs:
-        raise KeyError(f"{groupby!r} is not a column of adata.obs.")
-    coordinates = np.asarray(adata.obsm[basis])
-    groups = adata.obs[groupby].astype(str).to_numpy()
-    adata.obsm[key_added] = fan_dendrogram_angles(coordinates, groups, spread=spread)
     return adata if copy else None
