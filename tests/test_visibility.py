@@ -93,20 +93,32 @@ def test_mutated_snapshot_and_unmatched_comparison_rejected():
         evaluate_visibility(np.zeros((4, 2)))
 
 
-def test_plot_has_exact_canvas_and_marker_dimensions():
+@pytest.mark.parametrize('canvas_pixels', [600, 601, 700])
+def test_plot_has_exact_canvas_and_marker_dimensions(canvas_pixels):
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     points = [[0, 0], [.1, 0], [.2, 0], [.3, 0]]
     a = report(points)
     b = report([[0, 0], [.2, 0], [.4, 0], [.6, 0]])
-    fig = plot_visibility_pair(a, b)
+    fig = plot_visibility_pair(a, b, canvas_pixels=canvas_pixels)
     try:
+        from io import BytesIO
+        from PIL import Image
+        expected_size = (2 * canvas_pixels + 300, canvas_pixels + 220)
+        # Exercise the truncation used by older Matplotlib/Agg versions even
+        # when the installed renderer now rounds these values instead.
+        assert tuple(map(int, fig.bbox.size)) == expected_size
+        with BytesIO() as buffer:
+            fig.savefig(buffer, format='png', dpi=fig.dpi)
+            buffer.seek(0)
+            with Image.open(buffer) as image:
+                assert image.size == expected_size
         fig.canvas.draw()
         for ax, expected in zip(fig.axes, (a.coordinates, b.coordinates)):
             bounds = ax.get_window_extent()
-            assert bounds.width == pytest.approx(600)
-            assert bounds.height == pytest.approx(600)
+            assert bounds.width == pytest.approx(canvas_pixels)
+            assert bounds.height == pytest.approx(canvas_pixels)
             np.testing.assert_array_equal(ax.collections[0].get_offsets(), expected)
             assert np.sqrt(ax.collections[0].get_sizes()[0]) * fig.dpi / 72 == pytest.approx(4.)
     finally:

@@ -118,7 +118,11 @@ def plot_visibility_pair(before_result, after_result, *, title='Fixed-canvas vis
     diameter = reports[0]['policy']['canvas_pixels']
     dpi = 100
     width, height = 2 * diameter + 300, diameter + 220
-    fig = plt.figure(figsize=(width / dpi, height / dpi), dpi=dpi)
+    # Older Agg versions truncate the pixel bbox: 8.2 inches * 100 dpi can
+    # become 819.9999999999999. One ULP upward preserves the intended pixel
+    # size without resampling coordinates, axes or marker dimensions.
+    figsize = np.nextafter(np.asarray([width, height], dtype=float) / dpi, np.inf)
+    fig = plt.figure(figsize=figsize, dpi=dpi)
     classes = np.unique(before_result.labels)
     palette = plt.get_cmap('tab20')
     colors = {label: palette(i % 20) for i, label in enumerate(classes)}
