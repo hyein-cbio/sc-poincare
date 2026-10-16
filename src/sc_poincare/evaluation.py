@@ -235,7 +235,8 @@ def evaluate_neighborhoods(features, coordinates, labels, *, ks=(15, 30), block_
 
 
 def evaluate_expression_neighborhoods(expression, coordinates, *, ks=(15, 30),
-                                      geometry='poincare', block_size=64):
+                                      geometry='poincare', block_size=64,
+                                      per_gene=False, gene_names=None, cell_ids=None):
     """Input-expression preservation, not held-out prediction or biology.
 
     Predict each gene by the mean of k nonself embedding neighbors; average
@@ -243,6 +244,11 @@ def evaluate_expression_neighborhoods(expression, coordinates, *, ks=(15, 30),
     average over cells and positive-variance genes. Zero numerical-variance
     genes are omitted and counted. Inputs must use identical cell order; no
     normalization, feature selection or preprocessing is inferred.
+
+    Opt-in per_gene reports retain every original column index, including
+    undefined zero-variance genes. Optional names are labels, not identifiers;
+    duplicates are retained by index. These are reconstruction diagnostics,
+    not marker validation, held-out predictions or gene significance tests.
     """
     if not isinstance(geometry, str) or geometry not in ('poincare', 'euclidean'):
         raise ValueError("geometry must be 'poincare' or 'euclidean'.")
@@ -259,6 +265,20 @@ def evaluate_expression_neighborhoods(expression, coordinates, *, ks=(15, 30),
     if not sizes or sizes[-1] >= n:
         raise ValueError('Each k must be smaller than the cell count.')
     block_size = _positive_integer(block_size, 'block_size')
+    if not isinstance(per_gene, (bool, np.bool_)):
+        raise ValueError('per_gene must be boolean.')
+    if gene_names is not None and not per_gene:
+        raise ValueError('gene_names requires per_gene=True.')
+    names = None
+    if gene_names is not None:
+        names = np.asarray(gene_names, dtype=object)
+        if names.shape != (values.shape[1],) or not all(isinstance(x, str) and x.strip() for x in names):
+            raise ValueError('gene_names must contain one nonempty string per expression column.')
+        names = names.astype(str)
+    ids = None if cell_ids is None else _cell_ids(cell_ids, n)
+    provenance = dict(expression_sha256=_array_hash(values), coordinates_sha256=_array_hash(points),
+        gene_names_sha256=None if names is None else _array_hash(names),
+        cell_ids_sha256=None if ids is None else _array_hash(ids)) if per_gene or ids is not None else None
     with np.errstate(over='ignore', invalid='ignore'):
         variance = values.var(axis=0)
     if not np.isfinite(variance).all():
@@ -266,7 +286,9 @@ def evaluate_expression_neighborhoods(expression, coordinates, *, ks=(15, 30),
     positive = variance > 0
     if not np.any(positive):
         raise ValueError('At least one positive-variance gene is required.')
+    original_variance = variance.copy() if per_gene else None
     values, variance = values[:, positive], variance[positive]
+    gene_totals = {k: np.zeros(len(variance)) for k in sizes} if per_gene else None
     totals = {k: 0. for k in sizes}
     for start in range(0, n, block_size):
         stop = min(n, start + block_size)
@@ -278,14 +300,71 @@ def evaluate_expression_neighborhoods(expression, coordinates, *, ks=(15, 30),
         neighbors = np.argsort(distance, axis=1, kind='stable')[:, :sizes[-1]]
         for k in sizes:
             prediction = values[neighbors[:, :k]].mean(axis=1)
-            error = ((prediction - values[start:stop])**2 / variance).mean(axis=1)
+            gene_error = (prediction - values[start:stop])**2 / variance
+            error = gene_error.mean(axis=1)
             if not np.isfinite(error).all():
                 raise FloatingPointError('Nonfinite normalized expression error.')
             totals[k] += float(error.sum())
-    return dict(geometry=geometry, n_cells=n, n_genes_total=int(len(positive)),
-                n_genes_evaluated=int(positive.sum()), n_zero_variance_genes=int((~positive).sum()),
-                variance_ddof=0, self_excluded=True, tie_policy='distance_then_row_index',
-                normalized_mse={str(k): totals[k] / n for k in sizes})
+            if per_gene:
+                gene_totals[k] += gene_error.sum(axis=0)
+    result = dict(geometry=geometry, n_cells=n, n_genes_total=int(len(positive)),
+                  n_genes_evaluated=int(positive.sum()), n_zero_variance_genes=int((~positive).sum()),
+                  variance_ddof=0, self_excluded=True, tie_policy='distance_then_row_index',
+                  normalized_mse={str(k): totals[k] / n for k in sizes})
+    if provenance is not None:
+        result['provenance'] = provenance
+    if per_gene:
+        result['per_gene'] = []
+        position = 0
+        for index, included in enumerate(positive):
+            result['per_gene'].append(dict(gene_index=index, gene_name=None if names is None else str(names[index]),
+                variance=float(original_variance[index]), evaluated=bool(included),
+                normalized_mse={str(k): float(gene_totals[k][position] / n) if included else None for k in sizes}))
+            position += int(included)
+        result['gene_names_unique'] = None if names is None else len(np.unique(names)) == len(names)
+    return result
+
+
+def evaluate_ordering(pseudotime, stages, *, stage_order, cell_ids=None):
+    """Describe agreement with an explicitly predeclared stage order.
+
+    This does not choose a root, infer stage order, refit an embedding or prove
+    biological lineage. Unknown/missing stages are rejected, never dropped.
+    Constant ranks/pseudotime are explicitly undefined. Declare roots, markers
+    and stage order before viewing results to avoid post-hoc selection.
+    """
+    raw = np.asarray(pseudotime)
+    if raw.ndim != 1 or len(raw) < 2 or raw.dtype.kind not in 'biuf':
+        raise ValueError('pseudotime must be a real vector with at least two cells.')
+    values = raw.astype(np.float64)
+    if not np.isfinite(values).all():
+        raise ValueError('pseudotime must be finite.')
+    order = np.asarray(stage_order, dtype=object)
+    if order.ndim != 1 or len(order) < 2:
+        raise ValueError('stage_order must be a sequence of at least two categories.')
+    order = _canonical_labels(order, len(order))
+    if len(np.unique(order)) != len(order):
+        raise ValueError('stage_order contains duplicate equivalent categories.')
+    group = _canonical_labels(stages, len(values))
+    if not set(group).issubset(set(order)):
+        raise ValueError('Every observed stage must be in stage_order; no cells are dropped.')
+    mapping = {label: i for i, label in enumerate(order)}
+    ranks = np.array([mapping[x] for x in group])
+    ids = None if cell_ids is None else _cell_ids(cell_ids, len(values))
+    defined = len(np.unique(ranks)) > 1 and len(np.unique(values)) > 1
+    rho = float(spearmanr(values, ranks).statistic) if defined else None
+    if rho is not None and not np.isfinite(rho):
+        rho = None
+    populations = []
+    for label in order:
+        subset = values[group == label]
+        populations.append(dict(stage=str(label), n_cells=len(subset),
+            pseudotime_median=float(np.median(subset)) if len(subset) else None))
+    return dict(n_cells=len(values), stage_order=order.tolist(), stages=populations,
+        spearman=rho, status='defined' if rho is not None else 'undefined_constant_order_or_pseudotime',
+        n_distinct_observed_stages=len(np.unique(ranks)), n_unique_pseudotimes=len(np.unique(values)),
+        provenance=dict(pseudotime_sha256=_array_hash(values), stage_labels_sha256=_array_hash(group),
+            stage_order_sha256=_array_hash(order), cell_ids_sha256=None if ids is None else _array_hash(ids)))
 
 
 def compare_neighborhoods(before, after):

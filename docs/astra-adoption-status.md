@@ -4,6 +4,8 @@ Source reference: branch `feat/experimental-graph-stress`, pinned commit
 `3489e586caaa5b0408a0751220d6349426457bfe`. Implemented code, development evidence
 and speculative roadmap items are deliberately distinguished. This inventory
 does not authorize more experiments, source pushes or continuous future work.
+The [subsequent deduplicated follow-up](astra-followup.md) records the fresh
+source comparison, newly exposed controls and their bounded checks.
 
 ## Implemented and integrated
 
@@ -21,6 +23,11 @@ does not authorize more experiments, source pushes or continuous future work.
 | Independent feature/population/expression/visibility checks | Implemented, with explicit biological and held-out limits |
 | Retain counterexamples and resource failures | Initial underflow failures/time stops remain recorded, not replaced by favorable retries |
 | Bounded resource measurement | Cold pilots, supervised child RSS/time limits, shared inputs and compact summaries |
+| Explicit scalar forest tau | Experimental RFA-only control; tau=1 keeps the previous target |
+| Explicit spectral tol/maxiter | Opt-in ARPACK controls, residual/convergence metadata and warned seeded fallback; defaults unchanged |
+| Gene-level and declared-stage diagnostics | Implemented as read-only software; not biological validation or root/order inference |
+| Upstream development aggregate | Pinned, separately retained JSON; not counted as current reruns |
+| Remote CPU-Torch/Torch-free CI | Passed on main 843138f; that run does not certify subsequent uncommitted changes |
 
 The two full Moignard Euclidean controls originally stopped at the 45-minute
 budget. A later operator-authorized **20-minute continuation budget** restored
@@ -67,19 +74,19 @@ These integrations do not redesign the low-level objectives or optimizers:
 | Item | Why it is not silently adopted |
 |---|---|
 | Independent measured-data validation | Current datasets are known development inputs; labels/plots informed earlier research |
-| Biological markers, branch continuity and pseudotime/order | Readable disks, purity and training-input preservation are insufficient |
+| Biological marker/branch/order validation | Per-gene/order evaluators now exist, but named markers, truth and independent protocols remain required |
 | Arbitrary initialization / larger seed studies | Existing ranges mainly reflect small jitter around one layout, not confidence intervals |
 | Objective-versus-optimizer attribution | MU fixed is a bundled objective/chart/optimizer change; equal updates do not mean equal convergence |
 | Global/local and rare-population trade-offs | Some fidelity/purity losses remain; bigger spread is not always more information |
-| RFA forest time `P_tau=(I+tau L)^-1`, multiscale/degree-aware rules | Separate unvalidated targets requiring frozen experiments; not a numerical fix |
-| RFA spectral tolerance/maxiter controls | Need quality/stability and truthful fallback checks; not silently relaxed |
+| Multiscale/degree-aware RFA rules | Scalar tau is exposed and probed; no validated mixture or adaptive weighting rule exists |
+| Universal bounded spectral defaults | Explicit controls are implemented/probed; quality changes and population losses prevent automatic replacement |
 | Matrix-free / row-solve / sparse / landmark scale-up | Can change normalization/gradients and initialization; validate against the exact reference first |
 | Intrinsic adaptive optimizers, Lorentz/chart changes | Numerical range and optimization/biology are different questions |
 | Curvature, dimension, temperature/global scale | Not established universal improvements; avoid data-name-specific tuning |
 | Full Planaria cold-start result | Exact default guard still refuses it; lost warm-start observations are not validated evidence |
 | Coordinate-only MU warm starts in the AnnData API | Full state resume is supported; a new arbitrary initializer is a separately testable condition |
 | Durable external storage / forced environment replacement | Local atomic checkpoints and successful directory restores do not guarantee survival of container loss |
-| Remote CI/publication readiness | Workflow/configuration and local tests are not a completed external release/review of every historical scope |
+| Publication readiness | Successful main CI is not biological validation, historical-scope review or publication eligibility |
 
 ## Deliberately not promoted
 

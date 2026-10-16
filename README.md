@@ -182,6 +182,9 @@ fixed-canvas marker-center crowding/width from intrinsic separation.
   change, exact RFA path and verified AnnData checkpoint examples.
 - [Astra adoption and remaining work](docs/astra-adoption-status.md): implemented,
   safe integration changes, unvalidated research and deliberately rejected ideas.
+- [Deduplicated Astra follow-up](docs/astra-followup.md): opt-in RFA `forest_tau`
+  and spectral budgets, per-gene/order diagnostics and fixed control probes.
+  Defaults remain unchanged; current checkpoints use the new source fingerprints.
 - [Earlier union-only experiment](docs/graph-topology-results.md) and
   [visibility extension](docs/graph-visibility-study.md): historical, different
   objectives; neither is the MU algorithm's performance.

@@ -135,7 +135,9 @@ At default-switch integration its four source files were preserved; the later
 [display-layout extraction](display-layout-deprecation.md) intentionally changes
 `_disk.py`'s whole-file hash, so pre-extraction states are not auto-migrated.
 The high-level wrapper also refuses bare states without identity evidence.
-Matching numerical source/Torch/runtime policy still matters.
+Matching numerical source/Torch/runtime policy still matters. The subsequent
+[Astra control follow-up](astra-followup.md) also changes `_proximity.py` and
+`_fitting.py` source hashes; default numerical parity does not waive those checks.
 
 RFA progress has checkpoint=None. Its coordinate warm start is a new schedule,
 not exact optimizer/patience recovery. Do not pass a root-translated display to

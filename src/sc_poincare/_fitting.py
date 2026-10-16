@@ -2,7 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from copy import deepcopy
+from dataclasses import dataclass, field
+import numbers
 from typing import Callable
 import warnings
 
@@ -38,6 +40,7 @@ class FitReport:
     objective: str = DEFAULT_OBJECTIVE
     probability_computation: str = "log_softmax"
     zero_target_policy: str = "machine_tiny_logs_only"
+    initialization_diagnostics: dict = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -51,6 +54,7 @@ class FitProgress:
     best_coordinates: np.ndarray
     initialization: str
     initialization_reason: str
+    initialization_diagnostics: dict = field(default_factory=dict)
 
 
 def _emit_progress(callback, epoch, coordinates, loss, best_loss, best_coordinates, init_status):
@@ -58,7 +62,7 @@ def _emit_progress(callback, epoch, coordinates, loss, best_loss, best_coordinat
         callback(FitProgress(
             epoch=epoch, coordinates=np.array(coordinates, copy=True), loss=float(loss),
             best_loss=float(best_loss), best_coordinates=np.array(best_coordinates, copy=True),
-            **init_status,
+            **deepcopy(init_status),
         ))
 
 
@@ -85,13 +89,30 @@ def _seed_coordinates(n_obs: int, n_components: int, rng: np.random.Generator) -
     return confine_to_open_disk(directions * radii)
 
 
+def _validate_spectral_controls(tol, maxiter):
+    if isinstance(tol, (bool, np.bool_)) or not isinstance(tol, numbers.Real):
+        raise ValueError('spectral_tol must be finite and nonnegative.')
+    try:
+        tol = float(tol)
+    except (ValueError, OverflowError):
+        raise ValueError('spectral_tol must be finite and nonnegative.') from None
+    if not np.isfinite(tol) or tol < 0:
+        raise ValueError('spectral_tol must be finite and nonnegative.')
+    if maxiter is not None and (isinstance(maxiter, (bool, np.bool_)) or
+            not isinstance(maxiter, (int, np.integer)) or maxiter < 1):
+        raise ValueError('spectral_maxiter must be a positive integer or None.')
+    return float(tol), None if maxiter is None else int(maxiter)
+
+
 def _seed_from_connectivities(
     connectivities,
     n_components: int,
     rng: np.random.Generator,
     radius: float = 0.2,
     *,
-    status: dict[str, str] | None = None,
+    status: dict | None = None,
+    spectral_tol: float = 0.0,
+    spectral_maxiter: int | None = None,
 ) -> np.ndarray:
     """Start from a spectral layout of the connectivity graph.
 
@@ -100,10 +121,14 @@ def _seed_from_connectivities(
     of symmetric normalized adjacency provide the starting layout. This is
     the same spectral principle as UMAP, not a reuse of its graph or code.
     """
+    spectral_tol, spectral_maxiter = _validate_spectral_controls(spectral_tol, spectral_maxiter)
+    diagnostics = dict(spectral_tol=spectral_tol, spectral_maxiter=spectral_maxiter,
+                       solver='not_run', converged=False)
     graph = sparse.csr_matrix(connectivities, dtype=np.float64)
     n_obs = graph.shape[0]
     if status is not None:
-        status.update(initialization="spectral", initialization_reason="")
+        status.update(initialization="spectral", initialization_reason="",
+                      initialization_diagnostics=diagnostics)
 
     def random_fallback(reason: str, message: str | None = None):
         if status is not None:
@@ -128,18 +153,26 @@ def _seed_from_connectivities(
     normalized = (inverse_sqrt @ graph @ inverse_sqrt).tocsr()
     n_vectors = n_components + 1
     try:
-        if n_obs <= 2000:
+        if n_obs <= 2000 and spectral_tol == 0.0 and spectral_maxiter is None:
+            diagnostics['solver'] = 'dense_eigh'
             evals, evecs = np.linalg.eigh(normalized.toarray())
         else:
+            diagnostics['solver'] = 'arpack_eigsh'
             # Largest algebraic, not magnitude: negative modes of nearly
             # bipartite graphs are not the lowest Laplacian eigenmodes.
-            evals, evecs = eigsh(normalized, k=n_vectors, which="LA", v0=rng.normal(size=n_obs))
-    except (np.linalg.LinAlgError, ArpackNoConvergence):
+            options = {} if spectral_tol == 0.0 and spectral_maxiter is None else dict(tol=spectral_tol, maxiter=spectral_maxiter)
+            evals, evecs = eigsh(normalized, k=n_vectors, which="LA", v0=rng.normal(size=n_obs), **options)
+    except (np.linalg.LinAlgError, ArpackNoConvergence) as exc:
+        partial = getattr(exc, 'eigenvalues', None)
+        diagnostics.update(error_type=type(exc).__name__, partial_eigenpairs=0 if partial is None else len(partial))
         return random_fallback("eigensolver_failure", "Spectral eigensolver did not converge; using seeded random coordinates.")
+    diagnostics.update(converged=True, eigenpairs_returned=len(evals))
     order = np.argsort(evals)[::-1]
     coords = np.asarray(evecs[:, order][:, 1:n_vectors], dtype=np.float64)
-    if coords.shape[1] < n_components or not np.all(np.isfinite(coords)):
+    if coords.shape != (n_obs, n_components) or not np.all(np.isfinite(coords)) or not np.all(np.isfinite(evals)):
         return random_fallback("invalid_eigenvectors", "Invalid spectral coordinates; using seeded random initialization.")
+    diagnostics.update(checked_eigenpairs=n_components,
+        max_eigen_residual=float(np.linalg.norm(normalized @ coords - coords * evals[order][None, 1:n_vectors], axis=0).max()))
     coords = coords - coords.mean(axis=0, keepdims=True)
     max_radius = float(np.linalg.norm(coords, axis=1).max())
     if not np.isfinite(max_radius) or max_radius < 1e-12:
@@ -256,6 +289,8 @@ def _fit_with_torch(
     initial_coordinates: np.ndarray | None = None,
     progress_callback: Callable[[FitProgress], None] | None = None,
     objective: str = DEFAULT_OBJECTIVE,
+    spectral_tol: float = 0.0,
+    spectral_maxiter: int | None = None,
 ) -> FitReport:
     n_obs = target.shape[0]
     device = torch.device("cpu")
@@ -267,7 +302,8 @@ def _fit_with_torch(
     elif connectivities is None:
         seed = _seed_coordinates(n_obs, n_components, rng)
     else:
-        seed = _seed_from_connectivities(connectivities, n_components, rng, status=init_status)
+        seed = _seed_from_connectivities(connectivities, n_components, rng, status=init_status,
+                                        spectral_tol=spectral_tol, spectral_maxiter=spectral_maxiter)
     coords = torch.tensor(
         seed,
         dtype=torch.float64,
@@ -397,6 +433,8 @@ def _fit_with_numpy(
     initial_coordinates: np.ndarray | None = None,
     progress_callback: Callable[[FitProgress], None] | None = None,
     objective: str = DEFAULT_OBJECTIVE,
+    spectral_tol: float = 0.0,
+    spectral_maxiter: int | None = None,
 ) -> FitReport:
     n_obs = target.shape[0]
     init_status = {"initialization": "random", "initialization_reason": ""}
@@ -406,7 +444,8 @@ def _fit_with_numpy(
     elif connectivities is None:
         coords = _seed_coordinates(n_obs, n_components, rng)
     else:
-        coords = _seed_from_connectivities(connectivities, n_components, rng, status=init_status)
+        coords = _seed_from_connectivities(connectivities, n_components, rng, status=init_status,
+                                          spectral_tol=spectral_tol, spectral_maxiter=spectral_maxiter)
     # Exact finite differences are cubic; this fallback is only for tiny inputs.
     chunk_size = min(batch_size or 32, n_obs)
     loss_trace: list[float] = []
@@ -474,6 +513,8 @@ def fit_disk_embedding(
     initial_coordinates: np.ndarray | None = None,
     progress_callback: Callable[[FitProgress], None] | None = None,
     objective: str = DEFAULT_OBJECTIVE,
+    spectral_tol: float = 0.0,
+    spectral_maxiter: int | None = None,
 ) -> FitReport:
     """Match the exact global proximity objective, with row-chunked gradients.
 
@@ -496,6 +537,9 @@ def fit_disk_embedding(
     Callbacks are observational and their return values are ignored.
     """
     _validate_objective(objective)
+    spectral_tol, spectral_maxiter = _validate_spectral_controls(spectral_tol, spectral_maxiter)
+    if (spectral_tol != 0.0 or spectral_maxiter is not None) and (initial_coordinates is not None or connectivities is None):
+        raise ValueError('Spectral controls require connectivities and no initial_coordinates override.')
     shape = np.shape(target)
     if len(shape) != 2 or shape[0] != shape[1]:
         raise ValueError("target proximity must be a square matrix.")
@@ -580,6 +624,8 @@ def fit_disk_embedding(
         initial_coordinates=initial_coordinates,
         progress_callback=progress_callback,
         objective=objective,
+        spectral_tol=spectral_tol,
+        spectral_maxiter=spectral_maxiter,
     )
     if torch is not None:
         return _fit_with_torch(**kwargs)

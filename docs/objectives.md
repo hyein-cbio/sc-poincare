@@ -4,7 +4,9 @@ This document describes **`method="rfa"`**, whose default remains the row-wise
 symmetric KL objective between dense relative forest accessibility (RFA) and
 hyperbolic-distance softmax probabilities. The public AnnData default is now MU;
 see [MU targets](graph-stress.md) and the [migration guide](mu-default-migration.md).
-The low-level RFA fitter and its numerical policy are unchanged:
+The RFA fitting objective and default numerical policy are unchanged. The
+[follow-up controls](astra-followup.md) add explicit experimental propagation
+tau and spectral budgets; tau=1 preserves the target below:
 
 
 ```

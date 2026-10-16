@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from copy import deepcopy
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 import hashlib
 import json
 
@@ -29,6 +29,7 @@ class PoincareProgress:
     checkpoint: dict | None
     initialization: str
     initialization_reason: str = ''
+    initialization_diagnostics: dict = field(default_factory=dict)
 
     @property
     def coordinates(self):

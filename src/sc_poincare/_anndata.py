@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from copy import deepcopy
 import hashlib
 import numpy as np
 from scipy import sparse
@@ -13,9 +14,9 @@ from sc_poincare._disk import (
     place_point_at_origin,
     polar_angles,
 )
-from sc_poincare._fitting import fit_disk_embedding
+from sc_poincare._fitting import fit_disk_embedding, _validate_spectral_controls
 from sc_poincare._objectives import DEFAULT_OBJECTIVE, CONDITIONAL_OBJECTIVE, _validate_objective
-from sc_poincare._proximity import estimate_proximity, _validate_graph_mode
+from sc_poincare._proximity import estimate_proximity, _validate_graph_mode, _validate_forest_tau
 from sc_poincare._resources import DEFAULT_MAX_DENSE_BYTES, check_dense_budget
 from sc_poincare._mu_anndata import METHOD_DEFAULT, layout_mu
 from sc_poincare._fit_progress import (
@@ -104,6 +105,7 @@ def layout_cells(
     max_grad_norm=METHOD_DEFAULT, objective=METHOD_DEFAULT, graph_mode=METHOD_DEFAULT,
     mu_config=None, local_bandwidth=METHOD_DEFAULT, progress_callback=None,
     resume=None, checkpoint_every=METHOD_DEFAULT, initial_coordinates=None,
+    forest_tau=METHOD_DEFAULT, spectral_tol=METHOD_DEFAULT, spectral_maxiter=METHOD_DEFAULT,
 ):
     """Write a Scanpy-compatible disk embedding; MU is the provisional default.
 
@@ -129,6 +131,12 @@ def layout_cells(
     RFA initial_coordinates is a coordinate-only NEW run, not optimizer resume.
     checkpoint_every controls MU callback/state intervals; RFA callbacks are
     evaluated each epoch. Root translation is display-only, after fitting.
+
+    RFA-only forest_tau defaults to 1, preserving (I+L)^-1. Non-unit values
+    explicitly change propagation range, not sigma. spectral_tol=0 and
+    spectral_maxiter=None preserve the old initialization policy; nondefault
+    controls request ARPACK even for small inputs and may cause a warned,
+    seeded random fallback. Diagnostics record solver, convergence and residual.
     """
     if not isinstance(method, str) or method not in ('mu', 'rfa'):
         raise ValueError("method must be 'mu' or 'rfa'.")
@@ -146,10 +154,13 @@ def layout_cells(
             random_state=old(random_state,0), key_added=key_added, copy=copy, verbose=verbose,
             max_dense_bytes=max_dense_bytes, max_grad_norm=old(max_grad_norm,2.5),
             objective=old(objective,DEFAULT_OBJECTIVE), graph_mode=old(graph_mode,'mutual'),
-            progress_callback=progress_callback, initial_coordinates=initial_coordinates)
+            progress_callback=progress_callback, initial_coordinates=initial_coordinates,
+            forest_tau=old(forest_tau,1.), spectral_tol=old(spectral_tol,0.),
+            spectral_maxiter=old(spectral_maxiter,None))
     legacy = dict(sigma=sigma, burn_in_epochs=burn_in_epochs, min_delta=min_delta,
                   patience=patience, max_grad_norm=max_grad_norm, objective=objective,
-                  graph_mode=graph_mode)
+                  graph_mode=graph_mode, forest_tau=forest_tau,
+                  spectral_tol=spectral_tol, spectral_maxiter=spectral_maxiter)
     supplied = [name for name,value in legacy.items() if value is not METHOD_DEFAULT]
     if supplied or initial_coordinates is not None:
         names = ', '.join(supplied + (['initial_coordinates'] if initial_coordinates is not None else []))
@@ -192,6 +203,9 @@ def _layout_rfa(
     graph_mode: str = "mutual",
     progress_callback=None,
     initial_coordinates=None,
+    forest_tau: float = 1.0,
+    spectral_tol: float = 0.0,
+    spectral_maxiter: int | None = None,
 ):
     """Embed cells on the Poincaré disk and store the result on ``adata``.
 
@@ -212,6 +226,14 @@ def _layout_rfa(
         Explicitly opt into ``'median'`` to use the median positive stitched
         graph edge length. This chooses one global bandwidth without labels
         or feature rescaling; it is not a reproduction of the paper's settings.
+    forest_tau
+        Explicit experimental propagation scale in (I+tau*L)^-1. Default 1
+        preserves RFA. Does not change kernel weights, sigma or graph topology.
+    spectral_tol, spectral_maxiter
+        Explicit ARPACK controls. Defaults 0/None preserve the previous dense
+        <=2000 / sparse >2000 policy. Nondefaults force the sparse solver;
+        non-convergence warns and uses a seeded fallback. They do not bound
+        wall time, target memory, or establish equivalent quality.
     gamma
         Softmax temperature on hyperbolic distances (paper: ``γ``).
     objective
@@ -268,6 +290,10 @@ def _layout_rfa(
     """
     _validate_objective(objective)
     _validate_graph_mode(graph_mode)
+    forest_tau = _validate_forest_tau(forest_tau)
+    spectral_tol, spectral_maxiter = _validate_spectral_controls(spectral_tol, spectral_maxiter)
+    if initial_coordinates is not None and (spectral_tol != 0.0 or spectral_maxiter is not None):
+        raise ValueError('Spectral controls cannot be applied to provided initial_coordinates.')
     if progress_callback is not None and not callable(progress_callback):
         raise ValueError('progress_callback must be callable or None.')
     check_dense_budget(adata.n_obs, max_dense_bytes)
@@ -289,6 +315,7 @@ def _layout_rfa(
         metric=metric,
         max_dense_bytes=max_dense_bytes,
         graph_mode=graph_mode,
+        forest_tau=forest_tau,
     )
     observed = {'best_loss': np.inf, 'best_epoch': 0}
     def progress(p):
@@ -300,7 +327,7 @@ def _layout_rfa(
         if progress_callback is not None:
             progress_callback(PoincareProgress('rfa', p.epoch, p.loss, p.best_loss,
                 observed['best_epoch'], p.coordinates, p.best_coordinates, None,
-                p.initialization, p.initialization_reason))
+                p.initialization, p.initialization_reason, deepcopy(p.initialization_diagnostics)))
     report = fit_disk_embedding(
         proximity.accessibility,
         connectivities=proximity.weights,
@@ -319,6 +346,8 @@ def _layout_rfa(
         objective=objective,
         initial_coordinates=initial_coordinates,
         progress_callback=progress,
+        spectral_tol=spectral_tol,
+        spectral_maxiter=spectral_maxiter,
     )
     current_identity = observation_provenance(adata)
     current_features, _ = _choose_features(adata, resolved_rep, int(features.shape[1]))
@@ -349,6 +378,10 @@ def _layout_rfa(
             "graph_experimental": proximity.graph_mode == "union",
             "sigma": float(proximity.kernel_width),
             "sigma_requested": sigma if isinstance(sigma, str) else float(sigma),
+            "forest_tau": float(proximity.forest_tau),
+            "forest_experimental": proximity.forest_tau != 1.0,
+            "spectral_tol": float(spectral_tol),
+            "spectral_maxiter": None if spectral_maxiter is None else int(spectral_maxiter),
             "gamma": float(gamma),
             "n_components": int(n_components),
             "use_rep": resolved_rep,
@@ -374,6 +407,7 @@ def _layout_rfa(
             "initialization": report.initialization,
             "initialization_reason": report.initialization_reason,
         },
+        "initialization_diagnostics": deepcopy(report.initialization_diagnostics),
         "connectivities_key": connectivities_key,
         "connectivities_semantics": "gaussian_affinities",
         "proximity_diagnostics": proximity.diagnostics,

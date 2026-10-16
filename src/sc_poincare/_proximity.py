@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import numbers
 import warnings
 
 import numpy as np
@@ -26,6 +27,7 @@ class ManifoldProximity:
     kernel_width: float
     diagnostics: dict[str, float | int]
     graph_mode: str = "mutual"
+    forest_tau: float = 1.0
 
 
 class ProximityWarning(UserWarning):
@@ -256,13 +258,32 @@ def local_affinity(
     return affinity, stitched
 
 
+def _validate_forest_tau(value):
+    if isinstance(value, (bool, np.bool_)) or not isinstance(value, numbers.Real):
+        raise ValueError('forest_tau must be finite and positive.')
+    try:
+        tau = float(value)
+    except (ValueError, TypeError, OverflowError):
+        raise ValueError('forest_tau must be finite and positive.') from None
+    if not np.isfinite(tau) or tau <= 0:
+        raise ValueError('forest_tau must be finite and positive.')
+    return tau
+
+
 def forest_accessibility(
     affinity: sparse.spmatrix,
     *,
     block_size: int = 128,
     max_dense_bytes: int | None = DEFAULT_MAX_DENSE_BYTES,
+    forest_tau: float = 1.0,
 ) -> np.ndarray:
-    """Exact ``P = (I + L)^{-1}`` with blocked RHS solves; output is dense."""
+    """Exact ``P_tau = (I + tau L)^{-1}``; tau=1 preserves the legacy target.
+
+    Tau changes propagation range, not Gaussian sigma or graph construction.
+    Non-unit values are explicit experimental conditions, not quality fixes.
+    Output and normalization remain dense despite blocked RHS solves.
+    """
+    forest_tau = _validate_forest_tau(forest_tau)
     if affinity.shape[0] != affinity.shape[1] or affinity.shape[0] == 0:
         raise ValueError("affinity must be a nonempty square matrix.")
     check_dense_budget(affinity.shape[0], max_dense_bytes)
@@ -274,6 +295,10 @@ def forest_accessibility(
     n_obs = affinity.shape[0]
     degree = np.asarray(affinity.sum(axis=1)).reshape(-1)
     laplacian = sparse.diags(degree) - affinity
+    if forest_tau != 1.0:
+        laplacian = laplacian * forest_tau
+        if not np.isfinite(laplacian.data).all():
+            raise FloatingPointError('forest_tau overflowed the Laplacian.')
     shifted = (sparse.eye(n_obs, format="csc") + laplacian.tocsc()).tocsc()
     factorization = splu(shifted)
     accessibility = np.empty((n_obs, n_obs), dtype=np.float64)
@@ -297,7 +322,9 @@ def estimate_proximity(
     *,
     max_dense_bytes: int | None = DEFAULT_MAX_DENSE_BYTES,
     graph_mode: str = "mutual",
+    forest_tau: float = 1.0,
 ) -> ManifoldProximity:
+    forest_tau = _validate_forest_tau(forest_tau)
     _validate_graph_mode(graph_mode)
     check_dense_budget(features.shape[0], max_dense_bytes)
     graph_diagnostics: dict[str, int] = {}
@@ -306,7 +333,7 @@ def estimate_proximity(
         graph_mode=graph_mode,
     )
     width = _resolve_kernel_width(lengths, kernel_width)
-    accessibility = forest_accessibility(weights, max_dense_bytes=max_dense_bytes)
+    accessibility = forest_accessibility(weights, max_dense_bytes=max_dense_bytes, forest_tau=forest_tau)
     self_mass = np.diag(accessibility)
     n_self_dominated = int(np.count_nonzero(self_mass > 0.99))
     diagnostics = {
@@ -319,6 +346,7 @@ def estimate_proximity(
         "edge_distance_median": float(np.median(lengths.data)),
         "edge_distance_over_sigma_median": float(np.median(lengths.data) / width),
         "sigma_effective": width,
+        "forest_tau": forest_tau,
         "self_mass_median": float(np.median(self_mass)),
         "self_mass_gt_0_99_count": n_self_dominated,
         "self_mass_gt_0_99_fraction": float(n_self_dominated / weights.shape[0]),
@@ -340,4 +368,5 @@ def estimate_proximity(
         kernel_width=width,
         diagnostics=diagnostics,
         graph_mode=graph_mode,
+        forest_tau=forest_tau,
     )

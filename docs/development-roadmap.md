@@ -39,6 +39,12 @@ performance, biological equivalence, or hyperbolic-specific superiority.
   and local install/serialization tests. Consult workflow results for actual CI status.
 - [x] Complete the bounded MU study and its separately budgeted optimizer-state
   continuation; keep initial resource stops as history, not failed geometry evidence.
+- [x] Expose experimental scalar forest tau and bounded spectral controls without
+  changing numerical defaults; record convergence/fallback and fixed probe losses.
+- [x] Add optional per-gene reconstruction and predeclared-stage ordering diagnostics.
+  Their software availability is not independent biological validation.
+- [x] Audit upstream code/evidence before reapplication; see the
+  [deduplicated Astra follow-up](astra-followup.md).
 
 ## P0 — Maintain a reproducible starting point
 
@@ -70,8 +76,10 @@ have not been satisfied merely by selecting MU as the new provisional default.
 
 ## P2 — Bound initialization and scale-up cost
 
-- [ ] For RFA, evaluate explicit spectral `tol` / `maxiter` controls with recorded
-  non-convergence and seeded fallback. Do not silently trade accuracy for speed.
+- [x] For RFA, expose explicit spectral `tol` / `maxiter` controls with recorded
+  convergence/residuals and seeded fallback; complete the fixed small quality probe.
+- [ ] Extend initialization/convergence budgets on independent inputs before
+  changing spectral defaults. Short-run gains and residuals are not equivalence.
 - [ ] For MU, benchmark alternatives to dense classical scaling and dense global
   targets. Validate landmark/matrix-free/sparse approximations against the exact
   few-thousand-cell reference, including normalization and endpoint gradients.
@@ -84,8 +92,9 @@ have not been satisfied merely by selecting MU as the new provisional default.
 
 These are not default changes and require their own controlled experiments:
 
-- [ ] RFA forest time scale `P_tau=(I+tau L)^-1`, fixed multiscale mixtures or
-  degree-aware rules, distinct from Gaussian sigma.
+- [x] Expose scalar RFA forest time `P_tau=(I+tau L)^-1` distinctly from sigma;
+  probe fixed .1/1/10 conditions without selecting a new default.
+- [ ] Validate fixed multiscale mixtures or degree-aware rules separately.
 - [ ] Hybrid graph/bridge and local/global trade-offs; do not optimize only a
   training-derived metric or maximize visual spread without semantic checks.
 - [ ] Objective-versus-optimizer ablation, intrinsic adaptive updates, alternative
