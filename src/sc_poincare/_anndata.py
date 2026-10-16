@@ -17,7 +17,7 @@ from sc_poincare._disk import (
 )
 from sc_poincare._fitting import fit_disk_embedding
 from sc_poincare._objectives import DEFAULT_OBJECTIVE, CONDITIONAL_OBJECTIVE, _validate_objective
-from sc_poincare._proximity import estimate_proximity
+from sc_poincare._proximity import estimate_proximity, _validate_graph_mode
 from sc_poincare._resources import DEFAULT_MAX_DENSE_BYTES, check_dense_budget
 
 DEFAULT_BASIS = "X_poincare"
@@ -108,6 +108,7 @@ def layout_cells(
     max_dense_bytes: int | None = DEFAULT_MAX_DENSE_BYTES,
     max_grad_norm: float | None = 2.5,
     objective: str = DEFAULT_OBJECTIVE,
+    graph_mode: str = "mutual",
 ):
     """Embed cells on the Poincaré disk and store the result on ``adata``.
 
@@ -116,7 +117,9 @@ def layout_cells(
     adata
         Annotated cell-by-feature matrix.
     n_neighbors
-        Size of the mutual neighborhood used for the local graph (paper: ``k``).
+        Directed neighborhood size used for the local graph (paper: ``k``).
+    graph_mode
+        Mutual neighbors by default; explicit experimental union keeps either direction.
     sigma
         Gaussian kernel width on neighborhood edge lengths (paper: ``σ``).
         Explicitly opt into ``'median'`` to use the median positive stitched
@@ -177,6 +180,7 @@ def layout_cells(
       * ``adata.uns['poincare']`` — hyperparameters and the loss trace.
     """
     _validate_objective(objective)
+    _validate_graph_mode(graph_mode)
     check_dense_budget(adata.n_obs, max_dense_bytes)
     if copy:
         adata = adata.copy()
@@ -190,6 +194,7 @@ def layout_cells(
         features,
         n_neighbors=n_neighbors,
         kernel_width=sigma,
+        graph_mode=graph_mode,
         metric=metric,
         max_dense_bytes=max_dense_bytes,
     )
@@ -221,6 +226,8 @@ def layout_cells(
     adata.uns[uns_key] = {
         "params": {
             "n_neighbors": int(n_neighbors),
+            "graph_mode": proximity.graph_mode,
+            "graph_experimental": proximity.graph_mode == "union",
             "sigma": float(proximity.kernel_width),
             "sigma_requested": sigma if isinstance(sigma, str) else float(sigma),
             "gamma": float(gamma),

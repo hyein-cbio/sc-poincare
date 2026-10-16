@@ -25,6 +25,7 @@ class ManifoldProximity:
     n_neighbors: int
     kernel_width: float
     diagnostics: dict[str, float | int]
+    graph_mode: str = "mutual"
 
 
 class ProximityWarning(UserWarning):
@@ -146,13 +147,32 @@ def _resolve_kernel_width(lengths: sparse.csr_matrix, kernel_width: float | str)
     return width
 
 
+def _validate_graph_mode(graph_mode):
+    if not isinstance(graph_mode, str) or graph_mode not in ("mutual", "union"):
+        raise ValueError("graph_mode must be 'mutual' or 'union'.")
+
+
 def local_affinity(
     features: np.ndarray,
     n_neighbors: int,
     kernel_width: float | str,
     metric: str = "euclidean",
+    *,
+    diagnostics: dict[str, int] | None = None,
+    graph_mode: str = "mutual",
 ) -> tuple[sparse.csr_matrix, sparse.csr_matrix]:
-    """Return local affinities and sparse stitched edge lengths (not all pairs)."""
+    """Return local affinities and sparse stitched edge lengths (not all pairs).
+
+    If supplied, ``diagnostics`` receives graph-construction counts on success.
+    Counts describe the selected graph before Gaussian weighting; explicit
+    zero-length edges count as connections, not isolated cells. Collecting
+    diagnostics never changes graph construction or kernel weights.
+
+    ``mutual`` (default) requires reciprocal neighbors. Experimental ``union``
+    keeps either direction, then uses the same MST stitching and actual Gaussian
+    weights. No extra degree normalization or affinity floor is introduced.
+    """
+    _validate_graph_mode(graph_mode)
     features = np.asarray(features, dtype=np.float64)
     if features.ndim != 2 or features.shape[1] == 0 or not np.all(np.isfinite(features)):
         raise ValueError("features must be a finite 2-D matrix with at least one feature.")
@@ -177,21 +197,32 @@ def local_affinity(
         keep = indices[i] != i
         neighbor_index[i] = indices[i, keep][:k]
         neighbor_lengths.append(dict(zip(neighbor_index[i], distances[i, keep][:k])))
-    mutual = _mutual_knn_mask(neighbor_index)
+    if graph_mode == "mutual":
+        partners_by_cell = _mutual_knn_mask(neighbor_index)
+    else:
+        partners_by_cell = [set(row.tolist()) for row in neighbor_index]
+        for i, neighbors in enumerate(neighbor_index):
+            for j in neighbors:
+                partners_by_cell[j].add(i)
 
     rows: list[int] = []
     cols: list[int] = []
     data: list[float] = []
-    for i, partners in enumerate(mutual):
+    for i, partners in enumerate(partners_by_cell):
         for j in partners:
             if j <= i:
                 continue
-            length = float(neighbor_lengths[i][j])
+            # In union mode the edge may exist only in j's directed list.
+            length = float(neighbor_lengths[i][j] if j in neighbor_lengths[i]
+                           else neighbor_lengths[j][i])
             rows.extend((i, j))
             cols.extend((j, i))
             data.extend((length, length))
 
     length_graph = sparse.coo_matrix((data, (rows, cols)), shape=(n_obs, n_obs)).tocsr()
+    if diagnostics is not None:
+        n_components_before = int(connected_components(length_graph, directed=False)[0])
+        n_isolated_before = int(np.count_nonzero(np.diff(length_graph.indptr) == 0))
     stitched = _stitch_components(length_graph, features, metric=metric)
     width = _resolve_kernel_width(stitched, kernel_width)
 
@@ -215,6 +246,12 @@ def local_affinity(
             f"{n_underflow // 2} undirected Gaussian edge weights underflowed to zero. "
             "The graph is still connected; inspect feature scale and sigma.",
             ProximityWarning, stacklevel=2,
+        )
+    if diagnostics is not None:
+        diagnostics.update(
+            n_components_before_stitching=n_components_before,
+            n_isolated_before_stitching=n_isolated_before,
+            n_bridges_added=int((stitched.nnz - length_graph.nnz) // 2),
         )
     return affinity, stitched
 
@@ -259,14 +296,21 @@ def estimate_proximity(
     metric: str = "euclidean",
     *,
     max_dense_bytes: int | None = DEFAULT_MAX_DENSE_BYTES,
+    graph_mode: str = "mutual",
 ) -> ManifoldProximity:
+    _validate_graph_mode(graph_mode)
     check_dense_budget(features.shape[0], max_dense_bytes)
-    weights, lengths = local_affinity(features, n_neighbors, kernel_width, metric=metric)
+    graph_diagnostics: dict[str, int] = {}
+    weights, lengths = local_affinity(
+        features, n_neighbors, kernel_width, metric=metric, diagnostics=graph_diagnostics,
+        graph_mode=graph_mode,
+    )
     width = _resolve_kernel_width(lengths, kernel_width)
     accessibility = forest_accessibility(weights, max_dense_bytes=max_dense_bytes)
     self_mass = np.diag(accessibility)
     n_self_dominated = int(np.count_nonzero(self_mass > 0.99))
     diagnostics = {
+        **graph_diagnostics,
         "n_obs": int(weights.shape[0]),
         "n_edges": int(weights.nnz // 2),
         "edge_weight_min": float(weights.data.min()),
@@ -295,4 +339,5 @@ def estimate_proximity(
         n_neighbors=n_neighbors,
         kernel_width=width,
         diagnostics=diagnostics,
+        graph_mode=graph_mode,
     )
