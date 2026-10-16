@@ -20,6 +20,7 @@ from threadpoolctl import threadpool_limits
 from sc_poincare._disk import pairwise_disk_length, place_point_at_origin
 from sc_poincare._fitting import evaluate_alignment, fit_disk_embedding
 from sc_poincare._proximity import estimate_proximity
+from sc_poincare.evaluation import evaluate_neighborhoods
 
 
 def main():
@@ -28,6 +29,8 @@ def main():
     parser.add_argument("--label-column", help="Defaults to the last column")
     parser.add_argument("--root-label", default="root", help="Recenter only if exactly one matching cell exists")
     parser.add_argument("--n-neighbors", type=int, default=30)
+    parser.add_argument("--graph-mode", choices=["mutual", "union"], default="mutual",
+                        help="Union is experimental; default retains the paper's mutual graph")
     parser.add_argument("--sigma", type=lambda value: "median" if value == "median" else float(value), default=2.,
                         help="Numeric bandwidth or explicit median positive graph-edge distance")
     parser.add_argument("--gamma", type=float, default=2.)
@@ -51,6 +54,8 @@ def main():
         torch.set_num_threads(args.threads)
     frame = pd.read_csv(args.csv)
     label_column = args.label_column or frame.columns[-1]
+    if frame[label_column].isna().any():
+        raise ValueError("Label column contains missing values; supply nonmissing evaluation labels.")
     labels = frame[label_column].to_numpy(dtype=str)
     features = frame.drop(columns=label_column).to_numpy(dtype=np.float64)
     if features.shape[0] < 3:
@@ -59,7 +64,7 @@ def main():
     records = []
     with threadpool_limits(limits=args.threads):
         started = time.perf_counter()
-        proximity = estimate_proximity(features, args.n_neighbors, args.sigma)
+        proximity = estimate_proximity(features, args.n_neighbors, args.sigma, graph_mode=args.graph_mode)
         preparation_seconds = time.perf_counter() - started
         for seed in args.seeds:
             started = time.perf_counter()
@@ -70,6 +75,10 @@ def main():
                 random_state=seed, batch_size=args.batch_size, objective=args.objective,
             )
             fitting_seconds = time.perf_counter() - started
+            neighborhood_evaluation = evaluate_neighborhoods(
+                features, report.coordinates, labels,
+                ks=sorted({min(15, len(features) - 1), min(30, len(features) - 1)}),
+            )
             loss = evaluate_alignment(report.coordinates, proximity.accessibility, args.gamma,
                                       objective=args.objective)
             coordinates = report.coordinates
@@ -112,6 +121,7 @@ def main():
                 "graph_neighbor_recall_at_15": float(np.mean(graph_recall)),
                 "graph_neighbor_recall_at_node_degree": float(np.mean(degree_matched_recall)),
                 "terminals": terminal_metrics,
+                "neighborhood_evaluation": neighborhood_evaluation.summary,
                 "process_peak_rss_bytes": rss,
             }
             records.append(record)
@@ -123,7 +133,7 @@ def main():
         "input_sha256": hashlib.sha256(args.csv.read_bytes()).hexdigest(),
         "n_cells": len(features), "n_features": features.shape[1],
         "configuration": {"objective": args.objective, "probability_computation": "log_softmax",
-                          "zero_target_policy": "machine_tiny_logs_only", "n_neighbors": args.n_neighbors, "sigma": proximity.kernel_width, "sigma_requested": args.sigma, "gamma": args.gamma,
+                          "zero_target_policy": "machine_tiny_logs_only", "graph_mode": args.graph_mode, "n_neighbors": args.n_neighbors, "sigma": proximity.kernel_width, "sigma_requested": args.sigma, "gamma": args.gamma,
                           "epochs": args.epochs, "initialization": args.initialization,
                           "batch_size": args.batch_size, "threads": args.threads,
                           "max_grad_norm": 2.5, "gradient_clipping": "riemannian_norm",
