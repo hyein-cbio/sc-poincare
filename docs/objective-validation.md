@@ -2,8 +2,10 @@
 
 This study motivated the log-domain numerical correction and an **opt-in**
 self-excluding objective. It is not a declaration that the package is universally
-superior or biologically equivalent to the reference method. The default remains
-self-inclusive symmetric KL. See [objective definitions](objectives.md).
+superior or biologically equivalent to the reference method. Within explicit
+`method="rfa"`, the objective default remains self-inclusive symmetric KL.
+The current provisional AnnData method default is MU, a separate model; see
+[objective definitions](objectives.md) and [migration](mu-default-migration.md).
 
 ## Mechanism and protocol
 

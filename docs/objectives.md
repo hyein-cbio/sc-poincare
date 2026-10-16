@@ -1,7 +1,11 @@
 # Probability objectives and numerical policy
 
-The default remains the row-wise symmetric KL objective between dense relative
-forest accessibility (RFA) and hyperbolic-distance softmax probabilities:
+This document describes **`method="rfa"`**, whose default remains the row-wise
+symmetric KL objective between dense relative forest accessibility (RFA) and
+hyperbolic-distance softmax probabilities. The public AnnData default is now MU;
+see [MU targets](graph-stress.md) and the [migration guide](mu-default-migration.md).
+The low-level RFA fitter and its numerical policy are unchanged:
+
 
 ```
 log Q_ij = log_softmax(-d_H(x_i, x_j) / gamma)
@@ -37,7 +41,7 @@ The change alone does not guarantee good global or biological structure.
 ## Experimental self-excluding conditional objective
 
 Explicitly select `objective="conditional_symmetric_kl"` in
-`sc_poincare.tl.poincare_map` or low-level `fit_disk_embedding`:
+`sc_poincare.tl.poincare_map(..., method="rfa")` or low-level `fit_disk_embedding`:
 
 ```
 P'_ij = P_ij / sum_{k != i} P_ik     (j != i)
@@ -63,4 +67,5 @@ and `zero_target_policy` under the selected storage prefix's `params`. Low-level
 `FitReport` records the method and policy too. Changing objectives changes the
 loss scale; loss numbers or patience behavior cannot be compared as if the
 objective were unchanged. A fixed epoch limit is not convergence evidence.
-The public default remains `objective="symmetric_kl"`.
+Within the explicit RFA path, the objective default remains `"symmetric_kl"`.
+MU is a different method, not a renamed conditional-KL option.

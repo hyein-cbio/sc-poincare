@@ -1,5 +1,10 @@
 # Small-data benchmark protocol
 
+The historical `benchmark_small.py` and objective-ablation drivers deliberately
+remain explicit RFA reference tools; they do not silently switch to the public
+AnnData MU default. Use the MU drivers/migration guide for that method. This
+preserves their historical numerical contract and prevents mixed objectives.
+
 The current priority is quality and efficiency on small datasets, before
 introducing an approximate large-N method. **Superiority over the authors'
 PoincaréMaps implementation has not yet been established.** Improvements over
@@ -71,6 +76,140 @@ implementations. A lower loss on our own target, one attractive picture, or one
 faster run is insufficient for a general performance claim. Add a global
 structure metric (e.g. rank preservation of graph-geodesic distances), and
 separate small-data conclusions from any later scalability claims.
+
+## Post-fit population and input-neighbor diagnostics
+
+`sc_poincare.evaluation.evaluate_neighborhoods` is an observational evaluator,
+not a new objective or a checkpoint-selection rule. Supply aligned cells in
+three inputs: the numeric feature representation actually fitted (without
+labels or IDs), raw N-by-2 disk coordinates, and nonmissing population labels.
+It uses Euclidean feature distances and hyperbolic embedding distances; no
+normalization, PCA, sampling, root selection or display transform is implicit.
+
+For each k, exclude the cell itself and retrieve k neighbors among all other
+cells. Exact ties are broken by ascending original row index. Report:
+
+- **Overall purity:** mean same-label neighbor fraction over all cells.
+- **Population purity:** the same fraction averaged within each population.
+- **Macro purity:** an unweighted mean of population purities, including singletons.
+- **Input-neighbor recall:** intersection of feature and disk neighbor sets / k,
+  reported per cell, per population and overall. This is not recall of the
+  stitched training graph and not the paper's Qlocal/Qglobal implementation.
+- **Counts and purity ceilings:** a population of size m can reach at most
+  min(m-1,k)/k. Do not call small-population mixing a regression without checking
+  this ceiling, label granularity and expected continuity of differentiation.
+
+The evaluator defaults to k=15/30 and requires 1 <= k < N. The small CSV benchmark
+now adds this summary under each record's `neighborhood_evaluation`; for tiny
+inputs it explicitly uses the distinct values min(15,N-1) and min(30,N-1),
+recorded as the actual `ks`. Evaluation runs after fitting on its returned raw
+coordinates and does not influence the optimizer or checkpoint selection.
+
+To evaluate an existing NPZ (arrays `features`, `coordinates`, `labels`, and
+optionally aligned `before_coordinates`), run:
+
+```bash
+python examples/evaluate_neighborhoods.py data/run.npz \
+  --ks 15 30 --output data/neighborhood-evaluation
+```
+
+The output directory must be new. It receives `summary.json`, `manifest.json`,
+`cell_scores.npz` (per-cell purity and input recall in input row order), and
+`diagnostics_k*.png`. The manifest stores content hashes, versions, actual
+imported evaluator source hash and CLI settings, not source snapshots.
+Figures show label colors, per-cell input recall on a fixed 0–1 scale, and
+population purity with counts, ceilings, overall and macro means. With before
+coordinates, identical axes, labels and point sizes are used; no alignment is
+performed. Coordinates/features themselves are not copied into the output.
+
+### Checked before/after comparison and global safeguard
+
+Pass a separate `--baseline baseline.npz` to compare metrics, not just pictures.
+Both files must contain unique string `cell_ids` honestly describing each row's
+identity. Exact feature/label/order and evaluation-policy matching is required;
+no automatic reordering, subsetting or label remapping is performed. The CLI
+prefers `raw_coordinates` if present, so benchmark display coordinates are not
+accidentally scored. It writes `comparison.json` with after-minus-before deltas
+for overall/macro purity, input recall and every population, and plots paired
+population bars. These comparisons never select checkpoints or a winning method.
+The Python equivalent is `compare_neighborhoods(before_report, after_report)`.
+An embedded `before_coordinates` array without these identity checks remains an
+unchecked visual panel, explicitly marked in the manifest, not a metric comparison.
+
+The summary also includes `global_feature_rank`: choose up to 128 anchor cells
+without labels (seed 714 by default), correlate each anchor's Euclidean feature
+distances to all other cells with its hyperbolic distances using Spearman ranks,
+and average the defined per-anchor correlations. The anchor indices, seed and
+valid/undefined counts are explicit. Constant rows are undefined, not zero;
+comparison deltas are null if either result has any undefined anchor. Change
+`--global-anchors`/`--global-seed` only as a separately declared sensitivity check.
+This measures direct feature-distance rank, not developmental order, graph
+geodesics or an independent biological target. Labels do not choose anchors.
+
+Use one latest report/figure directory for small development checks, rather than
+accumulating full source copies and per-step records. Keep input artifacts or a
+deterministic reconstruction available separately when exact reruns matter.
+The [first graph-topology experiment](algorithm-experiment-01.md) froze sigma,
+starts, inputs and evaluation before its explicitly authorized 12-fit run. Its
+[results](graph-topology-results.md) retain unfavorable neighborhood changes.
+
+For new matched NPZ inputs (`features`, `labels`, unique string `cell_ids`), the
+paired driver resolves sigma once from mutual edges and creates the same mutual
+spectral initial array for both graph modes per seed:
+
+```bash
+python examples/benchmark_graph_modes.py data/input1.npz data/input2.npz \
+  --seeds 0 1 2 --epochs 500 --neighbors 15 --ks 15 30 \
+  --threads 1 --wall-seconds 600 --output data/new-graph-comparison
+```
+
+The new output directory holds one shared input per dataset, paired coordinates
+and losses per seed, a compact atomic summary (including failed/timeout state),
+and figures for the first declared seed only. No labels enter graph/initializer/
+fitting, no dense target caches are saved, and no winner is selected. A Unix
+interval timer bounds the entire run after setup, including evaluation/figures.
+The ordinary `benchmark_small.py --graph-mode union` flag is available too, but
+separate runs with graph-specific median sigmas or spectral starts are not this
+controlled causal comparison. Training-graph recall or raw KL across different
+targets cannot stand in for common-input accuracy.
+
+Distance computation is exact and row-blocked, with quadratic distance work
+and O(block_size*N) distance/sort workspace; this is not an atlas-scale
+approximation. Inputs must share cell order; shape checks cannot verify cell
+identity. Use feature/input identity checks in comparisons. Do not interpret
+training-input preservation as held-out prediction, confidence intervals or
+biological accuracy. Known development data and short fixed-budget regression
+fits remain development evidence. Freeze evaluation conditions before changing
+algorithms and retain rare-population results, not just favorable averages.
+
+### Screen visibility versus intrinsic geometry
+
+For an already evaluated embedding, `evaluate_visibility(report)` from
+`sc_poincare.visibility` uses a fixed disk diameter of 600 pixels, marker diameter
+4 pixels, macro population 90%-radius width, nearest-center distances, strict
+marker-center overlap and occupied 10-pixel grid bins. It also reports intrinsic
+nearest-other-population distance. Display spread, less center overlap and
+biological separation are different endpoints; single-label cross-population
+metrics are undefined (null), not zero. See the
+[fixed visibility protocol and additional-case results](graph-visibility-study.md).
+
+The post-processing CLI accepts directories from `benchmark_graph_modes.py`:
+
+```bash
+python examples/evaluate_graph_visibility.py data/paired-study \
+  --output data/new-visibility-report
+```
+
+It audits saved feature/label/ID/coordinate hashes, never fits or chooses new
+conditions, reports all saved seeds, and plots the predetermined seed 0. The
+individual PNG has exact 600-by-600 pixel disk axes at native 100 dpi with 4-pixel
+circular markers. The overview is a resized thumbnail, not the scoring canvas.
+Marker-center overlap is not raster occlusion: clipping, antialiasing, alpha,
+point order, screen scaling and human interpretation are not scored. Broader
+population width can represent mixing; occupied-bin counts depend on cell count,
+orientation and grid. Compare only matched inputs with the same display policy.
+Failed preparation cases remain in the summary/overview; never silently change
+sigma just to turn a failed fixed-condition test into a successful fit.
 
 ## Exact-mode changes in this revision
 

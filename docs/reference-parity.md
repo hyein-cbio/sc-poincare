@@ -5,8 +5,10 @@
 The results below were measured before the log-domain KL correction, on the
 source preserved in commit `9993dd0` (with the former `1e-12` probability floor).
 They are historical evidence, not a guarantee that the same recipes reproduce
-these values on current code. The stress-based research fitter remains separate
-from both the default and new conditional KL objective. See
+these values on current code. At that time, the stress-based research fitter
+was separate from the default RFA and experimental conditional KL objective.
+The current provisional AnnData default is MU; explicit `method="rfa"` selects
+the RFA path. See the [migration guide](mu-default-migration.md),
 [objective definitions](objectives.md) and the later
 [objective validation study](objective-validation.md).
 
