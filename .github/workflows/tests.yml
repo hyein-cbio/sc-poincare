@@ -1,0 +1,66 @@
+name: Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  MPLBACKEND: Agg
+  OMP_NUM_THREADS: "1"
+  OPENBLAS_NUM_THREADS: "1"
+  MKL_NUM_THREADS: "1"
+  VECLIB_MAXIMUM_THREADS: "1"
+
+jobs:
+  full-suite:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ["3.10", "3.12"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Install CPU Torch and build tooling
+        run: |
+          python -m pip install --upgrade pip build pytest
+          python -m pip install torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Build and install wheel
+        run: |
+          python -m build --wheel
+          wheel=$(find dist -name '*.whl' -print -quit)
+          python -m pip install "${wheel}[benchmark,scanpy]"
+      - name: Smoke test installed package outside source tree
+        working-directory: ${{ runner.temp }}
+        run: python -I -c "from sc_poincare.evaluation import evaluate_neighborhoods, compare_neighborhoods; import sc_poincare; print(sc_poincare.__file__)"
+      - name: Run complete synthetic suite (no private datasets)
+        run: python -m pytest tests
+
+  numpy-only:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install ".[benchmark]" pytest
+      - name: Check Torch-free geometry, graph and evaluation paths
+        run: |
+          python -c "import importlib.util; assert importlib.util.find_spec('torch') is None"
+          python -m pytest tests/test_geometry.py tests/test_proximity.py tests/test_graph_modes.py tests/test_evaluation.py tests/test_evaluation_comparison.py tests/test_visibility.py tests/test_graph_visibility_cli.py tests/test_graph_stress.py tests/test_euclidean_evaluation.py tests/test_mu_study.py tests/test_mu_summary.py tests/test_mu_default_api.py tests/test_graph_topology_diagnostics.py tests/test_scanpy_demo_methods.py tests/test_legacy_display.py
