@@ -168,6 +168,12 @@ losses, failed alternatives and same-objective Euclidean controls. It does not
 establish a general biological or hyperbolic-specific advantage. The exact
 implementation remains quadratic and has no validated full-Planaria result.
 
+A [controlled mechanism follow-up](docs/embedding-followup.md) records 37
+completed fit executions, failed local-teacher promotion criteria, and an
+explicitly incomplete global-target study. Moignard stage-order gains coexist
+with Paul population losses; no tested variant is promoted. Prepared teacher
+metadata exposes entropy, incoming mass and normalization diagnostics.
+
 See the [development roadmap](docs/development-roadmap.md) for planned validation,
 conditional-objective promotion criteria and research candidates. It links to the
 method and benchmark documents without duplicating their results. Proposed work

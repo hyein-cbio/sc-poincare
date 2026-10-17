@@ -1,5 +1,9 @@
 # Graph construction, optimization and embedding quality
 
+The subsequent [controlled mechanism follow-up](embedding-followup.md) is a
+separate 37-execution record, including a user-stopped partial protocol. The
+18-fit counts and results below refer to this earlier study.
+
 This study compared independently learned embeddings with coordinates published
 by Facebook Research's PoincareMaps release. It motivates the optional
 [graph stress API](graph-stress.md). It does not replace the default RFA method
