@@ -31,6 +31,14 @@ results or API details here:
   alternatives, native Euclidean controls, display/intrinsic distinctions and
   population-level counterexamples.
 
+The [controlled mechanism follow-up](embedding-followup.md) completed the local
+teacher protocol and closed the global-target protocol at the user's request.
+No local-teacher candidate met promotion criteria; the partial global-target
+study shows endpoint gains and Paul counterexamples, without completed
+selection or transfer. Teacher entropy/incoming-mass diagnostics are now
+observable in prepared metadata. The unresolved trade-offs and independent-data
+gates below remain open; this does not validate forest time-scale mixtures.
+
 ## P0 — Establish a reproducible starting point
 
 - [ ] Establish the current repository, Python import source and artifact paths,

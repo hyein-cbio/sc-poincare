@@ -11,6 +11,11 @@ population-level losses, and the Euclidean controls also improve. This API
 does not establish a general biological advantage or a hyperbolic-specific
 benefit.
 
+The [controlled mechanism follow-up](embedding-followup.md) completed 30
+local-teacher fits and seven global-target screening fits before user-requested
+closure. No candidate is promoted. Its separate aggregate record distinguishes
+failed criteria from cancelled selection, confirmations and transfer.
+
 ## Explicit feature input
 
 Install `pip install -e '.[torch,benchmark]'`. Supply a finite numeric feature
@@ -95,6 +100,27 @@ Row chunks retain every column and accumulate both endpoint contributions
 before each update. They change fitting workspace, not the objective or its
 quadratic target storage. No negative sampling is used.
 
+## Teacher diagnostics
+
+Prepared `setup.metadata` describes the input-only teacher without changing
+its weights, the target, initializer or optimization:
+
+| Metadata key | Meaning |
+|---|---|
+| `teacher_diagnostic_quantiles` | Quantile levels `[0, .1, .5, .9, 1]` |
+| `teacher_entropy_mean` | Mean row entropy in nats, with zero probabilities contributing zero |
+| `teacher_entropy_quantiles` | Distribution of row entropy |
+| `teacher_incoming_mass_quantiles` | Distribution of column sums |
+| `teacher_max_asymmetry` | Maximum elementwise absolute difference between P and its transpose |
+| `teacher_max_row_sum_error` | Maximum absolute deviation of a row sum from one |
+
+Mean teacher entropy lower-bounds local cross entropy over probability
+distributions; the geometric model need not attain that bound. Subtracting it
+gives teacher-specific KL, not a common biological score across teachers.
+Row-normalizing symmetric affinities generally produces an asymmetric,
+reversible teacher. Unequal incoming mass is valid normalization; neither
+symmetry nor equal incoming mass establishes equal population weighting.
+
 ## Results, progress and state recovery
 
 The returned `coordinates` select the lowest **training** objective, including
@@ -127,6 +153,10 @@ This Adam-state resume contract is separate from the existing RFA fitter's
 coordinate-only warm start. Caller checkpoint I/O and external storage remain
 the caller's responsibility; a progress callback is not durable storage.
 
+Adding these diagnostics changes source and metadata hashes. Historical
+checkpoints require their archived original implementation; numerical
+equivalence does not bypass the strict source/provenance checks on resume.
+
 ## Resource limits and reproducibility
 
 Preparation stores dense all-pairs targets and uses a dense classical-scaling
@@ -148,11 +178,20 @@ Port verification used the full Paul CSV, explicit label exclusion and PCA20.
 For both bandwidth rules, the first 20 updates matched the frozen research
 implementation exactly in coordinates, initialization and loss trace (maximum
 absolute difference 0.0); input, target and teacher hashes also matched. The
-43 experimental tests cover an independent objective, both geometries, chunk
+46 experimental tests cover an independent objective, both geometries, chunk
 gradients, persisted Adam resume, input validation and CLI checkpoint recovery.
-The complete suite passed 207 tests; one optional Scanpy test was skipped
+The complete suite passed 210 tests; one optional Scanpy test was skipped
 because Scanpy was unavailable. These checks do not repeat the 1,500-update
 biological comparison with the maintained port.
+
+After adding teacher metadata, separate processes compared pinned commit
+`3489e58` with the maintained source on the same full Paul PCA20 input. Both
+bandwidths and geometries matched exactly through 20 updates: 50 prepared-array,
+coordinate, loss, best-state and Adam-state comparisons had maximum difference
+0.0. The new metadata/source/checkpoint digests intentionally differ. Three
+analytic metadata tests cover a uniform triangle in both bandwidths and an
+asymmetric three-point line. These regression checks are separate from the
+37 completed quality-comparison executions in the follow-up.
 
 For long jobs, follow the [recovery protocol](benchmarking.md#long-run-preparation-and-recovery).
 Archive externally accessible copies of inputs or their pinned download

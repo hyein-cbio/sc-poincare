@@ -248,3 +248,38 @@ def test_cli_rejects_nonnumeric_npy_cleanly(tmp_path,values):
     path=tmp_path/'input.npy';np.save(path,values)
     with pytest.raises(ValueError,match='real numeric'):
         load_cli().load_features(path)
+
+
+@pytest.mark.parametrize("bandwidth", ["global", "local_radius"])
+def test_teacher_metadata_uniform_triangle(bandwidth):
+    f = np.array([[0., 0.], [1., 0.], [.5, np.sqrt(3.) / 2]])
+    setup = method.prepare_graph_stress(f, config=method.GraphStressConfig(
+        n_neighbors=2, local_bandwidth=bandwidth))
+    diagnostics = setup.metadata
+    np.testing.assert_allclose(diagnostics['teacher_entropy_mean'], np.log(2.), atol=1e-14, rtol=0.)
+    np.testing.assert_allclose(diagnostics['teacher_entropy_quantiles'], np.log(2.), atol=1e-14, rtol=0.)
+    np.testing.assert_allclose(diagnostics['teacher_incoming_mass_quantiles'], 1., atol=1e-14, rtol=0.)
+    assert diagnostics['teacher_diagnostic_quantiles'] == [0., .1, .5, .9, 1.]
+    assert diagnostics['teacher_max_asymmetry'] < 1e-14
+    assert diagnostics['teacher_max_row_sum_error'] < 1e-14
+    assert not setup.teacher.flags.writeable
+
+
+def test_teacher_metadata_asymmetric_line():
+    # Closed-form Gaussian weights: center row has odds exp(1), endpoints
+    # each have only the center. Unequal incoming mass is valid normalization.
+    setup = method.prepare_graph_stress(np.array([[0.], [1.], [4.]]),
+        config=method.GraphStressConfig(n_neighbors=1, local_bandwidth='local_radius'))
+    q = 1. / (1. + np.exp(-1.))
+    np.testing.assert_allclose(setup.teacher,
+        [[0., 1., 0.], [q, 0., 1. - q], [0., 1., 0.]], atol=1e-14, rtol=0.)
+    diagnostics = setup.metadata
+    entropy = -q * np.log(q) - (1. - q) * np.log(1. - q)
+    levels = diagnostics['teacher_diagnostic_quantiles']
+    np.testing.assert_allclose(diagnostics['teacher_entropy_mean'], entropy / 3, atol=1e-14, rtol=0.)
+    np.testing.assert_allclose(diagnostics['teacher_entropy_quantiles'],
+        np.quantile([0., entropy, 0.], levels), atol=1e-14, rtol=0.)
+    np.testing.assert_allclose(diagnostics['teacher_incoming_mass_quantiles'],
+        np.quantile([q, 2., 1. - q], levels), atol=1e-14, rtol=0.)
+    np.testing.assert_allclose(diagnostics['teacher_max_asymmetry'], q, atol=1e-14, rtol=0.)
+    assert diagnostics['teacher_max_row_sum_error'] < 1e-14
