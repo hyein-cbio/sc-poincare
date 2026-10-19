@@ -131,8 +131,10 @@ before a new long run.
 - [x] Predeclare k=15 versus k=30 at 20 updates, marker diameters 4 and 8 on the
   same coordinates, and the PS feature-space medoid (row 1736) as a post-fit
   root only. Pseudotime medians are 0.929 from the classical start and 0.640
-  from the random disk. Representation was not varied, and no picture was
-  chosen afterward.
+  from the random disk. An epoch-0 comparison on the same supplied matrix gives
+  loss 1.0369 in 42 dimensions and 1.0250 after one-thread full-SVD PCA20.
+  The PCA representation is not promoted. No picture was chosen afterward.
+  Record: [moignard-representation-probe.json](moignard-representation-probe.json).
 
 The earlier RFA conditional-KL work remains experimental. Its pending fixed-rule
 corrected-self-inclusive comparison, longer Planaria runs and isolation checks
