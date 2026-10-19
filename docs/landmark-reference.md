@@ -93,8 +93,9 @@ The checksum manifest and the 2,095-byte report were copied to the Drive folder
 `sc-poincare backups` and the downloaded manifest matches
 `262fa3960267a859eac9a29d3b47f3ba0246ae789eea339df6da63f0a535bf19`.
 A folder listing shows `arrays.npz.hex.00` through `arrays.npz.hex.30` at
-8,000 bytes and `arrays.npz.hex.31` at 5,896 bytes. One interior window of the
-re-downloaded chunk 31 decodes to the local hex at offset 2498. They have not
-been concatenated into a file whose SHA256 is
+8,000 bytes and `arrays.npz.hex.31` at 5,896 bytes. The Drive content snippet
+for chunk 31 contains every 500-character block start of the local hex,
+including `3f445ddca91d`, and it ends with the ZIP end-of-central-directory
+marker. They have not been concatenated into a file whose SHA256 is
 `75da11742aa4773b28f62463c3c6b63146024e812fb7aaaf494d2f864ad5ca17`, so
 `arrays.npz` is not yet a confirmed recoverable copy.
