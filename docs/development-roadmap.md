@@ -91,9 +91,10 @@ the current baseline or research gates.
   at 5,896 bytes. Those 4,000-byte pieces are 8,000 hex characters. Downloaded
   chunk 30 starts with `511c63a0` and ends with `3f83a802`. The earlier
   7,999-byte chunk 13 upload and the 7,985-byte chunk 08 upload stay in the
-  trash. The pieces have not been concatenated into a file whose SHA256 is
-  `75da11742aa4773b28f62463c3c6b63146024e812fb7aaaf494d2f864ad5ca17`, so the
-  archive is not yet a confirmed recoverable copy.
+  trash. One interior window of the re-downloaded chunk 31 decodes to the local
+  hex at offset 2498. The pieces have not been concatenated into a file whose
+  SHA256 is `75da11742aa4773b28f62463c3c6b63146024e812fb7aaaf494d2f864ad5ca17`,
+  so the archive is not yet a confirmed recoverable copy.
 
 ## P1 — Independent biological validation
 
