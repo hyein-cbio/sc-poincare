@@ -188,6 +188,10 @@ subset (coordinates, initial arrays, current/best and loss trace). The
 records its completed results, including exact control continuations. Neither
 set of numerical checks by itself proves biological superiority.
 
+An opt-in landmark reference check lives in `sc_poincare.landmark` and is
+documented in [landmark-reference.md](landmark-reference.md). It does not alter
+this exact preparation, the fitter, or the checkpoint source hashes.
+
 For long jobs, follow the [recovery protocol](benchmarking.md#long-run-preparation-and-recovery).
 Archive externally accessible copies of inputs or their pinned download
 manifest, fitted feature matrices, raw states, source/configuration hashes and

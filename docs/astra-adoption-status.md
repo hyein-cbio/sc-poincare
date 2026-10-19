@@ -86,7 +86,7 @@ These integrations do not redesign the low-level objectives or optimizers:
 | Global/local and rare-population trade-offs | Some fidelity/purity losses remain; bigger spread is not always more information |
 | Multiscale/degree-aware RFA rules | Scalar tau is exposed and probed; no validated mixture or adaptive weighting rule exists |
 | Universal bounded spectral defaults | Explicit controls are implemented/probed; quality changes and population losses prevent automatic replacement |
-| Matrix-free / row-solve / sparse / landmark scale-up | Can change normalization/gradients and initialization; validate against the exact reference first |
+| Matrix-free / row-solve / sparse / landmark scale-up | Synthetic landmark-triangle recovery is now checked against exact MU; the few-thousand-cell reference run and any scale-up fitter are still not done |
 | Intrinsic adaptive optimizers, Lorentz/chart changes | Numerical range and optimization/biology are different questions |
 | Curvature, dimension, temperature/global scale | Not established universal improvements; avoid data-name-specific tuning |
 | Full Planaria cold-start result | Exact default guard still refuses it; lost warm-start observations are not validated evidence |
@@ -119,7 +119,8 @@ These integrations do not redesign the low-level objectives or optimizers:
 1. Keep the provisional MU fixed default reproducible and explicit in pipelines;
    keep local-radius and RFA selectable rather than guessing a winner by data name.
 2. Validate new biological data/markers and a convergence/initialization protocol.
-3. Design one declared approximation against the exact 2,730/3,934-cell reference.
+3. Run the declared landmark-triangle check against the exact 2,730/3,934-cell
+   reference. Synthetic recovery is implemented; those arrays were not rerun.
 4. Only then consider broader scale/default or publication claims. The current
    exact implementation is not atlas-scale merely because a few thousand cells fit.
 
