@@ -1,0 +1,941 @@
+{
+  "input_id": "moignard2015-development-reference",
+  "source_sha256": "3f45057370d568f87b0ab313bfa91992d76e8551824e3a545014b8d4a47c2ea1",
+  "feature_sha256": "674f8b380ba701d56afdeae8b35edf8b1269dfaa8e8483bc7e9c7e9c12999aa0",
+  "labels_entered_fitting": false,
+  "root_rule": "feature-space medoid of PS, applied only after fitting",
+  "root_index": 1736,
+  "epochs": 40,
+  "budgets": [
+    20,
+    40
+  ],
+  "seeds": [
+    0,
+    1
+  ],
+  "promoted": false,
+  "biological_validation": false,
+  "spectral_defaults_changed": false,
+  "results": [
+    {
+      "epochs": 40,
+      "geometry": "poincare",
+      "loss_at_budget": {
+        "20": 0.6951748011324365,
+        "40": 0.5045658585794547
+      },
+      "best_loss": 0.5045658585794547,
+      "best_epoch": 40,
+      "radius_quantiles": [
+        0.01888284261508678,
+        0.3324825274595154,
+        0.5081374654264007
+      ],
+      "macro_purity": 0.5543573114224365,
+      "overall_purity": 0.5884087442806305,
+      "input_neighbor_recall": 0.17642772411455687,
+      "populations": [
+        {
+          "label": "NP",
+          "n_cells": 552,
+          "purity": 0.30628019323671496,
+          "input_neighbor_recall": 0.1758454106280193,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "PS",
+          "n_cells": 624,
+          "purity": 0.45224358974358975,
+          "input_neighbor_recall": 0.17136752136752134,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SG",
+          "n_cells": 770,
+          "purity": 0.592034632034632,
+          "input_neighbor_recall": 0.1483982683982684,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SFG",
+          "n_cells": 983,
+          "purity": 0.9394370973211258,
+          "input_neighbor_recall": 0.23560528992878943,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "HF",
+          "n_cells": 1005,
+          "purity": 0.48179104477611945,
+          "input_neighbor_recall": 0.14348258706467665,
+          "purity_ceiling": 1.0
+        }
+      ],
+      "root_index": 1736,
+      "root_pseudotime_quantiles": [
+        0.0,
+        0.928806907719183,
+        1.4192038738722976
+      ],
+      "visibility": {
+        "4.0": {
+          "marker_overlap_fraction": 0.9628876461616676,
+          "cross_label_overlap_fraction": 0.6680223690899848,
+          "macro_width_q90_px": 221.7455577312224,
+          "populations": [
+            {
+              "label": "4SFG",
+              "n_cells": 983,
+              "cross_label_overlap_fraction": 0.09562563580874874
+            },
+            {
+              "label": "4SG",
+              "n_cells": 770,
+              "cross_label_overlap_fraction": 0.8987012987012987
+            },
+            {
+              "label": "HF",
+              "n_cells": 1005,
+              "cross_label_overlap_fraction": 0.7990049751243781
+            },
+            {
+              "label": "NP",
+              "n_cells": 552,
+              "cross_label_overlap_fraction": 0.8768115942028986
+            },
+            {
+              "label": "PS",
+              "n_cells": 624,
+              "cross_label_overlap_fraction": 0.8894230769230769
+            }
+          ]
+        },
+        "8.0": {
+          "marker_overlap_fraction": 0.9992374173868835,
+          "cross_label_overlap_fraction": 0.7872394509405185,
+          "macro_width_q90_px": 221.7455577312224,
+          "populations": [
+            {
+              "label": "4SFG",
+              "n_cells": 983,
+              "cross_label_overlap_fraction": 0.18514750762970497
+            },
+            {
+              "label": "4SG",
+              "n_cells": 770,
+              "cross_label_overlap_fraction": 0.9922077922077922
+            },
+            {
+              "label": "HF",
+              "n_cells": 1005,
+              "cross_label_overlap_fraction": 0.9800995024875622
+            },
+            {
+              "label": "NP",
+              "n_cells": 552,
+              "cross_label_overlap_fraction": 0.9963768115942029
+            },
+            {
+              "label": "PS",
+              "n_cells": 624,
+              "cross_label_overlap_fraction": 0.9871794871794872
+            }
+          ]
+        }
+      },
+      "initialization": "classical_jitter",
+      "seed": 0,
+      "n_neighbors": 15,
+      "teacher": "default"
+    },
+    {
+      "epochs": 40,
+      "geometry": "poincare",
+      "loss_at_budget": {
+        "20": 0.8211016790351251,
+        "40": 0.7611712698499795
+      },
+      "best_loss": 0.7611712698499795,
+      "best_epoch": 40,
+      "radius_quantiles": [
+        0.008601612154907373,
+        0.2620505285708661,
+        0.5037741365214333
+      ],
+      "macro_purity": 0.21679714727098745,
+      "overall_purity": 0.22972377563124893,
+      "input_neighbor_recall": 0.032079308591764104,
+      "populations": [
+        {
+          "label": "NP",
+          "n_cells": 552,
+          "purity": 0.1466183574879227,
+          "input_neighbor_recall": 0.022826086956521743,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "PS",
+          "n_cells": 624,
+          "purity": 0.16677350427350426,
+          "input_neighbor_recall": 0.0233974358974359,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SG",
+          "n_cells": 770,
+          "purity": 0.20952380952380953,
+          "input_neighbor_recall": 0.01748917748917749,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SFG",
+          "n_cells": 983,
+          "purity": 0.2943370634113259,
+          "input_neighbor_recall": 0.06395388267209223,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "HF",
+          "n_cells": 1005,
+          "purity": 0.26673300165837477,
+          "input_neighbor_recall": 0.022553897180762852,
+          "purity_ceiling": 1.0
+        }
+      ],
+      "root_index": 1736,
+      "root_pseudotime_quantiles": [
+        0.0,
+        0.6404457742030392,
+        1.4886336374259967
+      ],
+      "visibility": {
+        "4.0": {
+          "marker_overlap_fraction": 0.9590747330960854,
+          "cross_label_overlap_fraction": 0.9339095068632435,
+          "macro_width_q90_px": 239.35602483001026,
+          "populations": [
+            {
+              "label": "4SFG",
+              "n_cells": 983,
+              "cross_label_overlap_fraction": 0.9369277721261444
+            },
+            {
+              "label": "4SG",
+              "n_cells": 770,
+              "cross_label_overlap_fraction": 0.9298701298701298
+            },
+            {
+              "label": "HF",
+              "n_cells": 1005,
+              "cross_label_overlap_fraction": 0.9432835820895522
+            },
+            {
+              "label": "NP",
+              "n_cells": 552,
+              "cross_label_overlap_fraction": 0.9402173913043478
+            },
+            {
+              "label": "PS",
+              "n_cells": 624,
+              "cross_label_overlap_fraction": 0.9134615384615384
+            }
+          ]
+        },
+        "8.0": {
+          "marker_overlap_fraction": 0.9987290289781393,
+          "cross_label_overlap_fraction": 0.9961870869344179,
+          "macro_width_q90_px": 239.35602483001026,
+          "populations": [
+            {
+              "label": "4SFG",
+              "n_cells": 983,
+              "cross_label_overlap_fraction": 0.9949135300101729
+            },
+            {
+              "label": "4SG",
+              "n_cells": 770,
+              "cross_label_overlap_fraction": 0.9961038961038962
+            },
+            {
+              "label": "HF",
+              "n_cells": 1005,
+              "cross_label_overlap_fraction": 0.9970149253731343
+            },
+            {
+              "label": "NP",
+              "n_cells": 552,
+              "cross_label_overlap_fraction": 0.9981884057971014
+            },
+            {
+              "label": "PS",
+              "n_cells": 624,
+              "cross_label_overlap_fraction": 0.9951923076923077
+            }
+          ]
+        }
+      },
+      "initialization": "random_disk",
+      "seed": 0,
+      "n_neighbors": 15,
+      "teacher": "default"
+    },
+    {
+      "epochs": 40,
+      "geometry": "poincare",
+      "loss_at_budget": {
+        "20": 0.6953998534818197,
+        "40": 0.504680364712953
+      },
+      "best_loss": 0.504680364712953,
+      "best_epoch": 40,
+      "radius_quantiles": [
+        0.019236587938772354,
+        0.33237387748545266,
+        0.5083371290214497
+      ],
+      "macro_purity": 0.5528189662417285,
+      "overall_purity": 0.5876292153872226,
+      "input_neighbor_recall": 0.17819013726487037,
+      "populations": [
+        {
+          "label": "NP",
+          "n_cells": 552,
+          "purity": 0.30386473429951694,
+          "input_neighbor_recall": 0.17560386473429954,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "PS",
+          "n_cells": 624,
+          "purity": 0.441559829059829,
+          "input_neighbor_recall": 0.18044871794871795,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SG",
+          "n_cells": 770,
+          "purity": 0.5941991341991342,
+          "input_neighbor_recall": 0.14718614718614717,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SFG",
+          "n_cells": 983,
+          "purity": 0.9390979993218042,
+          "input_neighbor_recall": 0.23926754832146493,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "HF",
+          "n_cells": 1005,
+          "purity": 0.4853731343283582,
+          "input_neighbor_recall": 0.14222222222222222,
+          "purity_ceiling": 1.0
+        }
+      ],
+      "root_index": 1736,
+      "root_pseudotime_quantiles": [
+        0.0,
+        0.929183631138573,
+        1.418595024862108
+      ],
+      "visibility": {
+        "4.0": {
+          "marker_overlap_fraction": 0.9611082867310625,
+          "cross_label_overlap_fraction": 0.6718352821555669,
+          "macro_width_q90_px": 222.58886426707895,
+          "populations": [
+            {
+              "label": "4SFG",
+              "n_cells": 983,
+              "cross_label_overlap_fraction": 0.0935910478128179
+            },
+            {
+              "label": "4SG",
+              "n_cells": 770,
+              "cross_label_overlap_fraction": 0.9077922077922078
+            },
+            {
+              "label": "HF",
+              "n_cells": 1005,
+              "cross_label_overlap_fraction": 0.8049751243781095
+            },
+            {
+              "label": "NP",
+              "n_cells": 552,
+              "cross_label_overlap_fraction": 0.8822463768115942
+            },
+            {
+              "label": "PS",
+              "n_cells": 624,
+              "cross_label_overlap_fraction": 0.8910256410256411
+            }
+          ]
+        },
+        "8.0": {
+          "marker_overlap_fraction": 0.9989832231825114,
+          "cross_label_overlap_fraction": 0.7872394509405185,
+          "macro_width_q90_px": 222.58886426707895,
+          "populations": [
+            {
+              "label": "4SFG",
+              "n_cells": 983,
+              "cross_label_overlap_fraction": 0.1871820956256358
+            },
+            {
+              "label": "4SG",
+              "n_cells": 770,
+              "cross_label_overlap_fraction": 0.9935064935064936
+            },
+            {
+              "label": "HF",
+              "n_cells": 1005,
+              "cross_label_overlap_fraction": 0.9791044776119403
+            },
+            {
+              "label": "NP",
+              "n_cells": 552,
+              "cross_label_overlap_fraction": 0.9945652173913043
+            },
+            {
+              "label": "PS",
+              "n_cells": 624,
+              "cross_label_overlap_fraction": 0.9855769230769231
+            }
+          ]
+        }
+      },
+      "initialization": "classical_jitter",
+      "seed": 1,
+      "n_neighbors": 15,
+      "teacher": "default"
+    },
+    {
+      "epochs": 40,
+      "geometry": "poincare",
+      "loss_at_budget": {
+        "20": 0.8237991518397618,
+        "40": 0.7626409736330133
+      },
+      "best_loss": 0.7626409736330133,
+      "best_epoch": 40,
+      "radius_quantiles": [
+        0.0035284013718243057,
+        0.2642821333720502,
+        0.5014190265699581
+      ],
+      "macro_purity": 0.23072608201569295,
+      "overall_purity": 0.24482291137095408,
+      "input_neighbor_recall": 0.032130147432638534,
+      "populations": [
+        {
+          "label": "NP",
+          "n_cells": 552,
+          "purity": 0.14468599033816423,
+          "input_neighbor_recall": 0.01920289855072464,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "PS",
+          "n_cells": 624,
+          "purity": 0.1795940170940171,
+          "input_neighbor_recall": 0.022222222222222223,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SG",
+          "n_cells": 770,
+          "purity": 0.23393939393939392,
+          "input_neighbor_recall": 0.020779220779220776,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SFG",
+          "n_cells": 983,
+          "purity": 0.33279077653441846,
+          "input_neighbor_recall": 0.0624618514750763,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "HF",
+          "n_cells": 1005,
+          "purity": 0.26262023217247105,
+          "input_neighbor_recall": 0.02441127694859038,
+          "purity_ceiling": 1.0
+        }
+      ],
+      "root_index": 1736,
+      "root_pseudotime_quantiles": [
+        0.0,
+        0.5627613811014234,
+        1.2607399095116245
+      ],
+      "visibility": {
+        "4.0": {
+          "marker_overlap_fraction": 0.9605998983223183,
+          "cross_label_overlap_fraction": 0.9267920691408236,
+          "macro_width_q90_px": 236.46266687962571,
+          "populations": [
+            {
+              "label": "4SFG",
+              "n_cells": 983,
+              "cross_label_overlap_fraction": 0.9175991861648016
+            },
+            {
+              "label": "4SG",
+              "n_cells": 770,
+              "cross_label_overlap_fraction": 0.9051948051948052
+            },
+            {
+              "label": "HF",
+              "n_cells": 1005,
+              "cross_label_overlap_fraction": 0.9333333333333333
+            },
+            {
+              "label": "NP",
+              "n_cells": 552,
+              "cross_label_overlap_fraction": 0.9510869565217391
+            },
+            {
+              "label": "PS",
+              "n_cells": 624,
+              "cross_label_overlap_fraction": 0.9358974358974359
+            }
+          ]
+        },
+        "8.0": {
+          "marker_overlap_fraction": 0.9974580579562786,
+          "cross_label_overlap_fraction": 0.9944077275038129,
+          "macro_width_q90_px": 236.46266687962571,
+          "populations": [
+            {
+              "label": "4SFG",
+              "n_cells": 983,
+              "cross_label_overlap_fraction": 0.9969481180061037
+            },
+            {
+              "label": "4SG",
+              "n_cells": 770,
+              "cross_label_overlap_fraction": 0.9922077922077922
+            },
+            {
+              "label": "HF",
+              "n_cells": 1005,
+              "cross_label_overlap_fraction": 0.9930348258706467
+            },
+            {
+              "label": "NP",
+              "n_cells": 552,
+              "cross_label_overlap_fraction": 0.9945652173913043
+            },
+            {
+              "label": "PS",
+              "n_cells": 624,
+              "cross_label_overlap_fraction": 0.9951923076923077
+            }
+          ]
+        }
+      },
+      "initialization": "random_disk",
+      "seed": 1,
+      "n_neighbors": 15,
+      "teacher": "default"
+    },
+    {
+      "epochs": 40,
+      "geometry": "euclidean",
+      "loss_at_budget": {
+        "20": 0.7619527259925087,
+        "40": 0.5568751633292898
+      },
+      "best_loss": 0.5568751633292898,
+      "best_epoch": 40,
+      "radius_quantiles": [
+        0.03383827924267004,
+        0.6203170918153068,
+        0.9302779449815515
+      ],
+      "macro_purity": 0.549269296281113,
+      "overall_purity": 0.5821216742924927,
+      "input_neighbor_recall": 0.1852906287069988,
+      "populations": [
+        {
+          "label": "NP",
+          "n_cells": 552,
+          "purity": 0.3120772946859903,
+          "input_neighbor_recall": 0.1861111111111111,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "PS",
+          "n_cells": 624,
+          "purity": 0.4446581196581197,
+          "input_neighbor_recall": 0.19786324786324785,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SG",
+          "n_cells": 770,
+          "purity": 0.5901298701298702,
+          "input_neighbor_recall": 0.1452813852813853,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SFG",
+          "n_cells": 983,
+          "purity": 0.9338758901322483,
+          "input_neighbor_recall": 0.25391658189216687,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "HF",
+          "n_cells": 1005,
+          "purity": 0.46560530679933665,
+          "input_neighbor_recall": 0.14056384742951905,
+          "purity_ceiling": 1.0
+        }
+      ],
+      "root_index": 1736,
+      "root_pseudotime_quantiles": [
+        0.0,
+        0.8555076088985512,
+        1.3332499790204089
+      ],
+      "initialization": "classical_jitter",
+      "seed": 0,
+      "n_neighbors": 15,
+      "teacher": "default"
+    },
+    {
+      "epochs": 40,
+      "geometry": "euclidean",
+      "loss_at_budget": {
+        "20": 0.8635539599725165,
+        "40": 0.7941548835739407
+      },
+      "best_loss": 0.7941548835739407,
+      "best_epoch": 40,
+      "radius_quantiles": [
+        0.02089466295119351,
+        0.5211290848022259,
+        0.9106395847953019
+      ],
+      "macro_purity": 0.21216112284499328,
+      "overall_purity": 0.22447042874089135,
+      "input_neighbor_recall": 0.0203524826300627,
+      "populations": [
+        {
+          "label": "NP",
+          "n_cells": 552,
+          "purity": 0.1431159420289855,
+          "input_neighbor_recall": 0.01823671497584541,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "PS",
+          "n_cells": 624,
+          "purity": 0.16837606837606836,
+          "input_neighbor_recall": 0.018910256410256412,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SG",
+          "n_cells": 770,
+          "purity": 0.20311688311688308,
+          "input_neighbor_recall": 0.011948051948051947,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SFG",
+          "n_cells": 983,
+          "purity": 0.2876229230247542,
+          "input_neighbor_recall": 0.03397761953204477,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "HF",
+          "n_cells": 1005,
+          "purity": 0.2585737976782753,
+          "input_neighbor_recall": 0.015522388059701494,
+          "purity_ceiling": 1.0
+        }
+      ],
+      "root_index": 1736,
+      "root_pseudotime_quantiles": [
+        0.0,
+        0.7300878323924966,
+        1.4565762970075808
+      ],
+      "initialization": "random_disk",
+      "seed": 0,
+      "n_neighbors": 15,
+      "teacher": "default"
+    },
+    {
+      "epochs": 20,
+      "geometry": "poincare",
+      "loss_at_budget": {
+        "20": 0.6943269050673687
+      },
+      "best_loss": 0.6943269050673687,
+      "best_epoch": 20,
+      "radius_quantiles": [
+        0.012356418603877926,
+        0.22690714687967936,
+        0.364999516511988
+      ],
+      "macro_purity": 0.5448417570923217,
+      "overall_purity": 0.5795797322487714,
+      "input_neighbor_recall": 0.12235214370445685,
+      "populations": [
+        {
+          "label": "NP",
+          "n_cells": 552,
+          "purity": 0.302536231884058,
+          "input_neighbor_recall": 0.12657004830917873,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "PS",
+          "n_cells": 624,
+          "purity": 0.44209401709401713,
+          "input_neighbor_recall": 0.128525641025641,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SG",
+          "n_cells": 770,
+          "purity": 0.5593073593073593,
+          "input_neighbor_recall": 0.1056277056277056,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SFG",
+          "n_cells": 983,
+          "purity": 0.9472363513055273,
+          "input_neighbor_recall": 0.15428958969142081,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "HF",
+          "n_cells": 1005,
+          "purity": 0.4730348258706468,
+          "input_neighbor_recall": 0.09777777777777778,
+          "purity_ceiling": 1.0
+        }
+      ],
+      "root_index": 1736,
+      "root_pseudotime_quantiles": [
+        0.0,
+        0.6036490700403936,
+        0.9285971617913288
+      ],
+      "visibility": {
+        "4.0": {
+          "marker_overlap_fraction": 0.9885612608032537,
+          "cross_label_overlap_fraction": 0.7521606507371632,
+          "macro_width_q90_px": 155.32812258493973,
+          "populations": [
+            {
+              "label": "4SFG",
+              "n_cells": 983,
+              "cross_label_overlap_fraction": 0.13835198372329605
+            },
+            {
+              "label": "4SG",
+              "n_cells": 770,
+              "cross_label_overlap_fraction": 0.9363636363636364
+            },
+            {
+              "label": "HF",
+              "n_cells": 1005,
+              "cross_label_overlap_fraction": 0.9502487562189055
+            },
+            {
+              "label": "NP",
+              "n_cells": 552,
+              "cross_label_overlap_fraction": 0.980072463768116
+            },
+            {
+              "label": "PS",
+              "n_cells": 624,
+              "cross_label_overlap_fraction": 0.9711538461538461
+            }
+          ]
+        },
+        "8.0": {
+          "marker_overlap_fraction": 0.9987290289781393,
+          "cross_label_overlap_fraction": 0.8131672597864769,
+          "macro_width_q90_px": 155.32812258493973,
+          "populations": [
+            {
+              "label": "4SFG",
+              "n_cells": 983,
+              "cross_label_overlap_fraction": 0.271617497456765
+            },
+            {
+              "label": "4SG",
+              "n_cells": 770,
+              "cross_label_overlap_fraction": 0.9948051948051948
+            },
+            {
+              "label": "HF",
+              "n_cells": 1005,
+              "cross_label_overlap_fraction": 0.9930348258706467
+            },
+            {
+              "label": "NP",
+              "n_cells": 552,
+              "cross_label_overlap_fraction": 0.9981884057971014
+            },
+            {
+              "label": "PS",
+              "n_cells": 624,
+              "cross_label_overlap_fraction": 0.9887820512820513
+            }
+          ]
+        }
+      },
+      "initialization": "classical_jitter",
+      "seed": 0,
+      "n_neighbors": 30,
+      "teacher": "default"
+    },
+    {
+      "epochs": 20,
+      "geometry": "poincare",
+      "loss_at_budget": {
+        "20": 0.6951652578948935
+      },
+      "best_loss": 0.6951652578948935,
+      "best_epoch": 20,
+      "radius_quantiles": [
+        0.0009200195894710311,
+        0.21676469023812728,
+        0.3612592663476639
+      ],
+      "macro_purity": 0.5460031724250325,
+      "overall_purity": 0.5805795627859685,
+      "input_neighbor_recall": 0.13726487036095578,
+      "populations": [
+        {
+          "label": "NP",
+          "n_cells": 552,
+          "purity": 0.30326086956521736,
+          "input_neighbor_recall": 0.1503623188405797,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "PS",
+          "n_cells": 624,
+          "purity": 0.4384615384615384,
+          "input_neighbor_recall": 0.15427350427350425,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SG",
+          "n_cells": 770,
+          "purity": 0.5722077922077923,
+          "input_neighbor_recall": 0.10233766233766234,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SFG",
+          "n_cells": 983,
+          "purity": 0.9439131909121737,
+          "input_neighbor_recall": 0.18094269243811462,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "HF",
+          "n_cells": 1005,
+          "purity": 0.47217247097844117,
+          "input_neighbor_recall": 0.10354892205638475,
+          "purity_ceiling": 1.0
+        }
+      ],
+      "root_index": 1736,
+      "root_pseudotime_quantiles": [
+        0.0,
+        0.6021810361794391,
+        0.9284501289227646
+      ],
+      "visibility": {
+        "4.0": {
+          "marker_overlap_fraction": 0.9918657854600915,
+          "cross_label_overlap_fraction": 0.7585155058464667,
+          "macro_width_q90_px": 149.211740839784,
+          "populations": [
+            {
+              "label": "4SFG",
+              "n_cells": 983,
+              "cross_label_overlap_fraction": 0.14445574771108852
+            },
+            {
+              "label": "4SG",
+              "n_cells": 770,
+              "cross_label_overlap_fraction": 0.961038961038961
+            },
+            {
+              "label": "HF",
+              "n_cells": 1005,
+              "cross_label_overlap_fraction": 0.9512437810945273
+            },
+            {
+              "label": "NP",
+              "n_cells": 552,
+              "cross_label_overlap_fraction": 0.9728260869565217
+            },
+            {
+              "label": "PS",
+              "n_cells": 624,
+              "cross_label_overlap_fraction": 0.9759615384615384
+            }
+          ]
+        },
+        "8.0": {
+          "marker_overlap_fraction": 0.9987290289781393,
+          "cross_label_overlap_fraction": 0.8322318251143874,
+          "macro_width_q90_px": 149.211740839784,
+          "populations": [
+            {
+              "label": "4SFG",
+              "n_cells": 983,
+              "cross_label_overlap_fraction": 0.3377416073245168
+            },
+            {
+              "label": "4SG",
+              "n_cells": 770,
+              "cross_label_overlap_fraction": 0.9974025974025974
+            },
+            {
+              "label": "HF",
+              "n_cells": 1005,
+              "cross_label_overlap_fraction": 0.9950248756218906
+            },
+            {
+              "label": "NP",
+              "n_cells": 552,
+              "cross_label_overlap_fraction": 0.9981884057971014
+            },
+            {
+              "label": "PS",
+              "n_cells": 624,
+              "cross_label_overlap_fraction": 0.9983974358974359
+            }
+          ]
+        }
+      },
+      "initialization": "classical_jitter",
+      "seed": 0,
+      "n_neighbors": 15,
+      "teacher": "degree_aware",
+      "teacher_meta": {
+        "local_sigma": 25.598988576140886,
+        "degree_mean": 22.925775292323333,
+        "rule": "sigma_sqrt_degree_product"
+      }
+    }
+  ]
+}
