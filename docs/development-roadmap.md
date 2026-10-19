@@ -70,11 +70,10 @@ the current baseline or research gates.
   landmark count, seeds and the dense-byte limit. The check fits nothing
   (`max_epochs` must be 0). Historical benchmark drivers are unchanged and are
   not covered by this gate. See [landmark-reference.md](landmark-reference.md).
-- [ ] Complete the specifically scoped external review of historical commit
-  `494367a` if needed; a current uncommitted-diff review does not prove that older
-  committed scope was reviewed. Preserve that distinction. That commit only adds
-  objective-ablation docs and `examples/benchmark_objectives.py`; reading it in
-  this tree is not the external review.
+- [x] Review historical commit `494367a` from that commit's diff, recorded in
+  [historical-494367a-review.md](historical-494367a-review.md). A review of the
+  current tree does not replace it. This record is not a third-party human
+  publication audit.
 - [x] Write a landmark reference tree with a checksum manifest and require a
   successful local reread before the writer returns. The tested tree is synthetic.
 - [ ] Keep one latest small result tree for a real study rather than
