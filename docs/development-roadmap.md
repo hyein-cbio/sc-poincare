@@ -100,9 +100,15 @@ gates below remain open; this does not validate forest time-scale mixtures.
   while the median cell radius is near 0.83. Ery label integers are perfectly
   anti-aligned with root distance in all five seeds. See
   [root-pseudotime.md](root-pseudotime.md).
-- [ ] Apply a frozen hyperparameter rule to independent biological data not used
+- [x] Apply a frozen hyperparameter rule to independent biological data not used
   in prior development. Keep labels out of fitting, initialization and condition
   selection; use them only for evaluation and optional root selection.
+  pbmc3k raw counts were not in the Paul, Moignard, Olsson, ToggleSwitch,
+  Myeloid, krumsiek, or Planaria comparisons. The rule is normalize, log1p,
+  1,000 HVGs, PCA 20, and corrected symmetric KL for 200 updates. Processed
+  labels are scored only after fitting. Dendritic-cell K15 purity stays near
+  0.476 while overall purity is near 0.882. See
+  [pbmc3k-frozen.md](pbmc3k-frozen.md).
 
 **Decision gate:** explain global/local/biological/stability trade-offs and unmet
 criteria under a fixed protocol. Reaching an epoch limit is not sufficient.
