@@ -159,7 +159,8 @@ have not been satisfied merely by selecting MU as the new provisional default.
   matrix is deterministic on this host and hashes to `20a9f31a…`, not
   `0386248d…`. The default thread pool is also deterministic and hashes to
   `8efb90c0…`. Float32 input, whitening, covariance eigh, ARPACK, and `auto`
-  miss the recorded hash as well. A NumPy SVD of the same centered matrix
+  miss the recorded hash as well. Rounding those one-thread float64 scores
+  through float32 hashes to `a048133c…`. A NumPy SVD of the same centered matrix
   differs from the one-thread sklearn scores by at most 1.8e-12 and still has
   a different byte hash. A gray-code enumeration of all 1,048,576 column-sign
   patterns misses `0386248d…` for the one-thread scores, the default-thread
