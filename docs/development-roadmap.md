@@ -220,7 +220,8 @@ Remaining research candidates are unvalidated:
   wheel CI already exist on `main` (`7285e4b`) and are not added again here.
   This branch is not a submission, so current JOSS eligibility is not claimed.
 - [ ] Obtain explicit approval for new commits or pushes; previous approval does
-  not automatically cover future changes or expensive experiments.
+  not automatically cover future changes or expensive experiments. The commits
+  on this branch do not approve the full Planaria run.
 
 The next scientific priority is a fixed-condition comparison of corrected
 self-inclusive and conditional KL, followed by long-run, independent-data and
