@@ -139,10 +139,13 @@ Remaining research candidates are unvalidated:
   as if they were raw gene counts. This branch's follow-up disqualified
   `union_log` and left `mutual_raw` incomplete. `main` records the finished
   global protocol (`36e88a1`); neither variant is promoted. It is not rerun.
-- [ ] Compare optimizers and coordinate charts under the same objective and
-  initial distances. Intrinsic adaptive updates, Lorentz coordinates and
-  Euclidean parameterizations are candidates; distinguish float64 representation
-  limits from optimization and do not assume Lorentz is always better.
+- [x] Compare tangent Adam with plain SGD under the same graph-stress objective
+  and the same initial tangent coordinates. Epoch-0 losses match. The default
+  remains Adam, and an Adam checkpoint does not resume as SGD. The native
+  Euclidean chart keeps that tangent array and does not have the same initial
+  pair distances.
+- [ ] Lorentz coordinates are not implemented. They are not assumed better than
+  the disk. Float64 limits and optimization remain separate questions.
 - [x] Investigate temperature/global scale. The input-calibrated row-temperature
   alternative failed on both development datasets and is not promoted. See
   [embedding-study.md](embedding-study.md).
