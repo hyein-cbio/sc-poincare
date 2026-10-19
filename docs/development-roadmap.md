@@ -45,6 +45,17 @@ performance, biological equivalence, or hyperbolic-specific superiority.
   Their software availability is not independent biological validation.
 - [x] Audit upstream code/evidence before reapplication; see the
   [deduplicated Astra follow-up](astra-followup.md).
+- [x] Integrate latest teacher entropy/incoming-mass/normalization observability
+  and analytic/integration tests; retain failed mechanism criteria and historical
+  global cancellation. The later [authorized completion](algorithm-continuation-results.md)
+  finishes the global protocol with receiver-reconstructed new fits, not exact
+  old-state resume; neither global variant passes joint transfer. No promotion.
+- [x] Inspect common-objective/gradient mechanisms and try the single power2-to1
+  stress pilot. Retain its mixed/negative outcomes.
+- [x] Complete the separately authorized [stage3/4 small-input study](stress-validation-34.md):
+  three seeds/1500 updates, raw/native views and one isolated k-sensitivity
+  weighting rule. Neither candidate passes the necessary joint gate. This does
+  not close the independent-data, full-size or arbitrary-initialization tasks.
 
 ## P0 — Maintain a reproducible starting point
 
@@ -58,6 +69,12 @@ performance, biological equivalence, or hyperbolic-specific superiority.
   and an actual restore/re-evaluation check.
 
 ## P1 — Independent biological validation
+
+The [metadata/readiness audit](validation-readiness-audit.md) verifies Paul and
+Moignard gene-header mappings and identifies LARRY as a candidate with no local
+fit evidence, not a certified blind holdout. Pancreas and Nestorowa were already
+used. Row-order, data-use, subset feasibility and external-backup gates remain
+before a new long run.
 
 - [ ] Freeze input-only rules and test measured datasets not used in development.
   No labels enter fitting, initialization, bandwidth/condition selection.

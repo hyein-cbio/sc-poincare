@@ -30,6 +30,7 @@ source comparison, newly exposed controls and their bounded checks.
 | Upstream development aggregate | Pinned, separately retained JSON; not counted as current reruns |
 | Teacher entropy/incoming-mass/normalization | Latest observational metadata ported with upstream analytic tests and main integration checks |
 | Latest balanced/multiscale/global-target evidence | Original upstream outcomes/closure retained separately from later user-authorized receiver completion |
+| Global completion and stage3/4 experiments | Receiver completion and longer-budget/sensitivity studies finished; no candidate met joint promotion/transfer criteria, no default change |
 | Raw 37-fit receiving audit | Transport intact; separate state supplement qualifies CPU roundoff; fresh K metrics and fresh-score local selector agree, with no global-selector execution |
 | Explicit Moignard stage mapping | Newly supplied recipe used post-hoc on existing main coordinates with the saved root verified |
 | Remote CPU-Torch/Torch-free CI | Passed on main 3cbdd5f; that run does not certify subsequent uncommitted changes |
@@ -98,9 +99,11 @@ These integrations do not redesign the low-level objectives or optimizers:
 - Latest balanced/multiscale local teachers failed joint promotion/transfer
   criteria. Union-global improved Moignard ordering but lost Paul macro/rare
   purity. At upstream closure mutual-raw screening and global selection/transfer
-  were incomplete; cancellation records remain historical evidence, not a
-  completed selector or an authorization to restart old queues. No variant is
-  automatically enabled or promoted.
+  were incomplete. Later [authorized completion](algorithm-continuation-results.md)
+  finished them with receiver-reconstructed new fits; neither candidate passed
+  joint transfer. The [stage3/4 study](stress-validation-34.md) also found no
+  consistent joint gain for power1 or k-sensitivity weighting. No candidate is
+  automatically enabled, combined or promoted.
 - The source input-calibrated row-temperature alternative failed real-data
   population/expression diagnostics despite improving a training-related score.
   It is not enabled as a hidden rule or rerun until a favorable picture appears.

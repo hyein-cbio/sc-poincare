@@ -154,6 +154,12 @@ metadata and H5AD serialization passed outside the source tree. The scoped
 CodeRabbit review completed with zero findings. These checks do not claim a
 remote CI run for uncommitted work.
 
+The later user-authorized [global-study completion and stress pilot](algorithm-continuation-results.md)
+records receiver-reconstructed completion of the missing global screen and
+original transfer procedure. Original cancellation records above remain the
+historical state; they are not rewritten. Neither global candidate passed the
+completed transfer rule, and no target variant was promoted.
+
 Local compact parity/order records live under
 `data/graph_diagnostics_integration/astra_latest/`. Historical original study
 counts, input arrays, coordinates and checkpoint tags are not overwritten.
