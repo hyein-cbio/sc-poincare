@@ -81,12 +81,12 @@ performance, biological equivalence, or hyperbolic-specific superiority.
   report upload is 2095 bytes, the same size as the local file. The feature
   matrix file hash `e244315a…` equals the published feature-file hash, so that
   matrix is rebuilt from the public CSV. The Drive folder is `sc-poincare backups`.
-  Hex pieces 00, 01, 02, 03, and 31 are in that folder. Chunks 00–03 are 8,000
-  bytes each and chunk 31 is 5,896 bytes. Downloaded chunk 00 starts with
-  `504b0304` and ends with `3ff4`. Downloaded chunk 02 starts with `ea6bb7fa`
-  and ends with `18abf1c`. Downloaded chunk 31 ends with the ZIP
+  Hex pieces 00 through 05, plus 31, are in that folder. Chunks 00–05 are
+  8,000 bytes each and chunk 31 is 5,896 bytes. Downloaded chunk 00 starts with
+  `504b0304` and ends with `3ff4`. Downloaded chunk 05 starts with `31df1cf6`
+  and ends with `42bd3fd7`. Downloaded chunk 31 ends with the ZIP
   end-of-central-directory `504b05060000000003000300c10000000def01000000`.
-  Chunks 04 through 30 are not uploaded, so the archive is not yet recoverable
+  Chunks 06 through 30 are not uploaded, so the archive is not yet recoverable
   off-machine.
 
 ## P1 — Independent biological validation
