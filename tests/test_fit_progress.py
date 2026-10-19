@@ -97,3 +97,16 @@ def test_distance_rank_prefers_a_feature_aligned_layout():
     aligned = features / (np.linalg.norm(features, axis=1).max() * 4)
     random = np.random.default_rng(1).normal(scale=0.05, size=(12, 2))
     assert module.distance_rank(aligned, features) > module.distance_rank(random, features)
+
+
+def test_neighbor_purity_is_one_for_a_single_label():
+    import importlib.util
+    file = Path(__file__).resolve().parents[1] / 'examples' / 'inspect_rare_populations.py'
+    spec = importlib.util.spec_from_file_location('inspect_rare_populations', file)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    coordinates = np.random.default_rng(2).normal(size=(8, 2))
+    labels = np.array(['a'] * 8)
+    scores = module.neighbor_purity(coordinates, labels, k=3)
+    assert scores['a'] == 1
+    assert scores['overall'] == 1
