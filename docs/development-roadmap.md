@@ -167,9 +167,11 @@ have not been satisfied merely by selecting MU as the new provisional default.
   `8efb90c0…`. Float32 input, whitening, covariance eigh, ARPACK, and `auto`
   miss the recorded hash as well. A NumPy SVD of the same centered matrix
   differs from the one-thread sklearn scores by at most 1.8e-12 and still has
-  a different byte hash. All 1,048,576 column-sign patterns of the one-thread
-  scores miss `0386248d…`. Torch 2.14.1 SVD with the V-based flip hashes to
-  `c6e41671…`. OpenBLAS 0.3.34 one-thread kernels hash to
+  a different byte hash. A gray-code enumeration of all 1,048,576 column-sign
+  patterns misses `0386248d…` for the one-thread scores, the default-thread
+  scores, the one-thread Haswell, Sandybridge, Nehalem, and Penryn scores,
+  SciPy `gesvd`, and the stable Torch 2.14.1 scores `c6e41671…`. OpenBLAS
+  0.3.34 one-thread kernels hash to
   `93eb6f3a…` (Haswell), `dc67f1b0…` (Sandybridge), `d5b1d157…` (Nehalem),
   and `b24766fa…` (Penryn). Their default thread pools hash to `89beec8b…`,
   `3603a5ed…`, `0fc2e924…`, and `b0fab7f4…`. SciPy `gesvd` on one SkylakeX

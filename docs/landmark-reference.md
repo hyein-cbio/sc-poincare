@@ -84,11 +84,12 @@ NumPy's SVD of the centered matrix differs from the sklearn scores by at most
 1.8e-12 and hashes differently. OpenBLAS 0.3.34 one-thread Haswell, Sandybridge,
 Nehalem, and Penryn kernels hash to `93eb6f3a…`, `dc67f1b0…`, `d5b1d157…`, and
 `b24766fa…`. SciPy `gesvd` on one SkylakeX thread hashes to `b96251a8…`.
-sklearn's full solver matches SciPy `gesdd` with the V-based sign flip. All
-1,048,576 column-sign patterns of the one-thread scores miss the recorded
-hash. Torch 2.14.1 SVD with that flip hashes to `c6e41671…`. The same
-full-SVD call misses the recorded Olsson hash. The recorded Paul matrix was
-not replaced with these scores.
+sklearn's full solver matches SciPy `gesdd` with the V-based sign flip. A
+gray-code enumeration of all 1,048,576 column-sign patterns misses the recorded
+hash for the one-thread scores, the default-thread scores, the one-thread
+Haswell, Sandybridge, Nehalem, and Penryn scores, SciPy `gesvd`, and the stable
+Torch 2.14.1 scores `c6e41671…`. The same full-SVD call misses the recorded
+Olsson hash. The recorded Paul matrix was not replaced with these scores.
 
 The ignored tree `data/moignard_landmark_reference` stores the checked feature
 matrix, report, and checksum manifest. `reevaluate_study_tree` reran the frozen
