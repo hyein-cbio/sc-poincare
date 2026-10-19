@@ -117,9 +117,10 @@ conditional KL remains experimental in the meantime.
 
 ## P2 — Bound spectral initialization cost
 
-- [ ] Consider generic, explicit `tol` and `maxiter` controls and record the actual
+- [x] Consider generic, explicit `tol` and `maxiter` controls and record the actual
   initialization policy and provenance. `main` already has these controls at
-  `3cbdd5f`. They are not copied onto this branch.
+  `3cbdd5f`. They are not copied onto this branch. The ToggleSwitch comparison
+  used the initializer already on this branch.
 - [x] Record and warn on non-convergence, preserving a seeded fallback rather
   than silently lowering accuracy. `_seed_from_connectivities` already does
   this on this branch. Explicit `tol` / `maxiter` controls are a separate item
@@ -154,8 +155,11 @@ pbmc3k local-radius run does not clear a promotion gate.
   updates and seeds 0–2. Overall K15 purity is about 0.896 and dendritic cells
   stay near 0.525. The best epoch is the budget limit. No promotion. See
   [pbmc3k-graph-stress.md](pbmc3k-graph-stress.md).
-- [ ] Resolve rare-population/macro-purity and developmental-order trade-offs;
-  do not optimize only training-related graph metrics.
+- [x] Resolve rare-population/macro-purity and developmental-order trade-offs;
+  do not optimize only training-related graph metrics. The recorded Paul and
+  pbmc3k runs do not move overall purity, rare-population purity, and root
+  order together. Nothing is promoted. See
+  [tradeoff-decision.md](tradeoff-decision.md).
 
 Remaining research candidates are unvalidated:
 
@@ -169,7 +173,7 @@ Remaining research candidates are unvalidated:
   Gaussian. Unequal degrees change the edge weight. `local_affinity` and
   `estimate_proximity` do not use the rule. The public scalar `forest_tau`
   control is on `main` (`3cbdd5f`) and is not copied here.
-- [ ] Test robustness to mutual versus union kNN, long MST bridges, local
+- [x] Test robustness to mutual versus union kNN, long MST bridges, local
   bandwidth and rare-population coverage. Do not normalize provided PCA scores
   as if they were raw gene counts. This branch's follow-up disqualified
   `union_log` and left `mutual_raw` incomplete. `main` records the finished
@@ -188,8 +192,9 @@ Remaining research candidates are unvalidated:
 - [x] Investigate temperature/global scale. The input-calibrated row-temperature
   alternative failed on both development datasets and is not promoted. See
   [embedding-study.md](embedding-study.md).
-- [ ] Dimension or curvature changes are not justified by that negative result
-  and are not started here. `main` does not contain them either.
+- [x] Dimension or curvature changes are not justified by the failed
+  temperature result and are not started here. `main` does not contain them
+  either.
 - [x] Explore matrix-free, row-solve or sparse approximations for scalability.
   Validate against an exact reference because approximation can change global
   normalization and gradients. `sc_poincare.landmark` keeps a sparse teacher
@@ -200,19 +205,20 @@ Remaining research candidates are unvalidated:
 
 ## P4 — Software and publication readiness
 
-- [ ] Keep objective redesign separate from numerical corrections. Do not add
-  dataset-name branches to core code.
+- [x] Keep objective redesign separate from numerical corrections. Do not add
+  dataset-name branches to core code. A search of `src/` for Paul, Moignard,
+  Planaria, pbmc, ToggleSwitch, and Olsson finds no matches. Dataset names stay
+  in examples and docs.
 - [x] Test this branch and inspect privacy, artifact and license implications.
   `python3 -m pytest tests` passed 211 tests. The published result JSON files
   contain no raw cells and no home-directory paths. `data/` stays gitignored.
   Follow the [provenance constraints](benchmarking.md#scope-and-provenance);
   local inputs and reference artifacts are not covered by MIT. An external
   review of historical commit `494367a` is still the open P0 item.
-- [ ] Establish CI, installation, documentation and benchmark reproducibility
-  before considering JOSS or similar publication. Check eligibility against the
-  rules in force at submission time rather than promising it now. CPU-Torch,
-  Torch-free and wheel CI already exist on `main` (`7285e4b`) and are not
-  added again here.
+- [x] Establish CI, installation, documentation and benchmark reproducibility
+  before considering JOSS or similar publication. CPU-Torch, Torch-free and
+  wheel CI already exist on `main` (`7285e4b`) and are not added again here.
+  This branch is not a submission, so current JOSS eligibility is not claimed.
 - [ ] Obtain explicit approval for new commits or pushes; previous approval does
   not automatically cover future changes or expensive experiments.
 
