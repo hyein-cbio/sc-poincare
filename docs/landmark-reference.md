@@ -81,9 +81,12 @@ float64 SHA256 is
 A second call produced the same bytes. The recorded feature SHA256 is
 `0386248d2c02c99f82cda2eb18b8e357b8e0399b10aba7e67575599fb115d90b`.
 NumPy's SVD of the centered matrix differs from the sklearn scores by at most
-1.8e-12 and does not match the recorded hash either. The same full-SVD call
-fails for public Olsson.csv. That Paul matrix was not replaced with the
-nonmatching PCA scores.
+1.8e-12 and hashes differently. OpenBLAS 0.3.34 one-thread Haswell, Sandybridge,
+Nehalem, and Penryn kernels hash to `93eb6f3a…`, `dc67f1b0…`, `d5b1d157…`, and
+`b24766fa…`. SciPy `gesvd` on one SkylakeX thread hashes to `b96251a8…`.
+sklearn's full solver matches SciPy `gesdd` with the V-based sign flip. The
+same full-SVD call misses the recorded Olsson hash. The recorded Paul matrix
+was not replaced with these scores.
 
 The ignored tree `data/moignard_landmark_reference` stores the checked feature
 matrix, report, and checksum manifest. `reevaluate_study_tree` reran the frozen
