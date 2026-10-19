@@ -180,6 +180,36 @@ def _graph_lengths(features, k, topology):
                                        shape=(len(features), len(features))).tocsr(), features)
 
 
+def _teacher_diagnostics(teacher):
+    """Describe a row-stochastic zero-diagonal teacher without changing it.
+
+    Entropy is in nats. Its mean lower-bounds nonself cross entropy over
+    probability distributions, but need not be attainable by the geometry.
+    Incoming mass and asymmetry describe normalization, not population balance.
+    """
+    n = len(teacher)
+    row_mass = teacher.sum(axis=1)
+    if not np.allclose(row_mass, 1., rtol=0., atol=1e-12) or np.any(np.diag(teacher) != 0.):
+        raise ValueError('A normalized nonself teacher is required for entropy diagnostics.')
+    entropy = np.empty(n)
+    max_asymmetry = 0.
+    for start in range(0, n, 128):
+        rows = teacher[start:start+128]
+        if not np.isfinite(rows).all() or np.any(rows < 0.):
+            raise ValueError('A finite nonnegative teacher is required for entropy diagnostics.')
+        max_asymmetry = max(max_asymmetry, float(np.max(np.abs(rows-teacher[:, start:start+128].T))))
+        for offset, row in enumerate(rows):
+            positive = row[row > 0.]
+            entropy[start+offset] = -float(np.dot(positive, np.log(positive)))
+    levels = [0., .1, .5, .9, 1.]
+    return dict(teacher_diagnostic_quantiles=levels, teacher_entropy_mean=float(entropy.mean()),
+        teacher_entropy_quantiles=np.quantile(entropy, levels).tolist(),
+        teacher_incoming_mass_quantiles=np.quantile(teacher.sum(axis=0), levels).tolist(),
+        teacher_max_asymmetry=max_asymmetry,
+        teacher_max_row_sum_error=float(np.max(np.abs(row_mass-1.))))
+
+
+
 def prepare_graph_stress(features, *, config=None,
                          max_dense_bytes=DEFAULT_MAX_DENSE_BYTES):
     """Prepare exact mutual-geodesic stress and a union-neighbor teacher.
@@ -187,7 +217,9 @@ def prepare_graph_stress(features, *, config=None,
     Mutual edge lengths become log1p(length/positive-edge-median). Shortest
     paths are normalized to a nonself mean of ``distance_scale``. Global
     teacher bandwidth is max(q95_positive_edge, maxedge/5). The alternative
-    local-radius teacher records its floor and underflow diagnostics.
+    local-radius teacher records its floor and underflow diagnostics. Metadata
+    also describes teacher entropy (nats), incoming mass and normalization;
+    these input-only statistics do not change targets or fitting.
 
     ``features`` must be a finite real N×D matrix with N > n_neighbors.
     Labels must be removed before calling this function or computing PCA.
@@ -272,6 +304,7 @@ def prepare_graph_stress(features, *, config=None,
         if not np.isfinite(array).all():
             raise FloatingPointError("Prepared target, teacher and initializer must be finite.")
         array.setflags(write=False)
+    metadata.update(_teacher_diagnostics(teacher))
     return GraphStressSetup(target, teacher, initial, config, metadata)
 
 
