@@ -4,6 +4,12 @@ This roadmap separates proposed work from validated behavior. It does not
 authorize new experiments, resume previous jobs, or carry forward their runtime
 budgets. Agree on a protocol and resource limits before starting long runs.
 
+The [comparison with main](main-comparison.md) records which of the items below
+already exist on `main` at `1e724d8` and are not reimplemented here. The
+[frozen conditional-KL protocol](frozen-conditional-kl-protocol.md) is the
+starting-point gate. [Further work](additional-work.md) is not part of this
+checklist.
+
 ## Current baseline and evidence
 
 The default remains corrected, self-inclusive `symmetric_kl`.
@@ -41,12 +47,15 @@ gates below remain open; this does not validate forest time-scale mixtures.
 
 ## P0 — Establish a reproducible starting point
 
-- [ ] Establish the current repository, Python import source and artifact paths,
+- [x] Establish the current repository, Python import source and artifact paths,
   then freeze a new comparison protocol using the
   [long-run preparation and recovery checklist](benchmarking.md#long-run-preparation-and-recovery).
+  Recorded in the [frozen conditional-KL protocol](frozen-conditional-kl-protocol.md).
+  Freezing the protocol does not start the fit.
 - [ ] Complete the external review of the benchmark/docs changes in `494367a`
   when review access is available. The original review was rate-limited; local
-  checks are not evidence of a completed external review.
+  checks are not evidence of a completed external review. CodeRabbit CLI 0.9.0
+  is installed here and is not authenticated, so this review was not run.
 
 ## P1 — Validate conditional KL before considering a default change
 
@@ -60,7 +69,12 @@ gates below remain open; this does not validate forest time-scale mixtures.
   reason throughout the trajectory.
 - [ ] Check evaluation graphs at k=15/20/30, alternative anchors and direct
   feature-distance diagnostics. Declare primary and sensitivity checks before
-  fitting rather than selecting favorable evaluations afterward.
+  fitting rather than selecting favorable evaluations afterward. The public
+  objective driver now records direct feature-distance Spearman on the same
+  anchors, and it already accepts several `--evaluation-k` and `--anchor-seed`
+  values. That software does not replace the unrun full-Planaria check. The
+  declared metrics are in the
+  [frozen protocol](frozen-conditional-kl-protocol.md).
 - [ ] Evaluate seed consistency separately from accuracy; plan more than three
   seeds and uncertainty estimates.
 - [ ] Inspect isolated, rare and outlier populations for artificial mixing or
@@ -79,9 +93,12 @@ conditional KL remains experimental in the meantime.
 ## P2 — Bound spectral initialization cost
 
 - [ ] Consider generic, explicit `tol` and `maxiter` controls and record the actual
-  initialization policy and provenance.
-- [ ] Record and warn on non-convergence, preserving a seeded fallback rather
-  than silently lowering accuracy.
+  initialization policy and provenance. `main` already has these controls at
+  `3cbdd5f`. They are not copied onto this branch.
+- [x] Record and warn on non-convergence, preserving a seeded fallback rather
+  than silently lowering accuracy. `_seed_from_connectivities` already does
+  this on this branch. Explicit `tol` / `maxiter` controls are a separate item
+  and already exist on `main`; they are not copied here.
 - [ ] Compare initial distance structure, seed stability and final quality, not
   just initialization speed.
 
@@ -112,29 +129,43 @@ Remaining research candidates are unvalidated:
   range controlled by tau from relative edge weights controlled by kernel sigma.
   Consider fixed multiscale mixtures or degree-aware rules; freeze input-only
   rules and control protocols before searching for a Planaria-specific best tau.
+  The scalar control itself is on `main` (`3cbdd5f`) and is not copied here.
+  Fixed multiscale mixtures are still unvalidated on `main`.
 - [ ] Test robustness to mutual versus union kNN, long MST bridges, local
   bandwidth and rare-population coverage. Do not normalize provided PCA scores
-  as if they were raw gene counts.
+  as if they were raw gene counts. This branch's follow-up disqualified
+  `union_log` and left `mutual_raw` incomplete. `main` records the finished
+  global protocol (`36e88a1`); neither variant is promoted. It is not rerun.
 - [ ] Compare optimizers and coordinate charts under the same objective and
   initial distances. Intrinsic adaptive updates, Lorentz coordinates and
   Euclidean parameterizations are candidates; distinguish float64 representation
   limits from optimization and do not assume Lorentz is always better.
-- [ ] Investigate temperature/global scale and, if justified mechanistically,
-  dimension or curvature.
+- [x] Investigate temperature/global scale. The input-calibrated row-temperature
+  alternative failed on both development datasets and is not promoted. See
+  [embedding-study.md](embedding-study.md).
+- [ ] Dimension or curvature changes are not justified by that negative result
+  and are not started here. `main` does not contain them either.
 - [ ] Explore matrix-free, row-solve or sparse approximations for scalability.
   Validate against an exact reference because approximation can change global
-  normalization and gradients.
+  normalization and gradients. `main` does not have this path. Do not add a
+  second implementation beside the unmerged landmark branch described in
+  [additional-work.md](additional-work.md).
 
 ## P4 — Software and publication readiness
 
 - [ ] Keep objective redesign separate from numerical corrections. Do not add
   dataset-name branches to core code.
-- [ ] Test and review public changes and inspect their privacy, artifact and
-  license implications. Follow the [provenance constraints](benchmarking.md#scope-and-provenance);
-  local inputs and reference artifacts are not automatically covered by MIT.
+- [x] Test this branch and inspect privacy, artifact and license implications.
+  `python3 -m pytest tests` passed 211 tests. The published result JSON files
+  contain no raw cells and no home-directory paths. `data/` stays gitignored.
+  Follow the [provenance constraints](benchmarking.md#scope-and-provenance);
+  local inputs and reference artifacts are not covered by MIT. An external
+  review of historical commit `494367a` is still the open P0 item.
 - [ ] Establish CI, installation, documentation and benchmark reproducibility
   before considering JOSS or similar publication. Check eligibility against the
-  rules in force at submission time rather than promising it now.
+  rules in force at submission time rather than promising it now. CPU-Torch,
+  Torch-free and wheel CI already exist on `main` (`7285e4b`) and are not
+  added again here.
 - [ ] Obtain explicit approval for new commits or pushes; previous approval does
   not automatically cover future changes or expensive experiments.
 
