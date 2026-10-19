@@ -41,4 +41,6 @@ whose SHA256 is `75da11742aa4773b28f62463c3c6b63146024e812fb7aaaf494d2f864ad5ca1
 That matches the local `arrays.npz`. The short earlier uploads of chunks 08 and
 13 remain in the trash and were not used.
 One BLAS thread and the default thread pool produce two different deterministic
-Paul PCA20 hashes, `20a9f31a…` and `8efb90c0…`.
+Paul PCA20 hashes, `20a9f31a…` and `8efb90c0…`. OpenBLAS 0.3.34 Haswell,
+Sandybridge, Nehalem, and Penryn kernels, with one thread or the default pool,
+also miss `0386248d…`.
