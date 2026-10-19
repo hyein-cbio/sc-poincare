@@ -34,7 +34,7 @@ reread agree exactly. Public Paul.csv matches its source hash, and sklearn
 Those PCA matrices were not substituted. The same package versions on this host
 produce a deterministic Paul PCA20 hash, `20a9f31a…`, which is not the recorded
 `0386248d…`. The Drive folder `sc-poincare backups` holds the Moignard manifest
-and report. Hex pieces 00–17 and 31 of `arrays.npz` are there. Chunks 18 through 30
+and report. Hex pieces 00–19 and 31 of `arrays.npz` are there. Chunks 20 through 30
 are not, so the coordinate archive is not yet an off-machine copy.
 One BLAS thread and the default thread pool produce two different deterministic
 Paul PCA20 hashes, `20a9f31a…` and `8efb90c0…`.
