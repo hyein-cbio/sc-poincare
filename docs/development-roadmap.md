@@ -75,8 +75,12 @@ performance, biological equivalence, or hyperbolic-specific superiority.
   primary value matched exactly (absolute difference 0). The feature matrix
   stays under ignored `data/` and is not vendored. Record:
   [moignard-landmark-restore.json](moignard-landmark-restore.json).
-- [ ] Long or unique jobs still need an off-machine backup destination. None
-  was supplied for this tree.
+- [ ] Long or unique jobs still need an off-machine copy of `arrays.npz`.
+  The Moignard manifest was uploaded and the downloaded bytes match SHA256
+  `262fa3960267a859eac9a29d3b47f3ba0246ae789eea339df6da63f0a535bf19`. The
+  report upload is 2095 bytes, the same size as the local file. The feature
+  matrix file hash `e244315a…` equals the published feature-file hash, so that
+  matrix is rebuilt from the public CSV. The Drive folder is `sc-poincare backups`.
 
 ## P1 — Independent biological validation
 
