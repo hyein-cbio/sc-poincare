@@ -154,8 +154,10 @@ def main():
                 scores['feature']={'global_distance_rank':float(spearmanr(feature_d[mask],h[mask]).statistic)}
                 rss=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
                 if sys.platform!='darwin':rss*=1024
+                grad_trace=None if mode=='legacy_floor_1e-12' else [float(v) for v in report.gradient_norm_trace]
                 row={'seed':seed,'objective':mode,'epochs_run':len(trace),'stop_reason':stop_reason,
-                    'fitting_seconds':seconds,'best_loss_of_own_objective':float(loss),'evaluation':scores,
+                    'fitting_seconds':seconds,'best_loss_of_own_objective':float(loss),
+                    'gradient_norm_trace':grad_trace,'evaluation':scores,
                     'initialization_source':init_status,'radius_quantiles':np.quantile(np.linalg.norm(xy,axis=1),[0,.1,.5,.9,1]).tolist(),
                     'process_high_water_rss_bytes':rss}
                 records.append(row)

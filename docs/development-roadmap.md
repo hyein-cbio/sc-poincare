@@ -66,7 +66,10 @@ gates below remain open; this does not validate forest time-scale mixtures.
   historical probability-floor baseline.
 - [ ] Select checkpoints by the training objective, not evaluation scores.
   Preserve raw current/best coordinates, loss, gradient norm, radius and stop
-  reason throughout the trajectory.
+  reason throughout the trajectory. The fitter already returns the lowest
+  training loss, including initialization. `gradient_norm_trace` now stores
+  the max per-point Riemannian norm before each update, aligned with
+  `loss_trace`. The full Planaria trajectory is still unrun.
 - [ ] Check evaluation graphs at k=15/20/30, alternative anchors and direct
   feature-distance diagnostics. Declare primary and sensitivity checks before
   fitting rather than selecting favorable evaluations afterward. The public

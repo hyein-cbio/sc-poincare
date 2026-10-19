@@ -52,8 +52,9 @@ graph diagnostics while training loss decreases?
 
 Return the lowest training objective, including the initialization. Do not
 select by an evaluation score. Preserve raw current and best coordinates,
-loss, gradient norm when the fitter records it, radius quantiles and stop
-reason.
+loss, `gradient_norm_trace`, radius quantiles and stop reason. Each trace
+entry is the max per-point Riemannian gradient norm at the checkpoint
+before that update.
 
 Seeds are 0, 1, 2, 3 and 4. The five-seed range is a sensitivity description,
 not a confidence interval and not a biological replicate.
