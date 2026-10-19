@@ -9,8 +9,10 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+from importlib.metadata import PackageNotFoundError, version
 from io import BytesIO
 import resource
+import subprocess
 import sys
 import time
 from pathlib import Path
@@ -31,6 +33,37 @@ from sc_poincare._fitting import (
 from sc_poincare._objectives import DEFAULT_OBJECTIVE, CONDITIONAL_OBJECTIVE
 from sc_poincare._proximity import estimate_proximity, local_affinity
 from sc_poincare._resources import DEFAULT_MAX_DENSE_BYTES
+
+
+def _package_version(distribution):
+    try:
+        return version(distribution)
+    except PackageNotFoundError:
+        return None
+
+
+def _run_provenance():
+    """Import path, revision, and versions immediately before fitting."""
+    import sc_poincare
+    revision = dirty = diff_sha = None
+    try:
+        revision = subprocess.check_output(
+            ['git', 'rev-parse', 'HEAD'], text=True, stderr=subprocess.DEVNULL).strip()
+        porcelain = subprocess.check_output(
+            ['git', 'status', '--porcelain'], text=True, stderr=subprocess.DEVNULL)
+        diff = subprocess.check_output(['git', 'diff', 'HEAD'], stderr=subprocess.DEVNULL)
+        dirty = bool(porcelain.strip())
+        diff_sha = hashlib.sha256(diff).hexdigest()
+    except (subprocess.CalledProcessError, FileNotFoundError):
+        pass
+    return {
+        'import_file': sc_poincare.__file__,
+        'git_revision': revision,
+        'git_dirty': dirty,
+        'git_diff_sha256': diff_sha,
+        'versions': {name: _package_version(name) for name in
+                     ('numpy', 'scipy', 'scikit-learn', 'pandas', 'torch', 'sc-poincare')},
+    }
 
 
 def _neighbor_purity(coordinates, labels, k):
@@ -137,6 +170,7 @@ def main():
             evaluations[k]=(distances,nn)
         # Same anchors as the graph scores. This is not a graph geodesic.
         feature_d=np.linalg.norm(features[anchors,None,:]-features[None,:,:],axis=-1)
+        provenance=_run_provenance()
         for seed in args.seeds:
             init_status={};initial=_seed_from_connectivities(proximity.weights,2,np.random.default_rng(seed),status=init_status)
             for mode in modes:
@@ -182,7 +216,8 @@ def main():
         'script_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         'n_cells':len(features),'n_features':features.shape[1],'configuration':config,
         'sigma_effective':proximity.kernel_width,'proximity_diagnostics':proximity.diagnostics,
-        'label_counts':label_counts,'preparation_seconds':preparation_seconds,'records':records,
+        'label_counts':label_counts,'provenance':provenance,
+        'preparation_seconds':preparation_seconds,'records':records,
         'notes':['All objectives share the same initial coordinates per seed.',
                  'Epoch limits do not imply convergence. Losses differ across objectives.',
                  'coordinates is the lowest training loss. current_coordinates is the final evaluated state.',
@@ -190,6 +225,7 @@ def main():
                  'feature.global_distance_rank compares embedding distances with direct feature distances on the same anchors.',
                  'Label counts and neighbor purity are recorded after fitting and do not select the checkpoint.',
                  'No labels or reference coordinates enter fitting.',
+                 'provenance is the import path, Git revision, diff hash, and versions before the first fit.',
                  'Dense-array budget is not an RSS cap. High-water RSS includes earlier modes/imports/evaluation.']}
     args.output.write_text(json.dumps(result,indent=2))
 
