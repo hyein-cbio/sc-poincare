@@ -87,12 +87,13 @@ the current baseline or research gates.
   report upload is 2095 bytes, the same size as the local file. The feature
   matrix file hash `e244315a…` equals the published feature-file hash, so that
   matrix is rebuilt from the public CSV. The Drive folder is `sc-poincare backups`.
-  Three hex pieces of the 126,948-byte archive are in that folder: `arrays.npz.hex.00`
-  (8,000 bytes), `arrays.npz.hex.01` (8,000 bytes), and `arrays.npz.hex.31`
-  (5,896 bytes). Downloaded chunk 00 starts with `504b0304` and ends with `3ff4`.
-  Downloaded chunk 31 ends with the ZIP end-of-central-directory
-  `504b05060000000003000300c10000000def01000000`. Chunks 02 through 30 are not
-  uploaded, so the archive is not yet recoverable off-machine.
+  Hex pieces 00, 01, 02, 03, and 31 are in that folder. Chunks 00–03 are 8,000
+  bytes each and chunk 31 is 5,896 bytes. Downloaded chunk 00 starts with
+  `504b0304` and ends with `3ff4`. Downloaded chunk 02 starts with `ea6bb7fa`
+  and ends with `18abf1c`. Downloaded chunk 31 ends with the ZIP
+  end-of-central-directory `504b05060000000003000300c10000000def01000000`.
+  Chunks 04 through 30 are not uploaded, so the archive is not yet recoverable
+  off-machine.
 
 ## P1 — Independent biological validation
 
@@ -157,9 +158,11 @@ have not been satisfied merely by selecting MU as the new provisional default.
   SciPy 1.18.1, scikit-learn 1.9.1, and pandas 3.0.6, the same versions used
   here. One-thread `PCA(20, svd_solver="full")` on the 2,730×1,000 label-stripped
   matrix is deterministic on this host and hashes to `20a9f31a…`, not
-  `0386248d…`. A NumPy SVD of the same centered matrix differs from that
-  sklearn result by at most 1.8e-12 and still has a different byte hash.
-  The recorded array was not substituted.
+  `0386248d…`. The default thread pool is also deterministic and hashes to
+  `8efb90c0…`. Float32 input, whitening, covariance eigh, ARPACK, and `auto`
+  miss the recorded hash as well. A NumPy SVD of the same centered matrix
+  differs from the one-thread sklearn scores by at most 1.8e-12 and still has
+  a different byte hash. The recorded array was not substituted.
 - [x] Fit landmark columns without storing an N-by-N target. The teacher stays
   sparse and each update materializes one row-chunk of embedding distances.
   When every cell is a landmark, a 3-epoch synthetic trajectory matches exact
