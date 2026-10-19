@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from scipy import sparse
 from scipy.sparse.csgraph import connected_components
 
 from sc_poincare._proximity import estimate_proximity, forest_accessibility, local_affinity
@@ -101,3 +102,34 @@ def test_multiscale_mixture_is_separate_from_sigma_and_from_the_default():
         multiscale_forest_accessibility(weights, taus=(1.0,))
     with pytest.raises(ValueError):
         multiscale_forest_accessibility(weights, taus=(0.1, -1.0))
+
+
+def test_degree_aware_widths_match_sigma_only_when_degrees_match():
+    from sc_poincare._proximity import degree_aware_affinity
+    n = 6
+    rows, cols, data = [], [], []
+    for i in range(n):
+        j = (i + 1) % n
+        rows.extend((i, j))
+        cols.extend((j, i))
+        data.extend((1.0, 1.0))
+    cycle = sparse.csr_matrix((data, (rows, cols)), shape=(n, n))
+    uniform = float(np.exp(-0.5 * (1.0 / 2.0) ** 2))
+    aware = degree_aware_affinity(cycle, sigma=2.0)
+    assert np.allclose(aware.toarray(), aware.toarray().T)
+    assert np.allclose(aware.data, uniform)
+    # Star: center degree 3, leaves degree 1. mean degree is 1.5.
+    star_rows = [0, 0, 0, 1, 2, 3]
+    star_cols = [1, 2, 3, 0, 0, 0]
+    star = sparse.csr_matrix((np.ones(len(star_rows)), (star_rows, star_cols)), shape=(4, 4))
+    star_aware = degree_aware_affinity(star, sigma=2.0).toarray()
+    leaf_sigma = 2.0 * np.sqrt(3.0 * 1.0) / 1.5
+    leaf_weight = float(np.exp(-0.5 * (1.0 / leaf_sigma) ** 2))
+    assert leaf_sigma != 2.0
+    np.testing.assert_allclose(star_aware[0, 1], leaf_weight)
+    features = np.random.default_rng(4).normal(size=(18, 6))
+    weights, _ = local_affinity(features, n_neighbors=5, kernel_width=1.5)
+    prox = estimate_proximity(features, n_neighbors=5, kernel_width=1.5)
+    np.testing.assert_allclose(prox.weights.toarray(), weights.toarray())
+    with pytest.raises(ValueError):
+        degree_aware_affinity(cycle, sigma=0.0)
