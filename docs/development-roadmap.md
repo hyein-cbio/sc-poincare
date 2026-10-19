@@ -96,7 +96,9 @@ the current baseline or research gates.
   126,948 bytes whose SHA256 is
   `75da11742aa4773b28f62463c3c6b63146024e812fb7aaaf494d2f864ad5ca17`, the same
   as the local `arrays.npz`. The zip contains `landmark_index.npy`,
-  `exact_initial.npy`, and `landmark_initial.npy`.
+  `exact_initial.npy`, and `landmark_initial.npy`. This copy is on the
+  connected personal account `hc27oclock@gmail.com`. No shop Google Drive is
+  visible to this connection, so a second copy was not written there.
 
 ## P1 — Independent biological validation
 
@@ -163,9 +165,11 @@ have not been satisfied merely by selecting MU as the new provisional default.
   matrix is deterministic on this host and hashes to `20a9f31a…`, not
   `0386248d…`. The default thread pool is also deterministic and hashes to
   `8efb90c0…`. Float32 input, whitening, covariance eigh, ARPACK, and `auto`
-  miss the recorded hash as well.   A NumPy SVD of the same centered matrix
+  miss the recorded hash as well. A NumPy SVD of the same centered matrix
   differs from the one-thread sklearn scores by at most 1.8e-12 and still has
-  a different byte hash. OpenBLAS 0.3.34 one-thread kernels hash to
+  a different byte hash. All 1,048,576 column-sign patterns of the one-thread
+  scores miss `0386248d…`. Torch 2.14.1 SVD with the V-based flip hashes to
+  `c6e41671…`. OpenBLAS 0.3.34 one-thread kernels hash to
   `93eb6f3a…` (Haswell), `dc67f1b0…` (Sandybridge), `d5b1d157…` (Nehalem),
   and `b24766fa…` (Penryn). Their default thread pools hash to `89beec8b…`,
   `3603a5ed…`, `0fc2e924…`, and `b0fab7f4…`. SciPy `gesvd` on one SkylakeX
