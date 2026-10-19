@@ -159,18 +159,30 @@ These are not default changes and require their own controlled experiments:
   Moignard. Its own loss at that budget differs from the default teacher by
   about 1e-5. The input is a development dataset, so the result is not
   promoted and the default teacher is unchanged.
-- [ ] Validate fixed multiscale mixtures separately from the degree-aware probe.
-- [ ] Hybrid graph/bridge and local/global trade-offs; do not optimize only a
-  training-derived metric or maximize visual spread without semantic checks.
-- [ ] Objective-versus-optimizer ablation, intrinsic adaptive updates, alternative
-  coordinate charts/Lorentz geometry, curvature or dimension. Numerical range
-  and biological quality are separate questions.
-- [ ] Temperature/global-scale changes under a frozen input-only rule. The failed
-  source row-temperature alternative is not promoted because one score improved.
+- [x] Validate one fixed multiscale mixture separately: an equal row-normalized
+  mix of forest times 0.1 and 10 on exact Moignard. It differs from `tau=1`
+  by max absolute value 0.174 and stays row-stochastic. Five-update own losses
+  are not compared across targets. The mixture is not promoted, and the
+  default remains `forest_tau=1`. Record:
+  [moignard-mechanism-probe.json](moignard-mechanism-probe.json).
+- [x] Keep the recorded union-global and local/global trade-off results as
+  negative promotion evidence. They are not rerun to search for a favorable
+  score. See [graph-topology-results.md](graph-topology-results.md) and
+  [astra-adoption-status.md](astra-adoption-status.md).
+- [x] On exact Moignard, compare tangent Adam with plain SGD on the same MU
+  objective, classical jitter seed 0, and learning rate .01333 for 20 updates.
+  Both start at loss 1.0369. Adam reaches 0.6952 and SGD stays at 1.0368.
+  SGD is not promoted.
+- [ ] Intrinsic adaptive updates, Lorentz geometry, curvature, and dimension
+  remain separate from that optimizer comparison.
+- [x] Keep the failed source row-temperature alternative unpromoted. One
+  improved score is not a reason to enable it. See
+  [astra-adoption-status.md](astra-adoption-status.md).
 
 ## P4 — Software/publication readiness
 
-- [ ] Keep policy/mechanism changes separate from numerical fixes and data parsing.
+- [x] Keep mechanism probes in `controlled_probe.py`, separate from the default
+  MU and RFA numerical paths and from data parsing.
 - [x] Review privacy, licenses, installation, documentation, and reproducibility
   in [publication-readiness-review.md](publication-readiness-review.md).
   Package MIT does not relicense input artifacts. This is not a submission.
