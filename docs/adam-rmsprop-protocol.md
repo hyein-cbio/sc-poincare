@@ -15,8 +15,10 @@ default scales, weights, radius, jitter, and learning rate. Geometry is
 arms. Only the optimizer differs. Dimension, curvature, SGD, and Lorentz are
 not part of this comparison.
 
-Seeds are 0, 1, 2, 3, and 4. The five-seed range is a sensitivity
-description, not a confidence interval. The budget is 1,500 updates, the
+Selection uses seed 0, as in the existing development rule. Seeds 1, 2, 3,
+and 4 are confirmation only after seed 0 meets every guardrail below. They
+are a sensitivity description, not a confidence interval, and they are not
+a second chance to choose the optimizer. The budget is 1,500 updates, the
 existing graph-stress default, not 20. The lowest training loss selects the
 checkpoint, including initialization. An epoch limit is not promotion.
 
@@ -38,8 +40,9 @@ are the development rules in
   is at most 0.005. No named Paul rare label may lose more than 0.01 K15
   purity.
 
-Olsson is not a selection set. A candidate that misses a guardrail is not
-retried under a new budget or a new seed. Paul may be scored only from the
+Olsson is not a selection set. A candidate that misses a seed-0 guardrail
+stops. It is not refit with a new budget or scored from a friendlier seed.
+Paul may be scored only from the
 feature matrix whose SHA256 is
 `0386248d2c02c99f82cda2eb18b8e357b8e0399b10aba7e67575599fb115d90b`.
 A nonmatching PCA is not a substitute, so this comparison cannot be scored

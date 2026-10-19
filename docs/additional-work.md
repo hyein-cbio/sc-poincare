@@ -43,8 +43,9 @@ without raising macro purity.
 None of these is on `main`, and none should become a default from a
 20-update development fit. The pre-registered Adam-versus-RMSProp rule is
 [adam-rmsprop-protocol.md](adam-rmsprop-protocol.md): the same graph-stress
-objective and initialization, seeds 0–4, 1,500 updates, and the existing
-Paul and Moignard promotion guardrails. The fit is not started. Riemannian
+objective and initialization, seed 0 for selection, seeds 1–4 only as
+confirmation, 1,500 updates, and the existing Paul and Moignard promotion
+guardrails. The fit is not started. Riemannian
 RMSProp is not implemented here, and Paul still needs feature SHA256
 `0386248d…` before that comparison can be scored.
 
