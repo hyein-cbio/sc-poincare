@@ -8,7 +8,7 @@
     20
   ],
   "labels_entered_fitting": false,
-  "epochs": 40,
+  "epochs": 80,
   "seed": 0,
   "loss_at_0": 1.068616122353061,
   "loss_at_20": 0.7431210548756442,
@@ -16,5 +16,7 @@
   "still_decreasing_at_40": true,
   "promoted": false,
   "biological_validation": false,
-  "spectral_defaults_changed": false
+  "spectral_defaults_changed": false,
+  "loss_at_80": 0.39107035791437117,
+  "still_decreasing_at_80": true
 }
