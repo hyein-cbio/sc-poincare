@@ -92,6 +92,6 @@ difference 0. See [moignard-landmark-restore.json](moignard-landmark-restore.jso
 The checksum manifest and the 2,095-byte report were copied to the Drive folder
 `sc-poincare backups` and the downloaded manifest matches
 `262fa3960267a859eac9a29d3b47f3ba0246ae789eea339df6da63f0a535bf19`.
-Hex pieces `arrays.npz.hex.00` through `arrays.npz.hex.10`, plus
-`arrays.npz.hex.31`, are in that folder. Chunks 11 through 30 are absent, so
+Hex pieces `arrays.npz.hex.00` through `arrays.npz.hex.12`, plus
+`arrays.npz.hex.31`, are in that folder. Chunks 13 through 30 are absent, so
 `arrays.npz` is not yet recoverable from the folder.
