@@ -1,6 +1,8 @@
 """Observational progress snapshots and explicit warm starts for long runs."""
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -83,3 +85,15 @@ def test_training_projection_roundoff_is_accepted_for_warm_start():
     report = _fitting.fit_disk_embedding(_target(), initial_coordinates=initial, n_epochs=1)
     assert report.initialization == 'provided'
     assert np.isfinite(report.best_loss)
+
+
+def test_distance_rank_prefers_a_feature_aligned_layout():
+    import importlib.util
+    file = Path(__file__).resolve().parents[1] / 'examples' / 'compare_spectral_init.py'
+    spec = importlib.util.spec_from_file_location('compare_spectral_init', file)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    features = np.random.default_rng(0).normal(size=(12, 2))
+    aligned = features / (np.linalg.norm(features, axis=1).max() * 4)
+    random = np.random.default_rng(1).normal(scale=0.05, size=(12, 2))
+    assert module.distance_rank(aligned, features) > module.distance_rank(random, features)
