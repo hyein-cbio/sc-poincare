@@ -20,16 +20,19 @@ and 4 are confirmation only after seed 0 meets every guardrail below. They
 are a sensitivity description, not a confidence interval, and they are not
 a second chance to choose the optimizer. The budget is 1,500 updates, the
 existing graph-stress default, not 20. The lowest training loss selects the
-checkpoint, including initialization. An epoch limit is not promotion.
+checkpoint, including initialization. An epoch limit does not pass this screen.
 
 The default dense guard stays on. Labels stay out of graph construction,
 initialization, and fitting.
 
-## Promotion guardrails already used
+## Development screen already used
 
 Adam is the baseline and RMSProp is the only candidate. The numbers below
 are the development rules in
 [embedding-followup.md](embedding-followup.md). They are not refit here.
+Meeting them does not promote RMSProp: gene MSE and neighbor purity use the
+cells that were just embedded. A promotion claim still needs one score the
+fit does not see, and the present API has no such mapping.
 
 - Paul: K15 macro purity gain at least 0.003, and mean gain for 17Neu,
   18Eos, and 19Lymph at least 0.005.
