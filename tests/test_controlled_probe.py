@@ -4,6 +4,7 @@ import pytest
 
 from sc_poincare import experimental
 from sc_poincare.controlled_probe import (
+    classical_ball,
     classical_jitter,
     degree_aware_teacher,
     fit_from_initial,
@@ -75,6 +76,20 @@ def test_multiscale_mixture_is_stochastic_and_not_tau_one(features):
     assert not np.allclose(mixed, base)
     again = forest_accessibility(weights, forest_tau=1.)
     np.testing.assert_allclose(again, base)
+
+
+def test_three_dimensional_ball_is_explicit_and_finite(features):
+    pytest.importorskip("torch")
+    config = experimental.GraphStressConfig(n_neighbors=4)
+    setup = experimental.prepare_graph_stress(features, config=config)
+    assert setup.base_initial.shape[1] == 2
+    ball = classical_ball(setup, 3, 0)
+    assert ball.shape == (len(features), 3)
+    assert np.max(np.linalg.norm(ball, axis=1)) < 1.
+    fitted = fit_from_initial(setup, ball, epochs=1, chunk_size=5, max_dense_bytes=1 << 20)
+    assert len(fitted["loss_trace"]) == 2
+    assert np.isfinite(fitted["loss_trace"]).all()
+    assert fitted["current"].shape == (len(features), 3)
 
 
 def test_development_input_blocks_promotion():

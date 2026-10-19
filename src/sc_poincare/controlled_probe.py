@@ -13,6 +13,33 @@ from scipy import sparse
 from sc_poincare import experimental
 
 
+def classical_ball(setup, dimension, random_state):
+    """Classical scaling into ``dimension`` coordinates, then the usual jitter.
+
+    Dimension 2 follows the same Gram construction as exact MU. A higher
+    dimension is an explicit probe, not a default. The maximum radius is the
+    configuration's ``initial_radius``.
+    """
+    dimension = int(dimension)
+    n = setup.base_initial.shape[0]
+    if isinstance(dimension, bool) or dimension < 2 or dimension >= n:
+        raise ValueError("dimension must be an integer >= 2 and smaller than the number of cells.")
+    config = setup.config
+    geodesic = np.array(setup.target, dtype=np.float64, copy=True)
+    geodesic *= setup.metadata["global_mean"] / config.distance_scale
+    squared = geodesic * geodesic
+    gram = -.5 * (squared - squared.mean(0) - squared.mean(1, keepdims=True) + squared.mean())
+    from scipy.linalg import eigh
+    values, vectors = eigh(gram, subset_by_index=[n - dimension, n - 1])
+    initial = vectors[:, ::-1] * np.sqrt(np.maximum(values[::-1], 0.))
+    radius = float(np.linalg.norm(initial, axis=1).max())
+    if not np.isfinite(radius) or radius <= 0:
+        raise ValueError("Classical scaling did not produce a nondegenerate layout.")
+    initial *= config.initial_radius / radius
+    noise = np.random.default_rng(random_state).normal(scale=config.jitter, size=initial.shape)
+    return np.ascontiguousarray(initial + noise, dtype=np.float64)
+
+
 def classical_jitter(setup, random_state):
     """The exact MU start: classical scaling plus the configuration's jitter."""
     config = setup.config
@@ -148,6 +175,7 @@ def fixed_multiscale_accessibility(affinity, *, max_dense_bytes):
 
 
 __all__ = [
+    "classical_ball",
     "classical_jitter",
     "degree_aware_teacher",
     "fit_from_initial",

@@ -1,0 +1,149 @@
+{
+  "input_id": "moignard2015-development-reference",
+  "feature_sha256": "674f8b380ba701d56afdeae8b35edf8b1269dfaa8e8483bc7e9c7e9c12999aa0",
+  "labels_entered_fitting": false,
+  "markers_predeclared": [
+    "Gata1",
+    "Kdr",
+    "Runx1",
+    "Sfpi1",
+    "Cdh5"
+  ],
+  "stage_order_predeclared": [
+    "PS",
+    "4SFG",
+    "4SG",
+    "NP"
+  ],
+  "promoted": false,
+  "biological_validation": false,
+  "spectral_defaults_changed": false,
+  "results": [
+    {
+      "dimension": 2,
+      "loss_at_0": 1.0369251291534152,
+      "loss_at_20": 0.6951748011324363,
+      "best_epoch": 20,
+      "macro_purity": 0.5460474128921773,
+      "input_neighbor_recall": 0.13645144890696492,
+      "populations": [
+        {
+          "label": "NP",
+          "n_cells": 552,
+          "purity": 0.307487922705314,
+          "input_neighbor_recall": 0.14758454106280194,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "PS",
+          "n_cells": 624,
+          "purity": 0.4370726495726496,
+          "input_neighbor_recall": 0.1518162393162393,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SG",
+          "n_cells": 770,
+          "purity": 0.5716883116883118,
+          "input_neighbor_recall": 0.10155844155844156,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SFG",
+          "n_cells": 983,
+          "purity": 0.9450661241098678,
+          "input_neighbor_recall": 0.1820278060359444,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "HF",
+          "n_cells": 1005,
+          "purity": 0.468922056384743,
+          "input_neighbor_recall": 0.1029519071310116,
+          "purity_ceiling": 1.0
+        }
+      ],
+      "root_index": 1736,
+      "stage_mean_pseudotime": {
+        "PS": 0.2898731737193925,
+        "4SFG": 0.7602694887987356,
+        "4SG": 0.538855878314036,
+        "NP": 0.3940976674996568
+      },
+      "stage_order_matches_means": false,
+      "separate_label_mean_pseudotime": {
+        "HF": 0.5621387692323079
+      },
+      "marker_pseudotime_spearman": {
+        "Gata1": 0.44741620814000665,
+        "Kdr": -0.03453990022416161,
+        "Runx1": 0.435758522538009,
+        "Sfpi1": 0.3124836545087612,
+        "Cdh5": 0.32012757166859246
+      }
+    },
+    {
+      "dimension": 3,
+      "loss_at_0": 1.0261001645016912,
+      "loss_at_20": 0.6069155966428209,
+      "best_epoch": 20,
+      "macro_purity": 0.5429794816963138,
+      "input_neighbor_recall": 0.16398915438061346,
+      "populations": [
+        {
+          "label": "NP",
+          "n_cells": 552,
+          "purity": 0.30289855072463767,
+          "input_neighbor_recall": 0.1719806763285024,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "PS",
+          "n_cells": 624,
+          "purity": 0.419551282051282,
+          "input_neighbor_recall": 0.1817307692307692,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SG",
+          "n_cells": 770,
+          "purity": 0.5826839826839826,
+          "input_neighbor_recall": 0.1361904761904762,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "4SFG",
+          "n_cells": 983,
+          "purity": 0.9369277721261444,
+          "input_neighbor_recall": 0.20807053238385897,
+          "purity_ceiling": 1.0
+        },
+        {
+          "label": "HF",
+          "n_cells": 1005,
+          "purity": 0.4728358208955224,
+          "input_neighbor_recall": 0.12676616915422884,
+          "purity_ceiling": 1.0
+        }
+      ],
+      "root_index": 1736,
+      "stage_mean_pseudotime": {
+        "PS": 0.45110671675227637,
+        "4SFG": 0.807264308317161,
+        "4SG": 0.6019221694865498,
+        "NP": 0.5336802613148817
+      },
+      "stage_order_matches_means": false,
+      "separate_label_mean_pseudotime": {
+        "HF": 0.6861517733762391
+      },
+      "marker_pseudotime_spearman": {
+        "Gata1": 0.3596648893614025,
+        "Kdr": -0.018049741158056506,
+        "Runx1": 0.4739508762227522,
+        "Sfpi1": 0.36656875037311926,
+        "Cdh5": 0.4172014297786006
+      }
+    }
+  ]
+}
