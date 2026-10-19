@@ -31,5 +31,8 @@ The public Moignard CSV hash and the label-stripped 3,934×42 feature hash match
 the recorded provenance. The zero-epoch landmark check and a checksummed local
 reread agree exactly. Public Paul.csv matches its source hash, and sklearn
 1.9.1 full-SVD PCA20 does not match the recorded Paul or Olsson feature hashes.
-Those PCA matrices were not substituted. No off-machine backup destination is
-configured.
+Those PCA matrices were not substituted. The same package versions on this host
+produce a deterministic Paul PCA20 hash, `20a9f31a…`, which is not the recorded
+`0386248d…`. The Drive folder `sc-poincare backups` holds the Moignard manifest
+and report. Three hex pieces of `arrays.npz` are there, and chunks 02 through
+30 are not, so the coordinate archive is not yet an off-machine copy.
