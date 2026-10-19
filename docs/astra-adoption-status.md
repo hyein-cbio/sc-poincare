@@ -1,7 +1,8 @@
 # Astra adoption status and remaining work
 
-Source reference: branch `feat/experimental-graph-stress`, pinned commit
-`3489e586caaa5b0408a0751220d6349426457bfe`. Implemented code, development evidence
+Initial source reference: branch `feat/experimental-graph-stress`, pinned commit
+`3489e586caaa5b0408a0751220d6349426457bfe`. Latest audited addition: `9f369a9`;
+see the [deduplicated mechanism adoption](astra-mechanism-adoption.md). Implemented code, development evidence
 and speculative roadmap items are deliberately distinguished. This inventory
 does not authorize more experiments, source pushes or continuous future work.
 The [subsequent deduplicated follow-up](astra-followup.md) records the fresh
@@ -27,7 +28,11 @@ source comparison, newly exposed controls and their bounded checks.
 | Explicit spectral tol/maxiter | Opt-in ARPACK controls, residual/convergence metadata and warned seeded fallback; defaults unchanged |
 | Gene-level and declared-stage diagnostics | Implemented as read-only software; not biological validation or root/order inference |
 | Upstream development aggregate | Pinned, separately retained JSON; not counted as current reruns |
-| Remote CPU-Torch/Torch-free CI | Passed on main 843138f; that run does not certify subsequent uncommitted changes |
+| Teacher entropy/incoming-mass/normalization | Latest observational metadata ported with upstream analytic tests and main integration checks |
+| Latest balanced/multiscale/global-target evidence | Original upstream outcomes/closure retained separately from later user-authorized receiver completion |
+| Raw 37-fit receiving audit | Transport intact; separate state supplement qualifies CPU roundoff; fresh K metrics and fresh-score local selector agree, with no global-selector execution |
+| Explicit Moignard stage mapping | Newly supplied recipe used post-hoc on existing main coordinates with the saved root verified |
+| Remote CPU-Torch/Torch-free CI | Passed on main 3cbdd5f; that run does not certify subsequent uncommitted changes |
 
 The two full Moignard Euclidean controls originally stopped at the 45-minute
 budget. A later operator-authorized **20-minute continuation budget** restored
@@ -90,6 +95,12 @@ These integrations do not redesign the low-level objectives or optimizers:
 
 ## Deliberately not promoted
 
+- Latest balanced/multiscale local teachers failed joint promotion/transfer
+  criteria. Union-global improved Moignard ordering but lost Paul macro/rare
+  purity. At upstream closure mutual-raw screening and global selection/transfer
+  were incomplete; cancellation records remain historical evidence, not a
+  completed selector or an authorization to restart old queues. No variant is
+  automatically enabled or promoted.
 - The source input-calibrated row-temperature alternative failed real-data
   population/expression diagnostics despite improving a training-related score.
   It is not enabled as a hidden rule or rerun until a favorable picture appears.

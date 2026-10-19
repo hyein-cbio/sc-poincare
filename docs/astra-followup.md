@@ -2,9 +2,11 @@
 
 ## Reference and scope
 
-A fresh fetch still resolves `feat/experimental-graph-stress` to
+The earlier follow-up fetch resolved `feat/experimental-graph-stress` to
 `3489e586caaa5b0408a0751220d6349426457bfe`; the starting main revision is
-`843138f7a65cb5beccb9efe7a2f2a7d796758d2b`. No new upstream implementation was
+`843138f7a65cb5beccb9efe7a2f2a7d796758d2b`. This is the earlier follow-up;
+subsequent commit `9f369a9` is covered in the [latest adoption report](astra-mechanism-adoption.md).
+No new upstream implementation was
 silently merged. `experimental.py` and `examples/run_graph_stress.py` were already
 byte-identical to that branch, so they were not copied or implemented again.
 
@@ -145,12 +147,17 @@ shared-init RFA baseline, fixed/local-radius Poincare MU had **419/410 worse gen
 out of 1000** in Paul and **9/8 worse genes out of 42** in Moignard, despite better
 aggregate MSE. These counts describe reconstruction errors, not significance or
 validated marker behavior. Input artifacts lack gene names, so reports retain
-column indices rather than guessing genes.
+column indices rather than guessing genes. A subsequent
+[metadata-readiness audit](validation-readiness-audit.md) recovered names from
+the exact checksummed study CSVs, verified every expression value and row label,
+and linked names through sidecars without rewriting the frozen inputs or fits.
 
 Astra's reported real-data developmental rank was not recomputed: the aggregate
 evidence does not provide a complete reproducible stage-order/root recipe. The
 new evaluator was tested with declared synthetic orders; no real-data stage
-mapping was guessed to reproduce a favorable number.
+mapping was guessed to reproduce a favorable number. The later upstream
+`9f369a9` report supplies an explicit tied-stage mapping; its post-hoc use on
+unchanged main coordinates is recorded separately in the latest adoption report.
 
 ## Upstream evidence and what is still not applied
 

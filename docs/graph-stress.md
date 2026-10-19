@@ -97,6 +97,22 @@ Row chunks retain every column and accumulate both endpoint contributions
 before each update. They change fitting workspace, not the objective or its
 quadratic target storage. No negative sampling is used.
 
+## Teacher diagnostics
+
+Preparation includes `teacher_entropy_mean` (nats), entropy and incoming-mass
+quantiles at `teacher_diagnostic_quantiles=[0,.1,.5,.9,1]`, maximum asymmetry and
+maximum row-normalization error. The keys are `teacher_entropy_quantiles`,
+`teacher_incoming_mass_quantiles`, `teacher_max_asymmetry` and
+`teacher_max_row_sum_error`. These describe the prepared teacher, not biological
+balance; the weights, initializer, targets and fit are not changed.
+
+Row-normalized symmetric affinities generally produce a reversible but
+asymmetric teacher. Mean entropy lower-bounds local cross entropy; subtracting
+it yields teacher-specific KL, not a common biological score across teachers.
+The [latest upstream adoption report](astra-mechanism-adoption.md) records the
+analytic checks and the 37-execution research evidence, including failed
+promotion criteria and cancelled work. No candidate target rule was promoted.
+
 ## Results, progress and state recovery
 
 The returned `coordinates` select the lowest **training** objective, including
@@ -149,7 +165,14 @@ numerical port checks establish computation agreement, not new biological
 validation. Review input hashes, package versions, graph construction, update
 counts and stopping state when reproducing results.
 
-The source branch reported that its port verification used the full Paul CSV,
+Adding teacher metadata at upstream `9f369a9` changes `experimental.py` source,
+metadata and checkpoint digests. Historical states still need their original
+sources; numerical equality does not bypass strict resume checks. Separate
+main before/after processes matched 262 array/tensor/scalar checks on full Paul
+PCA20 over 20 updates in both geometries/bandwidths. These are software regression
+checks, not new independent biological fits.
+
+The earlier source branch reported that its port verification used the full Paul CSV,
 explicit label exclusion and PCA20.
 For both bandwidth rules, the first 20 updates matched the frozen research
 implementation exactly in coordinates, initialization and loss trace (maximum

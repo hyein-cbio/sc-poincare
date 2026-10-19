@@ -185,6 +185,9 @@ fixed-canvas marker-center crowding/width from intrinsic separation.
 - [Deduplicated Astra follow-up](docs/astra-followup.md): opt-in RFA `forest_tau`
   and spectral budgets, per-gene/order diagnostics and fixed control probes.
   Defaults remain unchanged; current checkpoints use the new source fingerprints.
+- [Latest Astra teacher/mechanism adoption](docs/astra-mechanism-adoption.md):
+  teacher entropy/incoming-mass diagnostics and analytic tests; negative and
+  cancelled mechanism evidence retained without new target-rule defaults.
 - [Earlier union-only experiment](docs/graph-topology-results.md) and
   [visibility extension](docs/graph-visibility-study.md): historical, different
   objectives; neither is the MU algorithm's performance.
