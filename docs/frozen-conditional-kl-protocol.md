@@ -85,11 +85,12 @@ objectives.
 
 ## Biological checks that must be attached before a run
 
-Before execution, attach a marker, branch and root list taken from a source
-that was fixed without looking at the new coordinates. If that list is not in
-the input manifest, do not start. Graph scores do not fill that gap. Report
-every rare and outlier population that the list names. A population loss
-remains a result.
+The label inventory is attached in
+[planaria-label-inventory.md](planaria-label-inventory.md). Rare populations
+are those with at most 50 cells. They were counted from the CSV before any
+new coordinates existed. A future run reports every one of them. Graph scores
+do not replace that report. The dense-memory gate above still has to pass
+before the run starts.
 
 ## Decision
 
