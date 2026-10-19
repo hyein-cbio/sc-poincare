@@ -45,6 +45,12 @@ def test_benchmark_uses_common_initialization_and_never_fits_labels(tmp_path,mon
             assert record['label_neighbor_purity']['overall']==1
         label='one' if i==0 else 'different'
         assert report['label_counts']=={label:12}
+        provenance=report['provenance']
+        assert provenance['import_file'].endswith('sc_poincare/__init__.py')
+        assert len(provenance['git_revision'])==40
+        assert isinstance(provenance['git_dirty'], bool)
+        assert len(provenance['git_diff_sha256'])==64
+        assert provenance['versions']['numpy']
         assert all(r['label_neighbor_purity'][label]==1 for r in report['records'])
         assert all(r['epochs_run']==2 for r in report['records'])
         arrays=[np.load(out.with_name(f'{out.stem}_{mode}_seed0.npz')) for mode in modes]
