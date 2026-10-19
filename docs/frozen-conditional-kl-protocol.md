@@ -22,12 +22,16 @@ before any later execution. The 2026-10-19 record is:
 
 ## Resource gate
 
-Do not start this comparison unless the host has swap headroom above the
-historical full-Planaria measurements: one float64 target matrix about
-3.48 GiB and peak process RSS about 5.10 GiB, with other applications
-separated. The dense-array budget is not an RSS cap. The host above fails
-that gate. A smaller dataset, a shorter budget, or a disabled guard is not
-a substitute result.
+Public `Planaria.csv` from PoincaréMaps `7ffa518` was measured on this host.
+SHA256 `d59a30b1d2ddf959912d4a1fc4c20910de88823f2a67223d9e1809db065e382d`,
+12,133,109 bytes, 21,612 data rows, 50 numeric columns plus a label. One
+float64 N-by-N matrix is 3.48 GiB. The default guard budgets four such
+arrays, 13.92 GiB, and the limit is 0.50 GiB. `check_dense_budget(21612)`
+raises `MemoryError` before any matrix is allocated. Available memory was
+about 4.2 GiB with no swap. The historical peak RSS was about 5.10 GiB.
+
+Do not raise `--max-dense-mib` on this host to start the fit. A smaller
+dataset, a shorter budget, or a disabled guard is not a substitute result.
 
 ## Question and inputs
 
