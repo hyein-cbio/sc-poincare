@@ -234,9 +234,14 @@ def forest_accessibility(
     affinity = affinity.tocsr().astype(np.float64)
     if not np.all(np.isfinite(affinity.data)) or np.any(affinity.data < 0):
         raise ValueError("affinity must be finite and nonnegative.")
-    n_obs = affinity.shape[0]
     degree = np.asarray(affinity.sum(axis=1)).reshape(-1)
     laplacian = sparse.diags(degree) - affinity
+    return _row_stochastic_forest(laplacian, block_size)
+
+
+def _row_stochastic_forest(laplacian: sparse.spmatrix, block_size: int) -> np.ndarray:
+    """Exact ``(I + L)^{-1}`` followed by the existing nonnegative row normalization."""
+    n_obs = laplacian.shape[0]
     shifted = (sparse.eye(n_obs, format="csc") + laplacian.tocsc()).tocsc()
     factorization = splu(shifted)
     accessibility = np.empty((n_obs, n_obs), dtype=np.float64)
@@ -250,6 +255,39 @@ def forest_accessibility(
     row_mass = accessibility.sum(axis=1, keepdims=True)
     accessibility /= np.clip(row_mass, a_min=1e-12, a_max=None)
     return accessibility
+
+
+def multiscale_forest_accessibility(
+    affinity: sparse.spmatrix,
+    taus: tuple[float, ...] = (0.1, 10.0),
+    *,
+    block_size: int = 128,
+    max_dense_bytes: int | None = DEFAULT_MAX_DENSE_BYTES,
+) -> np.ndarray:
+    """Equal mixture of ``(I + tau L)^{-1}`` on one fixed affinity.
+
+    Tau changes propagation range. It does not change edge weights, which remain
+    the caller's sigma choice. ``estimate_proximity`` still uses unit tau.
+    """
+    if isinstance(taus, (str, bytes)) or len(tuple(taus)) < 2:
+        raise ValueError("taus must contain at least two finite positive scales.")
+    # Reuse the unit solver's validation and budget check, then discard that target.
+    forest_accessibility(affinity, block_size=block_size, max_dense_bytes=max_dense_bytes)
+    affinity = affinity.tocsr().astype(np.float64)
+    degree = np.asarray(affinity.sum(axis=1)).reshape(-1)
+    laplacian = sparse.diags(degree) - affinity
+    parts = []
+    for tau in taus:
+        if isinstance(tau, (bool, np.bool_)) or not np.isscalar(tau):
+            raise ValueError("each forest tau must be a finite positive number.")
+        scale = float(tau)
+        if not np.isfinite(scale) or scale <= 0:
+            raise ValueError("each forest tau must be a finite positive number.")
+        parts.append(_row_stochastic_forest(laplacian * scale, block_size))
+    mixed = np.mean(np.stack(parts, axis=0), axis=0)
+    np.maximum(mixed, 0.0, out=mixed)
+    mixed /= np.clip(mixed.sum(axis=1, keepdims=True), a_min=1e-12, a_max=None)
+    return mixed
 
 
 def estimate_proximity(

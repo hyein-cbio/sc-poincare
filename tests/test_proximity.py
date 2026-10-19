@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import numpy as np
+import pytest
 from scipy.sparse.csgraph import connected_components
 
 from sc_poincare._proximity import estimate_proximity, forest_accessibility, local_affinity
@@ -36,3 +37,25 @@ def test_forest_accessibility_is_row_stochastic():
     # Not a strict theorem for every seed, but the diagonal must dominate.
     assert np.all(np.diag(p) > 1.0 / 18)
     assert close >= 0 and far >= 0
+
+
+def test_multiscale_mixture_is_separate_from_sigma_and_from_the_default():
+    from sc_poincare._proximity import multiscale_forest_accessibility
+    rng = np.random.default_rng(4)
+    features = rng.normal(size=(18, 6))
+    weights, _ = local_affinity(features, n_neighbors=5, kernel_width=1.5)
+    unit = forest_accessibility(weights)
+    prox = estimate_proximity(features, n_neighbors=5, kernel_width=1.5)
+    np.testing.assert_allclose(prox.accessibility, unit, atol=1e-12)
+    mixed = multiscale_forest_accessibility(weights)
+    repeated = multiscale_forest_accessibility(weights, taus=(1.0, 1.0))
+    np.testing.assert_allclose(repeated, unit, atol=1e-10)
+    assert not np.allclose(mixed, unit, atol=1e-6)
+    assert np.all(mixed >= -1e-12)
+    np.testing.assert_allclose(mixed.sum(axis=1), 1.0, atol=1e-8)
+    wider, _ = local_affinity(features, n_neighbors=5, kernel_width=3.0)
+    assert not np.allclose(forest_accessibility(wider), unit, atol=1e-6)
+    with pytest.raises(ValueError):
+        multiscale_forest_accessibility(weights, taus=(1.0,))
+    with pytest.raises(ValueError):
+        multiscale_forest_accessibility(weights, taus=(0.1, -1.0))

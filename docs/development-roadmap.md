@@ -128,12 +128,13 @@ not satisfy the independent-data or general biological decision gates above.
 
 Remaining research candidates are unvalidated:
 
-- [ ] Forest time scale `P_tau = (I + tau L)^-1`: distinguish the propagation
-  range controlled by tau from relative edge weights controlled by kernel sigma.
-  Consider fixed multiscale mixtures or degree-aware rules; freeze input-only
-  rules and control protocols before searching for a Planaria-specific best tau.
-  The scalar control itself is on `main` (`3cbdd5f`) and is not copied here.
-  Fixed multiscale mixtures are still unvalidated on `main`.
+- [x] A fixed equal mixture of forest times 0.1 and 10 is available as
+  `multiscale_forest_accessibility` on one affinity. It differs from
+  `(I+L)^{-1}`, stays row-stochastic, and is not the `estimate_proximity`
+  target. Tau is not sigma: repeating tau=1 recovers the unit target, while a
+  different sigma changes that target. No Planaria-specific tau was selected.
+- [ ] Degree-aware edge rules remain unvalidated. The public scalar `forest_tau`
+  control is on `main` (`3cbdd5f`) and is not copied here.
 - [ ] Test robustness to mutual versus union kNN, long MST bridges, local
   bandwidth and rare-population coverage. Do not normalize provided PCA scores
   as if they were raw gene counts. This branch's follow-up disqualified
