@@ -87,11 +87,11 @@ the current baseline or research gates.
   report upload is 2095 bytes, the same size as the local file. The feature
   matrix file hash `e244315a…` equals the published feature-file hash, so that
   matrix is rebuilt from the public CSV. The Drive folder is `sc-poincare backups`.
-  Hex pieces 00 through 23, plus 31, are in that folder. Those 4,000-byte
+  Hex pieces 00 through 25, plus 31, are in that folder. Those 4,000-byte
   pieces are 8,000 hex characters and chunk 31 is 5,896 bytes. Downloaded
-  chunk 23 starts with `e290f1c1` and ends with `876bf530d60`. The earlier
+  chunk 25 starts with `83b777c2` and ends with `bf05fdac`. The earlier
   7,999-byte chunk 13 upload and the 7,985-byte chunk 08 upload stay in the
-  trash. Chunks 24 through 30 are absent, so the archive is not yet recoverable
+  trash. Chunks 26 through 30 are absent, so the archive is not yet recoverable
   off-machine.
 
 ## P1 — Independent biological validation
