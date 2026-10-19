@@ -92,6 +92,22 @@ def test_three_dimensional_ball_is_explicit_and_finite(features):
     assert fitted["current"].shape == (len(features), 3)
 
 
+def test_unit_curvature_matches_the_default_disk(features):
+    pytest.importorskip("torch")
+    config = experimental.GraphStressConfig(n_neighbors=4)
+    setup = experimental.prepare_graph_stress(features, config=config)
+    initial = classical_jitter(setup, 0)
+    plain = fit_from_initial(setup, initial, epochs=2, chunk_size=5, max_dense_bytes=1 << 20)
+    curved = fit_from_initial(setup, initial, epochs=2, chunk_size=5, max_dense_bytes=1 << 20, curvature=1.)
+    np.testing.assert_allclose(curved["loss_trace"], plain["loss_trace"], rtol=1e-10, atol=1e-10)
+    milder = fit_from_initial(setup, initial, epochs=1, chunk_size=5, max_dense_bytes=1 << 20, curvature=.25)
+    assert milder["curvature"] == .25
+    assert np.isfinite(milder["loss_trace"]).all()
+    assert np.max(np.sum(milder["current"] ** 2, axis=1) * .25) < 1
+    with pytest.raises(ValueError):
+        fit_from_initial(setup, initial, epochs=1, chunk_size=5, max_dense_bytes=1 << 20, curvature=0)
+
+
 def test_development_input_blocks_promotion():
     assert promotion_allowed(development_input=True, joint_improvements=[True, True]) is False
     assert promotion_allowed(development_input=False, joint_improvements=[True, False]) is False
