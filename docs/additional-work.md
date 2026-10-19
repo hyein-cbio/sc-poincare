@@ -41,11 +41,12 @@ on that single development run. SGD did not move. Dimension 3 lowered loss
 without raising macro purity.
 
 None of these is on `main`, and none should become a default from a
-20-update development fit. The worthwhile study is a pre-registered
-Adam-versus-RMSProp comparison: same objective, same classical initialization,
-more than three seeds, a budget long enough that the loss curve is not still
-in its first drop, and the population and stage rules already used for
-promotion. Write the rule before fitting.
+20-update development fit. The pre-registered Adam-versus-RMSProp rule is
+[adam-rmsprop-protocol.md](adam-rmsprop-protocol.md): the same graph-stress
+objective and initialization, seeds 0–4, 1,500 updates, and the existing
+Paul and Moignard promotion guardrails. The fit is not started. Riemannian
+RMSProp is not implemented here, and Paul still needs feature SHA256
+`0386248d…` before that comparison can be scored.
 
 ## 3. Separate held-out quality from transductive neighbor scores
 
