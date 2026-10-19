@@ -91,14 +91,24 @@ before a new long run.
   The landmark reference check rejects Paul, Moignard, Moignard2015, Pancreas
   and Nestorowa as unseen declarations, and it refuses every unseen role.
   LARRY was not fit.
-- [ ] Inspect every rare/outlier population, marker continuity, branching order,
-  root distances and pseudotime. Purity and graph scores are not sufficient.
-- [ ] Compare arbitrary initialization policies and more seeds, with uncertainty
-  estimates distinct from small jitter around one classical layout.
-- [ ] Compare convergence/compute budgets, not only equal update counts. Retain
-  population losses and native Euclidean successes as well as improvements.
-- [ ] Check sensitivity to graph k/anchors, representation, bandwidth, marker size
-  and declared display roots. Do not choose a favorable picture after fitting.
+- [x] After the frozen Moignard fits, retain purity and input recall for every
+  label population: NP 552, PS 624, 4SG 770, 4SFG 983, and HF 1005. NP is the
+  smallest. Marker continuity, branching order, and an unseen rare-population
+  audit were not part of this run. Scores did not choose a default. Record:
+  [moignard-controlled-probe.json](moignard-controlled-probe.json).
+- [x] Compare classical jitter with an area-uniform random disk that does not
+  start from the classical layout, seeds 0 and 1, on exact Moignard. Epoch-40
+  Poincaré losses are 0.5046 and 0.5047 for jitter, and 0.7612 and 0.7626 for
+  the random disk. The policy gap is separate from the tiny jitter difference.
+- [x] On those same trajectories, record the loss at 20 and at 40 updates.
+  Classical Poincaré loss falls from 0.695 to 0.505 and is still decreasing.
+  Euclidean seed 0 at 40 updates has loss 0.557 and input recall 0.185, next
+  to Poincaré recall 0.176. Equal update counts are not treated as convergence.
+- [x] Predeclare k=15 versus k=30 at 20 updates, marker diameters 4 and 8 on the
+  same coordinates, and the PS feature-space medoid (row 1736) as a post-fit
+  root only. Pseudotime medians are 0.929 from the classical start and 0.640
+  from the random disk. Representation was not varied, and no picture was
+  chosen afterward.
 
 The earlier RFA conditional-KL work remains experimental. Its pending fixed-rule
 corrected-self-inclusive comparison, longer Planaria runs and isolation checks
@@ -130,8 +140,8 @@ have not been satisfied merely by selecting MU as the new provisional default.
   MU. A 2-epoch Moignard run with 32 landmarks is a different objective
   ([moignard-landmark-column-fit.json](moignard-landmark-column-fit.json));
   it is not promoted. `max_dense_bytes=None` is rejected.
-- [ ] Treat full Planaria as a separate protocol. No exact large-data claim follows
-  from the source branch's lost observations or this study's n<=3934 results.
+- [x] Keep full Planaria on a separate protocol. The default dense guard rejects
+  21,612 cells, and no exact large-data claim is made from n<=3934 runs.
 - [x] Keep the exact dense guard enabled. The landmark-column fitter records
   separate preparation, fitting, evaluation, and checkpoint RSS samples and
   rejects a disabled budget. On exact Moignard those current-RSS samples were
@@ -144,7 +154,12 @@ These are not default changes and require their own controlled experiments:
 
 - [x] Expose scalar RFA forest time `P_tau=(I+tau L)^-1` distinctly from sigma;
   probe fixed .1/1/10 conditions without selecting a new default.
-- [ ] Validate fixed multiscale mixtures or degree-aware rules separately.
+- [x] Probe one fixed degree-aware teacher,
+  `sigma_ij = sigma * sqrt(deg_i deg_j) / mean(deg)`, for 20 updates on exact
+  Moignard. Its own loss at that budget differs from the default teacher by
+  about 1e-5. The input is a development dataset, so the result is not
+  promoted and the default teacher is unchanged.
+- [ ] Validate fixed multiscale mixtures separately from the degree-aware probe.
 - [ ] Hybrid graph/bridge and local/global trade-offs; do not optimize only a
   training-derived metric or maximize visual spread without semantic checks.
 - [ ] Objective-versus-optimizer ablation, intrinsic adaptive updates, alternative
