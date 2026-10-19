@@ -117,13 +117,28 @@ have not been satisfied merely by selecting MU as the new provisional default.
   normalization, classical-scaling initialization and both-endpoint gradients.
   The exact guard stays on. No default changes. Details:
   [landmark-reference.md](landmark-reference.md).
-- [ ] Repeat that check on the exact few-thousand-cell Paul and Moignard
-  reference. Synthetic recovery does not substitute for those arrays. Matrix-free
-  training that avoids storing the dense target is still a separate experiment.
+- [x] Repeat that check on the exact Moignard 3,934×42 feature array
+  (`feature_array_sha256` `674f8b38…`, CSV `3f450573…`). Thirty-two landmarks,
+  seed 0, zero epochs, and the default 512 MiB guard. Landmark columns agree
+  within 2e-14 absolute error. With that partial landmark set the column
+  objective's endpoint gradient differs from exact MU (relative L2 0.875).
+  Record: [moignard-landmark-reference.json](moignard-landmark-reference.json).
+- [ ] Repeat that check on the exact Paul 2,730×20 PCA features. Public
+  `Paul.csv` matches source `fed836ed…`, and sklearn 1.9.1 full-SVD PCA20 does
+  not reproduce feature hash `0386248d…`. That array was not substituted.
+- [x] Fit landmark columns without storing an N-by-N target. The teacher stays
+  sparse and each update materializes one row-chunk of embedding distances.
+  When every cell is a landmark, a 3-epoch synthetic trajectory matches exact
+  MU. A 2-epoch Moignard run with 32 landmarks is a different objective
+  ([moignard-landmark-column-fit.json](moignard-landmark-column-fit.json));
+  it is not promoted. `max_dense_bytes=None` is rejected.
 - [ ] Treat full Planaria as a separate protocol. No exact large-data claim follows
   from the source branch's lost observations or this study's n<=3934 results.
-- [ ] Do not disable the default memory guard to claim scalability. Measure process
-  RSS and preparation, fitting, evaluation and checkpoint I/O separately.
+- [x] Keep the exact dense guard enabled. The landmark-column fitter records
+  separate preparation, fitting, evaluation, and checkpoint RSS samples and
+  rejects a disabled budget. On exact Moignard those current-RSS samples were
+  353, 453, 458, and 459 MiB. A workspace that fits does not mean exact N-by-N
+  MU was stored.
 
 ## P3 — Research mechanisms, not dataset-specific patches
 

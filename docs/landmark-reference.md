@@ -46,5 +46,34 @@ is the Paul (2,730) or Moignard (3,934) reference, and neither authorizes
 disabling the dense guard, full Planaria, or a new default.
 
 The completion still allocates an N-by-N matrix inside a run that already built
-the exact target. It is not a matrix-free training method. A fitter that never
-stores the dense target remains a separate experiment.
+the exact target. `prepare_landmark_columns` / `fit_landmark_columns` are the
+separate matrix-free path: they store landmark distances and a sparse teacher.
+`max_dense_bytes=None` is rejected. When every cell is a landmark, the column
+mean is the exact nonself mean and a synthetic Adam trajectory matches
+`fit_graph_stress`. Fewer landmarks are a different objective.
+
+## Exact Moignard reference
+
+`Moignard2015.csv` from the public PoincaréMaps dataset matches the published
+source SHA256 `3f45057370d568f87b0ab313bfa91992d76e8551824e3a545014b8d4a47c2ea1`.
+Dropping the last column reproduces the 3,934×42 feature SHA256
+`674f8b380ba701d56afdeae8b35edf8b1269dfaa8e8483bc7e9c7e9c12999aa0`.
+Labels were removed before preparation. The zero-epoch check used 32 landmarks,
+seed 0, and the default 512 MiB guard. It took 12.3 seconds and fitted nothing.
+Landmark columns agree with the exact target to 1.8e-14 absolute error. The
+triangle excess max is 11.27, the completion-mean relative error is 0.437, and
+the column-objective endpoint gradient differs from exact MU by relative L2
+0.875. See [moignard-landmark-reference.json](moignard-landmark-reference.json).
+
+A separate 2-epoch landmark-column fit on that same feature array stores no
+dense target (workspace 4.0 MiB against an exact-dense estimate of 472 MiB).
+Its normalization is the landmark-column mean, not the exact nonself mean, so
+it is not an exact-MU continuation. Phase RSS samples are in
+[moignard-landmark-column-fit.json](moignard-landmark-column-fit.json).
+
+Public `Paul.csv` matches source SHA256
+`fed836ed28f148d9ee8efd8ec13ebd468f06ef9b92eeb6f9e218235d4ad2f21d`.
+sklearn 1.9.1 `PCA(20, svd_solver="full")` after dropping the last column does
+not reproduce feature SHA256
+`0386248d2c02c99f82cda2eb18b8e357b8e0399b10aba7e67575599fb115d90b`.
+That Paul matrix was not replaced with the nonmatching PCA scores.
