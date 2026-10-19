@@ -11,6 +11,7 @@ import hashlib
 import json
 from importlib.metadata import PackageNotFoundError, version
 from io import BytesIO
+import os
 import resource
 import subprocess
 import sys
@@ -45,14 +46,19 @@ def _package_version(distribution):
 def _run_provenance():
     """Import path, revision, and versions immediately before fitting."""
     import sc_poincare
+    repo = Path(__file__).resolve().parents[1]
+    git_env = os.environ.copy()
+    git_env.pop('GIT_DIR', None)
+    git_env.pop('GIT_WORK_TREE', None)
     revision = dirty = diff_sha = None
     try:
-        revision = subprocess.check_output(
-            ['git', 'rev-parse', 'HEAD'], text=True, stderr=subprocess.DEVNULL).strip()
-        porcelain = subprocess.check_output(
-            ['git', 'status', '--porcelain'], text=True, stderr=subprocess.DEVNULL)
-        diff = subprocess.check_output(['git', 'diff', 'HEAD'], stderr=subprocess.DEVNULL)
-        dirty = bool(porcelain.strip())
+        def git_text(*args):
+            return subprocess.check_output(
+                ['git', '-C', str(repo), *args], text=True, stderr=subprocess.DEVNULL, env=git_env)
+        revision = git_text('rev-parse', 'HEAD').strip()
+        dirty = bool(git_text('status', '--porcelain').strip())
+        diff = subprocess.check_output(
+            ['git', '-C', str(repo), 'diff', 'HEAD'], stderr=subprocess.DEVNULL, env=git_env)
         diff_sha = hashlib.sha256(diff).hexdigest()
     except (subprocess.CalledProcessError, FileNotFoundError):
         pass
