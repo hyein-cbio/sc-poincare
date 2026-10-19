@@ -92,10 +92,12 @@ difference 0. See [moignard-landmark-restore.json](moignard-landmark-restore.jso
 The checksum manifest and the 2,095-byte report were copied to the Drive folder
 `sc-poincare backups` and the downloaded manifest matches
 `262fa3960267a859eac9a29d3b47f3ba0246ae789eea339df6da63f0a535bf19`.
-A folder listing shows `arrays.npz.hex.00` through `arrays.npz.hex.30` at
-8,000 bytes and `arrays.npz.hex.31` at 5,896 bytes. The Drive content snippet
-for chunk 31 contains every 500-character block start of the local hex,
-including `3f445ddca91d`, and it ends with the ZIP end-of-central-directory
-marker. They have not been concatenated into a file whose SHA256 is
-`75da11742aa4773b28f62463c3c6b63146024e812fb7aaaf494d2f864ad5ca17`, so
-`arrays.npz` is not yet a confirmed recoverable copy.
+Drive holds `arrays.npz.hex.00` through `arrays.npz.hex.30` at 8,000 bytes
+and `arrays.npz.hex.31` at 5,896 bytes. The earlier short uploads of chunks 08
+and 13 stay in the trash and were not part of the restore. Each of the 32
+current download responses was read back from the persisted tool transcript,
+base64-decoded, and matched the corresponding local hex file byte for byte.
+Concatenating those hex texts and decoding them produced 126,948 bytes whose
+SHA256 is `75da11742aa4773b28f62463c3c6b63146024e812fb7aaaf494d2f864ad5ca17`,
+the same as the local `arrays.npz`. The zip contains `landmark_index.npy`,
+`exact_initial.npy`, and `landmark_initial.npy`.

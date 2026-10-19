@@ -81,22 +81,22 @@ the current baseline or research gates.
   primary value matched exactly (absolute difference 0). The feature matrix
   stays under ignored `data/` and is not vendored. Record:
   [moignard-landmark-restore.json](moignard-landmark-restore.json).
-- [ ] Long or unique jobs still need an off-machine copy of `arrays.npz`.
+- [x] Long or unique jobs still need an off-machine copy of `arrays.npz`.
   The Moignard manifest was uploaded and the downloaded bytes match SHA256
   `262fa3960267a859eac9a29d3b47f3ba0246ae789eea339df6da63f0a535bf19`. The
   report upload is 2095 bytes, the same size as the local file. The feature
   matrix file hash `e244315a…` equals the published feature-file hash, so that
   matrix is rebuilt from the public CSV. The Drive folder is `sc-poincare backups`.
-  A folder listing shows hex pieces 00 through 30 at 8,000 bytes and chunk 31
-  at 5,896 bytes. Those 4,000-byte pieces are 8,000 hex characters. Downloaded
-  chunk 30 starts with `511c63a0` and ends with `3f83a802`. The earlier
-  7,999-byte chunk 13 upload and the 7,985-byte chunk 08 upload stay in the
-  trash. The Drive content snippet for chunk 31 contains every 500-character
-  block start of the local hex, including `3f445ddca91d`, and it ends with the
-  ZIP end-of-central-directory marker. The pieces have not been concatenated
-  into a file whose SHA256 is
-  `75da11742aa4773b28f62463c3c6b63146024e812fb7aaaf494d2f864ad5ca17`, so the
-  archive is not yet a confirmed recoverable copy.
+  Hex pieces `arrays.npz.hex.00` through `.30` are 8,000 bytes and `.31` is
+  5,896 bytes. The earlier 7,999-byte chunk 13 upload and the 7,985-byte chunk
+  08 upload stay in the trash and were not part of the restore. Each of the 32
+  current Drive download responses was read back from the persisted tool
+  transcript, base64-decoded, and matched the corresponding local hex file
+  byte for byte. Concatenating those hex texts and decoding them produced
+  126,948 bytes whose SHA256 is
+  `75da11742aa4773b28f62463c3c6b63146024e812fb7aaaf494d2f864ad5ca17`, the same
+  as the local `arrays.npz`. The zip contains `landmark_index.npy`,
+  `exact_initial.npy`, and `landmark_initial.npy`.
 
 ## P1 — Independent biological validation
 
