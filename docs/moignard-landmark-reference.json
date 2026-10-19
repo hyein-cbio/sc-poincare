@@ -1,0 +1,62 @@
+{
+  "schema_version": 1,
+  "fits_executed": 0,
+  "biological_validation": false,
+  "normalization": "exact_nonself_mean",
+  "landmark_seed": 0,
+  "executed_landmark_seeds": [
+    0
+  ],
+  "declared_seeds": [
+    0
+  ],
+  "primary_metric": "landmark_column_max_abs",
+  "primary_value": 1.7763568394002505e-14,
+  "sensitivity": {
+    "triangle_excess_max": 11.268061528318201,
+    "completion_mean_relative_error": 0.43654847964944116,
+    "init_procrustes_rmse": 0.008129661686712905,
+    "completion_gradient_relative_l2": 0.365181915833238,
+    "column_objective_gradient_relative_l2": 0.8750312252544279
+  },
+  "metrics": {
+    "landmark_column_max_abs": 1.7763568394002505e-14,
+    "triangle_excess_max": 11.268061528318201,
+    "completion_mean_relative_error": 0.43654847964944116,
+    "init_procrustes_rmse": 0.008129661686712905,
+    "completion_gradient_relative_l2": 0.365181915833238,
+    "column_objective_gradient_relative_l2": 0.8750312252544279
+  },
+  "protocol": {
+    "input_id": "moignard2015-development-reference",
+    "role": "reference_check",
+    "n_cells": 3934,
+    "feature_sha256": "674f8b380ba701d56afdeae8b35edf8b1269dfaa8e8483bc7e9c7e9c12999aa0",
+    "parameters_json": "{\"distance_scale\":2.0,\"gamma\":0.06666666666666667,\"initial_radius\":0.2,\"jitter\":0.0002,\"learning_rate\":0.013333333333333334,\"local_bandwidth\":\"global\",\"local_weight\":0.03,\"n_neighbors\":15,\"relative_floor\":0.01}",
+    "n_landmarks": 32,
+    "max_dense_bytes": 536870912,
+    "max_epochs": 0,
+    "seeds": [
+      0
+    ],
+    "primary_metric": "landmark_column_max_abs",
+    "sensitivity_metrics": [
+      "triangle_excess_max",
+      "completion_mean_relative_error",
+      "init_procrustes_rmse",
+      "completion_gradient_relative_l2",
+      "column_objective_gradient_relative_l2"
+    ],
+    "labels_excluded": true,
+    "approximation": "landmark_triangle",
+    "objective": "exact_mu_relative_stress_plus_local_ce",
+    "schema_version": 1
+  },
+  "n_cells": 3934,
+  "n_landmarks": 32,
+  "global_mean": 7.87626946686226,
+  "completion_nonself_mean": 11.314642927930294,
+  "elapsed_seconds": 12.336770174999856,
+  "source_sha256": "3f45057370d568f87b0ab313bfa91992d76e8551824e3a545014b8d4a47c2ea1",
+  "feature_array_sha256_checked": "674f8b380ba701d56afdeae8b35edf8b1269dfaa8e8483bc7e9c7e9c12999aa0"
+}

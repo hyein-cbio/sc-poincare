@@ -8,10 +8,15 @@ import pytest
 from sc_poincare import experimental
 from sc_poincare._research_policy import CLOSED_RESEARCH_MARKER
 from sc_poincare.landmark import (
+    LandmarkColumnSetup,
     compare_landmark_reference,
+    fit_landmark_columns,
     freeze_comparison,
+    prepare_landmark_columns,
     verify_reference_tree,
     write_reference_tree,
+    _parameters_json,
+    _sparse_teacher,
 )
 
 
@@ -142,6 +147,78 @@ def test_manifest_round_trip_detects_tampering_and_closed_trees(features, tmp_pa
     with pytest.raises(ValueError, match="Closed research"):
         write_reference_tree(closed / "child", reference)
     assert not (closed / "child").exists()
+
+
+def test_landmark_column_fit_stores_no_dense_target_and_keeps_the_exact_guard(features):
+    config = experimental.GraphStressConfig(n_neighbors=4)
+    setup = prepare_landmark_columns(
+        features, config, n_landmarks=5, seed=0, max_dense_bytes=1 << 20,
+    )
+    assert setup.distances.shape == (5, len(features))
+    assert setup.metadata["stores_dense_target"] is False
+    assert setup.metadata["exact_guard_allows"] is True
+    assert setup.teacher.shape == (len(features), len(features))
+    assert setup.teacher.nnz < len(features) * len(features)
+    partial_budget = setup.metadata["workspace_bytes"] + 8
+    narrow = prepare_landmark_columns(
+        features, config, n_landmarks=5, seed=0, max_dense_bytes=partial_budget,
+    )
+    assert narrow.metadata["exact_guard_allows"] is False
+    with pytest.raises(MemoryError, match="was not disabled"):
+        prepare_landmark_columns(
+            features, config, n_landmarks=5, seed=0, max_dense_bytes=setup.metadata["workspace_bytes"] - 1,
+        )
+    with pytest.raises(ValueError, match="dense guard"):
+        prepare_landmark_columns(features, config, n_landmarks=5, seed=0, max_dense_bytes=None)
+
+
+def test_sparse_teacher_matches_exact_and_full_landmark_fit_matches_exact_mu(features):
+    pytest.importorskip("torch")
+    config = experimental.GraphStressConfig(n_neighbors=4)
+    exact = experimental.prepare_graph_stress(features, config=config)
+    teacher, _ = _sparse_teacher(np.ascontiguousarray(features, dtype=np.float64), config)
+    np.testing.assert_allclose(teacher.toarray(), exact.teacher, rtol=0., atol=1e-12)
+    n = len(features)
+    geodesic = np.array(exact.target, dtype=np.float64, copy=True)
+    geodesic *= exact.metadata["global_mean"] / config.distance_scale
+    column = LandmarkColumnSetup(
+        distances=np.ascontiguousarray(geodesic),
+        landmark_index=np.arange(n),
+        teacher=teacher,
+        base_initial=np.array(exact.base_initial, dtype=np.float64, copy=True),
+        config=config,
+        metadata=dict(
+            n_cells=n,
+            n_landmarks=n,
+            global_mean=exact.metadata["global_mean"],
+            stores_dense_target=False,
+            workspace_bytes=4 * 8 * n * n,
+            parameters_json=_parameters_json(config),
+        ),
+    )
+    fitted = fit_landmark_columns(
+        column, epochs=3, random_state=0, chunk_size=5, max_dense_bytes=1 << 20,
+    )
+    reference = experimental.fit_graph_stress(exact, epochs=3, random_state=0, chunk_size=5)
+    np.testing.assert_allclose(fitted.loss_trace, reference.loss_trace, rtol=1e-10, atol=1e-10)
+    np.testing.assert_allclose(fitted.current, reference.current, rtol=1e-8, atol=1e-8)
+    assert fitted.metadata["fits_executed"] == 1
+    assert fitted.metadata["biological_validation"] is False
+    assert fitted.metadata["exact_guard_disabled"] is False
+    assert fitted.metadata["evaluation_loss"] == pytest.approx(fitted.current_loss, rel=1e-12, abs=1e-12)
+    assert fitted.metadata["checkpoint_bytes"] > 0
+    for key in ("fitting_rss_bytes", "evaluation_rss_bytes", "checkpoint_rss_bytes"):
+        assert fitted.metadata[key] > 0
+    dense = LandmarkColumnSetup(
+        distances=column.distances,
+        landmark_index=column.landmark_index,
+        teacher=np.array(exact.teacher, copy=True),
+        base_initial=column.base_initial,
+        config=config,
+        metadata=column.metadata,
+    )
+    with pytest.raises(ValueError, match="sparse teacher"):
+        fit_landmark_columns(dense, epochs=1, max_dense_bytes=1 << 20)
 
 
 def test_reference_tree_parent_is_created_only_as_the_new_directory(features, tmp_path):

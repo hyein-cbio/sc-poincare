@@ -18,10 +18,15 @@ import hashlib
 import json
 import os
 from pathlib import Path
+import resource
+import sys
+import tempfile
 
 import numpy as np
 from scipy.linalg import eigh
+from scipy import sparse
 from scipy.sparse.csgraph import dijkstra
+from sklearn.neighbors import NearestNeighbors
 
 from sc_poincare import experimental
 from sc_poincare._research_policy import ensure_active_paths
@@ -293,6 +298,17 @@ def _relative_l2(candidate, reference):
     return numerator / denominator
 
 
+def _teacher_block(teacher, start, stop):
+    """Row block of a dense tensor or a sparse teacher. The full teacher is not densified."""
+    torch = experimental._torch()
+    if sparse.issparse(teacher):
+        block = np.asarray(teacher[start:stop].toarray(), dtype=np.float64)
+        return torch.tensor(np.ascontiguousarray(block), dtype=torch.float64)
+    if hasattr(teacher, "detach"):
+        return teacher[start:stop]
+    return torch.as_tensor(np.asarray(teacher[start:stop]), dtype=torch.float64)
+
+
 def _column_objective(u, distances, landmark_index, mean, teacher, config, geometry, chunk_size, *, backward):
     """Exact local CE plus global stress on pairs that touch a landmark.
 
@@ -309,7 +325,6 @@ def _column_objective(u, distances, landmark_index, mean, teacher, config, geome
     position[index] = torch.arange(len(landmark_index))
     is_landmark = position >= 0
     target_ln = torch.as_tensor(np.asarray(distances, dtype=np.float64) * (config.distance_scale / mean))
-    teacher_t = teacher if hasattr(teacher, "detach") else torch.as_tensor(teacher)
     u.grad = None
     global_total, local_total = 0., 0.
     with torch.set_grad_enabled(backward):
@@ -340,7 +355,7 @@ def _column_objective(u, distances, landmark_index, mean, teacher, config, geome
             self_mask[torch.arange(stop - start), rows] = True
             logits = (-d / config.gamma).masked_fill(self_mask, -torch.inf)
             logq = (logits - torch.logsumexp(logits, dim=1, keepdim=True)).masked_fill(self_mask, 0)
-            local_loss = -(teacher_t[start:stop] * logq).sum() / n
+            local_loss = -(_teacher_block(teacher, start, stop) * logq).sum() / n
             loss = global_loss + config.local_weight * local_loss
             if not torch.isfinite(loss):
                 raise FloatingPointError("Nonfinite landmark-column objective.")
@@ -563,6 +578,257 @@ def verify_reference_tree(directory):
     return report
 
 
+def _positive_budget(max_dense_bytes):
+    if isinstance(max_dense_bytes, bool) or max_dense_bytes is None:
+        raise ValueError("max_dense_bytes must be a positive integer. The dense guard stays enabled.")
+    return _integer("max_dense_bytes", max_dense_bytes, 1)
+
+
+def _sparse_teacher(features, config):
+    """Row-stochastic union teacher stored sparse. Zeros stay implicit."""
+    local = experimental._graph_lengths(features, config.n_neighbors, "union")
+    positive = local.data[local.data > 0]
+    if not len(positive) or not np.isfinite(positive).all():
+        raise ValueError("A nondegenerate union graph is required for the local teacher.")
+    sigma = max(float(np.quantile(positive, .95)), float(positive.max() / 5.))
+    if config.local_bandwidth == "global":
+        weights = local.copy()
+        weights.data = np.exp(-.5 * (weights.data / sigma) ** 2)
+        diagnostics = dict(local_sigma=sigma)
+    else:
+        distances, indices = NearestNeighbors(
+            n_neighbors=config.n_neighbors + 1, n_jobs=1).fit(features).kneighbors(features)
+        radii = np.array([
+            distances[i, np.flatnonzero(indices[i] != i)[:config.n_neighbors][-1]]
+            for i in range(len(features))
+        ])
+        usable = radii[radii > 0]
+        if not len(usable):
+            raise ValueError("A nonzero local neighbor radius is required.")
+        floor = float(np.median(usable) * 1e-6)
+        radii = np.maximum(radii, floor)
+        graph = local.tocoo()
+        exponent = -.5 * graph.data ** 2 / (radii[graph.row] * radii[graph.col])
+        weights = sparse.csr_matrix((np.exp(exponent), (graph.row, graph.col)), shape=local.shape)
+        diagnostics = dict(local_sigma=sigma, radius_floor=floor)
+    weights = weights.tocsr()
+    weights.eliminate_zeros()
+    row_sum = np.asarray(weights.sum(axis=1)).ravel()
+    if np.any(row_sum <= 0) or not np.isfinite(row_sum).all():
+        raise FloatingPointError("Landmark teacher has an empty or nonfinite row.")
+    weights = sparse.diags(1. / row_sum) @ weights
+    weights = weights.tocsr()
+    if weights.shape != (len(features), len(features)):
+        raise ValueError("Landmark teacher must be square.")
+    return weights, diagnostics
+
+
+def _current_rss_bytes():
+    try:
+        import psutil
+        return int(psutil.Process().memory_info().rss), "current_rss"
+    except ImportError:
+        rss = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+        if sys.platform != "darwin":
+            rss *= 1024
+        return int(rss), "cumulative_high_water"
+
+
+@dataclass(frozen=True)
+class LandmarkColumnSetup:
+    """Landmark-column target and sparse teacher. No dense N-by-N target is stored."""
+
+    distances: np.ndarray
+    landmark_index: np.ndarray
+    teacher: sparse.csr_matrix
+    base_initial: np.ndarray
+    config: experimental.GraphStressConfig
+    metadata: dict
+
+
+@dataclass
+class LandmarkColumnResult:
+    coordinates: np.ndarray
+    current: np.ndarray
+    loss_trace: np.ndarray
+    best_loss: float
+    best_epoch: int
+    current_loss: float
+    metadata: dict
+
+
+def prepare_landmark_columns(features, config, *, n_landmarks, seed, max_dense_bytes):
+    """Prepare a landmark-column MU target without allocating an N-by-N distance matrix.
+
+    Normalization is the mean of the stored nonself landmark columns. When every
+    cell is a landmark that mean is the exact nonself geodesic mean. Otherwise
+    this is a different scale from exact MU and the metadata says so. The exact
+    dense guard is evaluated and recorded; it is not disabled, and a passing
+    workspace budget is not evidence that exact MU would fit.
+    """
+    if not isinstance(config, experimental.GraphStressConfig):
+        raise TypeError("config must be a GraphStressConfig.")
+    budget = _positive_budget(max_dense_bytes)
+    array = _canonical_features(features, config.n_neighbors)
+    n_landmarks = _integer("n_landmarks", n_landmarks, 2)
+    seed = _integer("seed", seed, 0)
+    n = len(array)
+    if n_landmarks > n:
+        raise ValueError("n_landmarks cannot exceed the number of cells.")
+    workspace = 4 * 8 * n * n_landmarks
+    if workspace > budget:
+        raise MemoryError(
+            "Landmark-column workspace exceeds max_dense_bytes. "
+            "The exact N-by-N guard is unchanged and was not disabled."
+        )
+    before, rss_kind = _current_rss_bytes()
+    indices, distances = _farthest_landmarks(
+        _transformed_mutual(array, config.n_neighbors), n_landmarks, seed,
+    )
+    self_distance = distances[np.arange(n_landmarks), indices]
+    pair_count = n * n_landmarks - n_landmarks
+    mean = float((distances.sum() - self_distance.sum()) / pair_count)
+    if not np.isfinite(mean) or mean <= 0:
+        raise ValueError("Landmark-column distances need a positive nonself mean.")
+    initial = _landmark_initialization(distances, indices, config.initial_radius)
+    teacher, diagnostics = _sparse_teacher(array, config)
+    after, _ = _current_rss_bytes()
+    exact_bytes = 4 * 8 * n * n
+    metadata = dict(
+        n_cells=n,
+        n_features=array.shape[1],
+        n_landmarks=n_landmarks,
+        feature_sha256=experimental._digest(array),
+        global_mean=mean,
+        normalization="landmark_column_mean",
+        matches_exact_nonself_mean_when_all_cells_are_landmarks=n_landmarks == n,
+        stores_dense_target=False,
+        teacher_nnz=int(teacher.nnz),
+        workspace_bytes=workspace,
+        exact_dense_bytes=exact_bytes,
+        exact_guard_allows=exact_bytes <= budget,
+        preparation_rss_bytes=after,
+        preparation_rss_kind=rss_kind,
+        rss_before_preparation_bytes=before,
+        parameters_json=_parameters_json(config),
+        **diagnostics,
+    )
+    distances = np.ascontiguousarray(distances, dtype=np.float64)
+    distances.setflags(write=False)
+    initial.setflags(write=False)
+    return LandmarkColumnSetup(distances, indices, teacher, initial, config, metadata)
+
+
+def _reject_dense_storage(setup):
+    n = setup.metadata["n_cells"]
+    landmarks = setup.metadata["n_landmarks"]
+    if setup.distances.shape != (landmarks, n):
+        raise ValueError("Landmark distances must be shaped (landmarks, cells).")
+    if landmarks != n and setup.distances.shape[0] == setup.distances.shape[1] == n:
+        raise ValueError("Refusing a square dense distance matrix for a partial landmark set.")
+    if not sparse.issparse(setup.teacher) or setup.teacher.shape != (n, n):
+        raise ValueError("The matrix-free fit requires a sparse teacher, not a dense N-by-N array.")
+    if setup.base_initial.shape != (n, 2):
+        raise ValueError("Landmark initialization must be shaped (cells, 2).")
+    if setup.metadata.get("stores_dense_target") is not False:
+        raise ValueError("This fit refuses a prepared dense N-by-N target.")
+
+
+def fit_landmark_columns(setup, *, epochs, random_state=0, chunk_size=256,
+                         max_dense_bytes, geometry="poincare"):
+    """Fit the landmark-column objective without storing an N-by-N target.
+
+    Each update materializes one row-chunk of embedding distances. The global
+    term uses both directed endpoints of pairs that touch a landmark and keeps
+    the exact ``N*(N-1)`` denominator, so omitted pairs contribute nothing.
+    The local term is the exact full-softmax cross-entropy against the sparse
+    teacher. RSS is sampled after preparation (already in the setup), after
+    fitting, after a separate evaluation pass, and after checkpoint save/load.
+    Samples are not a claim that exact dense MU fits in the same memory.
+    """
+    if not isinstance(setup, LandmarkColumnSetup):
+        raise TypeError("setup must be a LandmarkColumnSetup.")
+    if not isinstance(setup.config, experimental.GraphStressConfig):
+        raise TypeError("config must be a GraphStressConfig.")
+    if _parameters_json(setup.config) != setup.metadata.get("parameters_json"):
+        raise ValueError("Landmark setup configuration does not match its metadata.")
+    if geometry not in ("poincare", "euclidean"):
+        raise ValueError("geometry must be 'poincare' or 'euclidean'.")
+    budget = _positive_budget(max_dense_bytes)
+    epochs = _integer("epochs", epochs, 0)
+    random_state = _integer("random_state", random_state, 0)
+    chunk_size = _integer("chunk_size", chunk_size, 1)
+    _reject_dense_storage(setup)
+    n = setup.metadata["n_cells"]
+    rows = min(chunk_size, n)
+    block_bytes = 4 * 8 * rows * n
+    if block_bytes > budget or setup.metadata["workspace_bytes"] > budget:
+        raise MemoryError(
+            "Landmark fitting block exceeds max_dense_bytes. "
+            "Raise the explicit budget or reduce chunk_size. The exact guard was not disabled."
+        )
+    torch = experimental._torch()
+    config = setup.config
+    mean = setup.metadata["global_mean"]
+    jittered = setup.base_initial + np.random.default_rng(random_state).normal(
+        scale=config.jitter, size=setup.base_initial.shape)
+    u = torch.tensor(experimental._tangent_from_disk(jittered), dtype=torch.float64, requires_grad=True)
+    optimizer = torch.optim.Adam([u], lr=config.learning_rate)
+    best = jittered.copy() if geometry == "poincare" else u.detach().numpy().copy()
+    best_loss, best_epoch, trace = np.inf, 0, []
+    for epoch in range(epochs + 1):
+        loss, _, _ = _column_objective(
+            u, setup.distances, setup.landmark_index, mean, setup.teacher, config,
+            geometry, chunk_size, backward=epoch < epochs,
+        )
+        current = (experimental._disk_from_tangent(u) if geometry == "poincare" else u).detach().numpy().copy()
+        trace.append(loss)
+        if loss < best_loss:
+            best_loss, best_epoch, best = loss, epoch, current.copy()
+        if epoch < epochs:
+            optimizer.step()
+    fit_rss, rss_kind = _current_rss_bytes()
+    evaluated, _, _ = _column_objective(
+        u, setup.distances, setup.landmark_index, mean, setup.teacher, config,
+        geometry, chunk_size, backward=False,
+    )
+    eval_rss, _ = _current_rss_bytes()
+    payload = dict(
+        u=u.detach().cpu().clone(),
+        loss_trace=trace.copy(),
+        best_epoch=best_epoch,
+        best_loss=best_loss,
+        stores_dense_target=False,
+    )
+    with tempfile.TemporaryDirectory() as folder:
+        path = Path(folder) / "checkpoint.pt"
+        torch.save(payload, path)
+        checkpoint_bytes = path.stat().st_size
+        loaded = torch.load(path, weights_only=True)
+    checkpoint_rss, _ = _current_rss_bytes()
+    if not torch.equal(loaded["u"], payload["u"]):
+        raise ValueError("Checkpoint reload did not reproduce the fitted tangent coordinates.")
+    metadata = dict(setup.metadata)
+    metadata.update(
+        fits_executed=1,
+        biological_validation=False,
+        geometry=geometry,
+        epochs=epochs,
+        random_state=random_state,
+        chunk_size=chunk_size,
+        fitting_rss_bytes=fit_rss,
+        evaluation_rss_bytes=eval_rss,
+        evaluation_loss=evaluated,
+        checkpoint_rss_bytes=checkpoint_rss,
+        checkpoint_bytes=checkpoint_bytes,
+        rss_kind=rss_kind,
+        exact_guard_disabled=False,
+    )
+    return LandmarkColumnResult(
+        best, current, np.asarray(trace), best_loss, best_epoch, loss, metadata,
+    )
+
+
 __all__ = [
     "APPROXIMATION",
     "GRADIENT_METRICS",
@@ -571,8 +837,12 @@ __all__ = [
     "REFERENCE_METRICS",
     "FrozenComparison",
     "LandmarkReference",
+    "LandmarkColumnResult",
+    "LandmarkColumnSetup",
     "compare_landmark_reference",
+    "fit_landmark_columns",
     "freeze_comparison",
+    "prepare_landmark_columns",
     "verify_reference_tree",
     "write_reference_tree",
 ]
