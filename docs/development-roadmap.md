@@ -113,10 +113,10 @@ before a new long run.
   HVGs, full-SVD PCA20, MU defaults, 20 updates, seed 0. Labels were not read.
   The feature hash is `076856d9…`. Update-20 loss is 0.7431. The local
   `data/pbmc3k_raw.h5ad`, processed with the same recipe under Scanpy 1.12.4,
-  hashes to `fef3efcc…`. A separate 40-update fit on that local matrix has
-  losses 1.0686, 0.7431, and 0.5660 at updates 0, 20, and 40. The update-20
-  loss is within 4e-8 of the recorded probe, and the loss is still decreasing
-  at 40. The local hash does not replace `076856d9…`. Predeclared marker
+  hashes to `fef3efcc…`. A separate 80-update fit on that local matrix has
+  losses 1.0686, 0.7431, 0.5660, and 0.3911 at updates 0, 20, 40, and 80.
+  The update-20 loss is within 4e-8 of the recorded probe, and the loss is
+  still decreasing at 80. The local hash does not replace `076856d9…`. Predeclared marker
   Spearman values against origin pseudotime are in
   [pbmc3k-independent-probe.json](pbmc3k-independent-probe.json). The separate
   budget is in [pbmc3k-local-budget-probe.json](pbmc3k-local-budget-probe.json).
