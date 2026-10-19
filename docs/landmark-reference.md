@@ -84,9 +84,11 @@ NumPy's SVD of the centered matrix differs from the sklearn scores by at most
 1.8e-12 and hashes differently. OpenBLAS 0.3.34 one-thread Haswell, Sandybridge,
 Nehalem, and Penryn kernels hash to `93eb6f3a…`, `dc67f1b0…`, `d5b1d157…`, and
 `b24766fa…`. SciPy `gesvd` on one SkylakeX thread hashes to `b96251a8…`.
-sklearn's full solver matches SciPy `gesdd` with the V-based sign flip. The
-same full-SVD call misses the recorded Olsson hash. The recorded Paul matrix
-was not replaced with these scores.
+sklearn's full solver matches SciPy `gesdd` with the V-based sign flip. All
+1,048,576 column-sign patterns of the one-thread scores miss the recorded
+hash. Torch 2.14.1 SVD with that flip hashes to `c6e41671…`. The same
+full-SVD call misses the recorded Olsson hash. The recorded Paul matrix was
+not replaced with these scores.
 
 The ignored tree `data/moignard_landmark_reference` stores the checked feature
 matrix, report, and checksum manifest. `reevaluate_study_tree` reran the frozen
@@ -103,4 +105,6 @@ base64-decoded, and matched the corresponding local hex file byte for byte.
 Concatenating those hex texts and decoding them produced 126,948 bytes whose
 SHA256 is `75da11742aa4773b28f62463c3c6b63146024e812fb7aaaf494d2f864ad5ca17`,
 the same as the local `arrays.npz`. The zip contains `landmark_index.npy`,
-`exact_initial.npy`, and `landmark_initial.npy`.
+`exact_initial.npy`, and `landmark_initial.npy`. This copy is on the connected
+personal account `hc27oclock@gmail.com`. No shop Google Drive is visible to
+this connection, so a second copy was not written there.
