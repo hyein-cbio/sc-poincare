@@ -121,7 +121,7 @@ def evaluate_neighborhoods(features, coordinates, labels, *, ks=(15, 30), block_
 
     All inputs must have the same cell order. ``features`` is the caller's
     fitted representation (e.g. PCA scores), with labels/identifiers excluded.
-    ``coordinates`` must be finite N-by-2 points. Default ``geometry='poincare'``
+    ``coordinates`` must be finite N-by-D points with D >= 2. Default ``geometry='poincare'``
     requires points strictly inside the open unit disk; explicit ``'euclidean'``
     evaluates native Euclidean coordinates without disk projection or rescaling.
     Labels may be nonempty strings or finite numeric categories; missing labels
@@ -155,8 +155,8 @@ def evaluate_neighborhoods(features, coordinates, labels, *, ks=(15, 30), block_
     features = _matrix(features, 'features')
     points = _matrix(coordinates, 'coordinates')
     n = len(features)
-    if n < 2 or points.shape != (n, 2):
-        raise ValueError("coordinates must be N-by-2 with the same N >= 2 as features.")
+    if n < 2 or points.shape[0] != n or points.shape[1] < 2:
+        raise ValueError("coordinates must be N-by-D, D >= 2, with the same N >= 2 as features.")
     if geometry == 'poincare' and np.any(np.sum(points * points, axis=1) >= 1):
         raise ValueError("coordinates must lie strictly inside the unit disk.")
     group = _canonical_labels(labels, n)

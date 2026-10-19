@@ -173,8 +173,15 @@ These are not default changes and require their own controlled experiments:
   objective, classical jitter seed 0, and learning rate .01333 for 20 updates.
   Both start at loss 1.0369. Adam reaches 0.6952 and SGD stays at 1.0368.
   SGD is not promoted.
-- [ ] Intrinsic adaptive updates, Lorentz geometry, curvature, and dimension
-  remain separate from that optimizer comparison.
+- [x] On exact Moignard, compare Poincaré ball dimensions 2 and 3 for 20
+  updates from classical scaling and the same jitter seed. Losses at update 20
+  are 0.6952 and 0.6069. Macro purity is 0.546 and 0.543, so the lower 3D
+  loss is not treated as a better embedding. The 2D default is unchanged.
+  Predeclared marker Spearman values against PS-root pseudotime and the stage
+  means are in [moignard-dimension-probe.json](moignard-dimension-probe.json).
+  The predeclared order PS, 4SFG, 4SG, NP does not match the mean pseudotimes.
+- [ ] Intrinsic adaptive updates, Lorentz geometry, and curvature remain
+  separate from that dimension comparison.
 - [x] Keep the failed source row-temperature alternative unpromoted. One
   improved score is not a reason to enable it. See
   [astra-adoption-status.md](astra-adoption-status.md).

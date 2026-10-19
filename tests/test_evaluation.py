@@ -155,10 +155,18 @@ def test_invalid_features(example, features):
 
 
 @pytest.mark.parametrize('points', [np.ones((5, 2)), np.full((5, 2), np.nan), np.zeros((4, 2)),
-                                    np.zeros((5, 3)), np.ones((5, 2), complex)])
+                                    np.ones((5, 3)), np.ones((5, 2), complex)])
 def test_invalid_coordinates(example, points):
     with pytest.raises(ValueError):
         evaluate_neighborhoods(example[0], points, example[2], ks=[1])
+
+
+def test_three_dimensional_ball_coordinates_are_evaluated(example):
+    points = np.zeros((5, 3))
+    points[:, 0] = np.linspace(-.2, .2, 5)
+    report = evaluate_neighborhoods(example[0], points, example[2], ks=[1])
+    assert report.coordinates.shape == (5, 3)
+    assert report.summary['embedding_metric'] == 'poincare'
 
 
 def test_nonfinite_distances_raise(example):
