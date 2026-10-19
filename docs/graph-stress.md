@@ -84,6 +84,9 @@ These are preprocessing choices for those comparisons, not core branches.
    `x=tanh(norm(u)/2)*u/norm(u)` in the disk. `optimizer_name="sgd"` uses that
    same objective, learning rate and initial tangent array. It is not the
    default, and an Adam checkpoint does not resume as SGD.
+   `geometry="lorentz"` optimizes the spatial coordinates of the hyperboloid
+   point that starts on the same disk initialization. Its epoch-0 distances
+   match the disk. It is not the default.
 
 Local radii are bounded below by the median positive radius times 1e-6. The
 diagnostics record zero radii and Gaussian underflow. A row with no positive

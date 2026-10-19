@@ -144,8 +144,12 @@ Remaining research candidates are unvalidated:
   remains Adam, and an Adam checkpoint does not resume as SGD. The native
   Euclidean chart keeps that tangent array and does not have the same initial
   pair distances.
-- [ ] Lorentz coordinates are not implemented. They are not assumed better than
-  the disk. Float64 limits and optimization remain separate questions.
+- [x] Compare a Lorentz spatial chart with the disk on the same graph-stress
+  objective and the same initial disk points. Epoch-0 losses match because the
+  hyperboloid map preserves those distances. Later tangent-Adam steps are not
+  the same physical steps. The default geometry remains `poincare`. A lower
+  Lorentz loss is not a reason to switch the default. Float64 range and
+  optimization remain separate questions.
 - [x] Investigate temperature/global scale. The input-calibrated row-temperature
   alternative failed on both development datasets and is not promoted. See
   [embedding-study.md](embedding-study.md).
