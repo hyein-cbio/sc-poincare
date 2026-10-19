@@ -70,9 +70,13 @@ performance, biological equivalence, or hyperbolic-specific superiority.
   publication audit.
 - [x] Write a landmark reference tree with a checksum manifest and require a
   successful local reread before the writer returns. The tested tree is synthetic.
-- [ ] Keep one latest small result tree for a real study rather than
-  source/cache duplicates. Long or unique jobs still need external backup
-  and an actual restore/re-evaluation check.
+- [x] Keep one latest Moignard landmark-reference tree with a checksum manifest
+  and rerun the frozen check from the stored feature matrix. The restored
+  primary value matched exactly (absolute difference 0). The feature matrix
+  stays under ignored `data/` and is not vendored. Record:
+  [moignard-landmark-restore.json](moignard-landmark-restore.json).
+- [ ] Long or unique jobs still need an off-machine backup destination. None
+  was supplied for this tree.
 
 ## P1 — Independent biological validation
 
@@ -152,8 +156,9 @@ These are not default changes and require their own controlled experiments:
 ## P4 — Software/publication readiness
 
 - [ ] Keep policy/mechanism changes separate from numerical fixes and data parsing.
-- [ ] Review privacy, licenses, installation, documentation and reproducibility
-  before external publication; package MIT does not relicense input artifacts.
+- [x] Review privacy, licenses, installation, documentation, and reproducibility
+  in [publication-readiness-review.md](publication-readiness-review.md).
+  Package MIT does not relicense input artifacts. This is not a submission.
 - [ ] Check any publication eligibility against current rules when submitting.
 - [ ] Obtain explicit approval for commits/pushes and new expensive experiments.
   Earlier approval does not silently authorize future jobs.

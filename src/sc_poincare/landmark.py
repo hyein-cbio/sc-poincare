@@ -829,6 +829,105 @@ def fit_landmark_columns(setup, *, epochs, random_state=0, chunk_size=256,
     )
 
 
+def _protocol_from_report(report):
+    payload = dict(report["protocol"])
+    payload["seeds"] = tuple(payload["seeds"])
+    payload["sensitivity_metrics"] = tuple(payload["sensitivity_metrics"])
+    return FrozenComparison(**payload)
+
+
+def _study_manifest_files():
+    return ("features.npy", "report.json", "arrays.npz")
+
+
+def write_study_tree(directory, features, reference):
+    """Write one feature matrix, the reference report, initials, and checksums.
+
+    The directory must not already exist. Checksums are reread before return.
+    This does not copy a source CSV and does not by itself create an off-machine backup.
+    """
+    if not isinstance(reference, LandmarkReference):
+        raise TypeError("reference must be a LandmarkReference.")
+    if reference.report.get("fits_executed") != 0 or reference.report.get("biological_validation") is not False:
+        raise ValueError("A study tree records an unfitted reference check, not a biological claim.")
+    protocol = _protocol_from_report(reference.report)
+    config = experimental.GraphStressConfig(**json.loads(protocol.parameters_json))
+    array = _canonical_features(features, config.n_neighbors)
+    if experimental._digest(array) != protocol.feature_sha256 or len(array) != protocol.n_cells:
+        raise ValueError("features do not match the reference protocol.")
+    path = Path(directory)
+    ensure_active_paths(path)
+    if path.exists():
+        raise FileExistsError(f"Study tree already exists: {path}.")
+    path.mkdir()
+    try:
+        temporary = path / "features.npy.tmp"
+        with temporary.open("wb") as handle:
+            np.save(handle, array, allow_pickle=False)
+        os.replace(temporary, path / "features.npy")
+        _atomic_bytes(path / "report.json", json.dumps(reference.report, allow_nan=False, sort_keys=True, indent=2).encode())
+        temporary = path / "arrays.npz.tmp"
+        with temporary.open("wb") as handle:
+            np.savez(handle, **reference.arrays)
+        os.replace(temporary, path / "arrays.npz")
+        files = {}
+        for name in _study_manifest_files():
+            payload = path / name
+            files[name] = {"sha256": _sha256_file(payload), "bytes": payload.stat().st_size}
+        _atomic_bytes(path / "MANIFEST.json", json.dumps({"schema_version": 1, "files": files}, sort_keys=True, indent=2).encode())
+        _verify_study_checksums(path)
+    except Exception:
+        for child in path.iterdir():
+            child.unlink()
+        path.rmdir()
+        raise
+    return path
+
+
+def _verify_study_checksums(path):
+    manifest = json.loads((path / "MANIFEST.json").read_text())
+    if manifest.get("schema_version") != 1 or set(manifest.get("files", {})) != set(_study_manifest_files()):
+        raise ValueError("Study manifest schema or file list is invalid.")
+    for name, record in manifest["files"].items():
+        payload = path / name
+        if _sha256_file(payload) != record["sha256"] or payload.stat().st_size != record["bytes"]:
+            raise ValueError(f"Study payload checksum mismatch: {name}.")
+    return manifest
+
+
+def reevaluate_study_tree(directory):
+    """Reload a study tree and rerun the frozen reference check.
+
+    The returned difference is between the stored primary value and the value
+    computed again from the stored feature matrix. This is a local re-evaluation,
+    not an off-machine backup and not a new biological fit.
+    """
+    path = Path(directory)
+    ensure_active_paths(path)
+    _verify_study_checksums(path)
+    report = json.loads((path / "report.json").read_text())
+    features = np.load(path / "features.npy", allow_pickle=False)
+    protocol = _protocol_from_report(report)
+    config = experimental.GraphStressConfig(**json.loads(protocol.parameters_json))
+    array = _canonical_features(features, config.n_neighbors)
+    if experimental._digest(array) != protocol.feature_sha256:
+        raise ValueError("Stored features do not match the frozen feature hash.")
+    fresh = compare_landmark_reference(array, protocol, config)
+    difference = abs(float(fresh.report["primary_value"]) - float(report["primary_value"]))
+    if difference > 1e-8:
+        raise ValueError(f"Restored reference primary value changed by {difference}.")
+    return dict(
+        primary_metric=report["primary_metric"],
+        stored_primary_value=float(report["primary_value"]),
+        restored_primary_value=float(fresh.report["primary_value"]),
+        primary_abs_difference=difference,
+        feature_sha256=protocol.feature_sha256,
+        n_cells=protocol.n_cells,
+        fits_executed=0,
+        biological_validation=False,
+    )
+
+
 __all__ = [
     "APPROXIMATION",
     "GRADIENT_METRICS",
@@ -843,6 +942,8 @@ __all__ = [
     "fit_landmark_columns",
     "freeze_comparison",
     "prepare_landmark_columns",
+    "reevaluate_study_tree",
     "verify_reference_tree",
     "write_reference_tree",
+    "write_study_tree",
 ]

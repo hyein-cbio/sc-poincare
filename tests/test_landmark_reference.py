@@ -13,8 +13,10 @@ from sc_poincare.landmark import (
     fit_landmark_columns,
     freeze_comparison,
     prepare_landmark_columns,
+    reevaluate_study_tree,
     verify_reference_tree,
     write_reference_tree,
+    write_study_tree,
     _parameters_json,
     _sparse_teacher,
 )
@@ -219,6 +221,21 @@ def test_sparse_teacher_matches_exact_and_full_landmark_fit_matches_exact_mu(fea
     )
     with pytest.raises(ValueError, match="sparse teacher"):
         fit_landmark_columns(dense, epochs=1, max_dense_bytes=1 << 20)
+
+
+def test_study_tree_restore_recomputes_the_primary_metric(features, tmp_path):
+    protocol, config = _protocol(features, n_landmarks=6)
+    reference = compare_landmark_reference(features, protocol, config)
+    directory = write_study_tree(tmp_path / "study", features, reference)
+    restored = reevaluate_study_tree(directory)
+    assert restored["fits_executed"] == 0
+    assert restored["biological_validation"] is False
+    assert restored["primary_abs_difference"] == pytest.approx(0., abs=1e-12)
+    assert restored["feature_sha256"] == protocol.feature_sha256
+    features_path = directory / "features.npy"
+    features_path.write_bytes(features_path.read_bytes()[:-1] + b"\x00")
+    with pytest.raises(ValueError, match="checksum"):
+        reevaluate_study_tree(directory)
 
 
 def test_reference_tree_parent_is_created_only_as_the_new_directory(features, tmp_path):
