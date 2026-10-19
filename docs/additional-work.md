@@ -55,22 +55,25 @@ predeclared score that the fit does not see, for example held-out genes or a
 held-out cell mapped without moving the training coordinates. The present API
 is transductive and has no such mapping.
 
-## 4. Independent data, not another development seed
+## 4. Independent data beyond pbmc3k
 
-Paul, Moignard, Olsson, Pancreas and Nestorowa are already development data.
-A 20-update pbmc3k probe on the unmerged branch is not the independent-data
-gate. The next biological run should freeze the input-only rule, keep labels
-out of fitting, and use a dataset that was not used to choose that rule.
+pbmc3k was not in the Paul, Moignard, Olsson, ToggleSwitch, Myeloid,
+krumsiek, or Planaria development tables. A frozen symmetric-KL rule and a
+1,500-update local-radius graph-stress rule have now been run there. Overall
+K15 purity is high, and dendritic cells stay near 0.48–0.53. Those runs are
+not a certified blind holdout.
+
+Paul, Moignard, Olsson, Pancreas, and Nestorowa remain development data.
 LARRY was identified as unused and still has no fit. Do not start it until
-row order, subset size and an external backup are fixed.
+row order, subset size, and an external backup are fixed.
 
 ## 5. Full Planaria only under the frozen gate
 
 The 1,000-update corrected-versus-conditional comparison is specified in
-`frozen-conditional-kl-protocol.md`. It is still the scientific gap on
-`main`. Run it only on a host that clears the memory gate, with the marker
-list attached first. Five seeds and the feature-distance rank are already
-part of that protocol.
+`frozen-conditional-kl-protocol.md`. The public CSV hash and the 51-label
+inventory are attached. Rare labels are those with at most 50 cells. The
+default dense guard still refuses 21,612 cells on this host, so the fit has
+not started. Run it only where that guard can pass without being disabled.
 
 ## 6. External review of `494367a`
 
