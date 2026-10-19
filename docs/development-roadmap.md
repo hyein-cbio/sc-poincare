@@ -105,7 +105,10 @@ before a new long run.
 - [x] Freeze one input-only recipe and run it on 10x pbmc3k, which is absent
   from the recorded studies: total-count normalization, log1p, 1000 Seurat
   HVGs, full-SVD PCA20, MU defaults, 20 updates, seed 0. Labels were not read.
-  The feature hash is `076856d9…`. Update-20 loss is 0.7431. Predeclared marker
+  The feature hash is `076856d9…`. Update-20 loss is 0.7431. The local
+  `data/pbmc3k_raw.h5ad`, processed with the same recipe under Scanpy 1.12.4,
+  hashes to `fef3efcc…`, so that file was not used to extend the recorded run.
+  Predeclared marker
   Spearman values against origin pseudotime are in
   [pbmc3k-independent-probe.json](pbmc3k-independent-probe.json). This is not a
   certified blind holdout or biological validation. Paul, Moignard, Pancreas,
