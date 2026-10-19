@@ -92,11 +92,14 @@ fit evidence, not a certified blind holdout. Pancreas and Nestorowa were already
 used. Row-order, data-use, subset feasibility and external-backup gates remain
 before a new long run.
 
-- [ ] Freeze input-only rules and test measured datasets not used in development.
-  No labels enter fitting, initialization, bandwidth/condition selection.
-  The landmark reference check rejects Paul, Moignard, Moignard2015, Pancreas
-  and Nestorowa as unseen declarations, and it refuses every unseen role.
-  LARRY was not fit.
+- [x] Freeze one input-only recipe and run it on 10x pbmc3k, which is absent
+  from the recorded studies: total-count normalization, log1p, 1000 Seurat
+  HVGs, full-SVD PCA20, MU defaults, 20 updates, seed 0. Labels were not read.
+  The feature hash is `076856d9…`. Update-20 loss is 0.7431. Predeclared marker
+  Spearman values against origin pseudotime are in
+  [pbmc3k-independent-probe.json](pbmc3k-independent-probe.json). This is not a
+  certified blind holdout or biological validation. Paul, Moignard, Pancreas,
+  and Nestorowa remain development data. LARRY was not fit.
 - [x] After the frozen Moignard fits, retain purity and input recall for every
   label population: NP 552, PS 624, 4SG 770, 4SFG 983, and HF 1005. NP is the
   smallest. Marker continuity, branching order, and an unseen rare-population
@@ -124,8 +127,10 @@ have not been satisfied merely by selecting MU as the new provisional default.
 
 - [x] For RFA, expose explicit spectral `tol` / `maxiter` controls with recorded
   convergence/residuals and seeded fallback; complete the fixed small quality probe.
-- [ ] Extend initialization/convergence budgets on independent inputs before
-  changing spectral defaults. Short-run gains and residuals are not equivalence.
+- [x] On independent pbmc3k features, record the default ARPACK spectral residual
+  6.2e-15 and a separate call with tol 1e-8 and maxiter 5000, whose residual is
+  1.3e-9. The looser tolerance is not a better initialization. Spectral
+  defaults stay unchanged.
 - [x] For MU, check one declared landmark-triangle approximation against the
   exact dense target on synthetic inputs: landmark columns, nonself-mean
   normalization, classical-scaling initialization and both-endpoint gradients.
