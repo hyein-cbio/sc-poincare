@@ -76,7 +76,9 @@ gates below remain open; this does not validate forest time-scale mixtures.
   Preserve raw current/best coordinates, loss, gradient norm, radius and stop
   reason throughout the trajectory. The fitter returns the lowest training
   loss, including initialization. Each ToggleSwitch run stores 200
-  pre-update Riemannian gradient norms and radius quantiles. The full
+  pre-update Riemannian gradient norms and radius quantiles. The public
+  driver now also stores `current_coordinates` beside that selected state,
+  and records every label's neighbor purity only after fitting. The full
   Planaria trajectory is still unrun.
 - [x] Check evaluation graphs at k=15/20/30, alternative anchors and direct
   feature-distance diagnostics. Declare primary and sensitivity checks before

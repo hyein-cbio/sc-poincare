@@ -41,6 +41,8 @@ def test_callbacks_are_observational_and_report_evaluated_checkpoints(monkeypatc
     assert actual.coordinates is not actual.loss_trace
     best_epoch = int(np.argmin(actual.loss_trace))
     assert _fitting.evaluate_alignment(actual.coordinates, target, 2.) == pytest.approx(actual.loss_trace[best_epoch], rel=1e-8)
+    assert actual.current_coordinates.shape == actual.coordinates.shape
+    assert _fitting.evaluate_alignment(actual.current_coordinates, target, 2.) == pytest.approx(actual.loss_trace[-1], rel=1e-8)
 
 
 @pytest.mark.parametrize('backend', ['torch', 'numpy'])

@@ -20,6 +20,7 @@ import pandas as pd
 from scipy.sparse.csgraph import dijkstra
 from scipy.stats import spearmanr
 from sklearn.decomposition import PCA
+from sklearn.neighbors import NearestNeighbors
 from threadpoolctl import threadpool_limits
 
 from sc_poincare._disk import pairwise_disk_length
@@ -30,6 +31,17 @@ from sc_poincare._fitting import (
 from sc_poincare._objectives import DEFAULT_OBJECTIVE, CONDITIONAL_OBJECTIVE
 from sc_poincare._proximity import estimate_proximity, local_affinity
 from sc_poincare._resources import DEFAULT_MAX_DENSE_BYTES
+
+
+def _neighbor_purity(coordinates, labels, k):
+    """Post-fit chart neighbor agreement. Labels do not enter the fit."""
+    nn = NearestNeighbors(n_neighbors=k + 1).fit(coordinates)
+    indices = nn.kneighbors(coordinates, return_distance=False)[:, 1:]
+    purity = np.array([np.mean(labels[row] == labels[i]) for i, row in enumerate(indices)])
+    scores = {str(label): float(purity[labels == label].mean())
+              for label in sorted(set(labels), key=str)}
+    scores['overall'] = float(purity.mean())
+    return scores
 
 
 def _legacy_reference(target, initial, args):
@@ -57,7 +69,7 @@ def _legacy_reference(target, initial, args):
         with torch.no_grad():
             step=args.learning_rate/10 if epoch<args.burn_in else args.learning_rate
             x.copy_(_riemannian_retract(x,x.grad,step,2.5))
-    return best_xy,trace,best
+    return best_xy,trace,best,x.detach().numpy().copy()
 
 
 def main():
@@ -97,6 +109,7 @@ def main():
     input_hash=hashlib.sha256(input_bytes).hexdigest()
     frame=pd.read_csv(BytesIO(input_bytes));label_column=args.label_column or frame.columns[-1]
     labels=frame[label_column].to_numpy(dtype=str)
+    label_counts={str(label):int(count) for label,count in zip(*np.unique(labels,return_counts=True))}
     features=frame.drop(columns=label_column).to_numpy(dtype=np.float64)
     if len(features)<3:parser.error('At least three cells are required')
     args.output.parent.mkdir(parents=True,exist_ok=True)
@@ -129,14 +142,18 @@ def main():
             for mode in modes:
                 started=time.perf_counter()
                 if mode=='legacy_floor_1e-12':
-                    xy,trace,loss=_legacy_reference(proximity.accessibility,initial,args)
+                    xy,trace,loss,current=_legacy_reference(proximity.accessibility,initial,args)
                     stop_reason='epoch_limit'
+                    grad_trace=None
                 else:
                     report=fit_disk_embedding(proximity.accessibility,initial_coordinates=initial,
                         temperature=args.gamma,n_epochs=args.epochs,patience=args.epochs,
                         min_delta=0.,learning_rate=args.learning_rate,burn_in_epochs=args.burn_in,
                         batch_size=args.batch_size,random_state=seed,max_dense_bytes=budget,objective=mode)
-                    xy,trace,loss=report.coordinates,report.loss_trace,report.best_loss;stop_reason=report.stop_reason
+                    xy,trace,loss=report.coordinates,report.loss_trace,report.best_loss
+                    current=report.current_coordinates
+                    stop_reason=report.stop_reason
+                    grad_trace=[float(v) for v in report.gradient_norm_trace]
                 seconds=time.perf_counter()-started
                 h=pairwise_disk_length(xy[anchors],xy);ranked=h.copy();ranked[~mask]=np.inf
                 hn=np.argsort(ranked,axis=1)[:,:min(15,len(features)-1)]
@@ -147,26 +164,31 @@ def main():
                 scores['feature']={'global_distance_rank':float(spearmanr(feature_d[mask],h[mask]).statistic)}
                 rss=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
                 if sys.platform!='darwin':rss*=1024
-                grad_trace=None if mode=='legacy_floor_1e-12' else [float(v) for v in report.gradient_norm_trace]
+                purity_k=min(args.evaluation_k[0],len(features)-1)
                 row={'seed':seed,'objective':mode,'epochs_run':len(trace),'stop_reason':stop_reason,
                     'fitting_seconds':seconds,'best_loss_of_own_objective':float(loss),
                     'gradient_norm_trace':grad_trace,'evaluation':scores,
                     'initialization_source':init_status,'radius_quantiles':np.quantile(np.linalg.norm(xy,axis=1),[0,.1,.5,.9,1]).tolist(),
+                    'label_neighbor_purity_k':purity_k,
+                    'label_neighbor_purity':_neighbor_purity(xy,labels,purity_k),
                     'process_high_water_rss_bytes':rss}
                 records.append(row)
                 np.savez(args.output.with_name(f'{args.output.stem}_{mode}_seed{seed}.npz'),
-                         coordinates=xy,initial_coordinates=initial,labels=labels,loss_trace=trace)
+                         coordinates=xy,current_coordinates=current,initial_coordinates=initial,
+                         labels=labels,loss_trace=np.asarray(trace,dtype=float))
                 print(json.dumps(row),flush=True)
     config={k:str(v) if isinstance(v,Path) else v for k,v in vars(args).items()}
     result={'input_sha256':input_hash,
         'script_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
         'n_cells':len(features),'n_features':features.shape[1],'configuration':config,
         'sigma_effective':proximity.kernel_width,'proximity_diagnostics':proximity.diagnostics,
-        'preparation_seconds':preparation_seconds,'records':records,
+        'label_counts':label_counts,'preparation_seconds':preparation_seconds,'records':records,
         'notes':['All objectives share the same initial coordinates per seed.',
                  'Epoch limits do not imply convergence. Losses differ across objectives.',
+                 'coordinates is the lowest training loss. current_coordinates is the final evaluated state.',
                  'Evaluation graph/anchors are diagnostic, not blinded biological holdouts.',
                  'feature.global_distance_rank compares embedding distances with direct feature distances on the same anchors.',
+                 'Label counts and neighbor purity are recorded after fitting and do not select the checkpoint.',
                  'No labels or reference coordinates enter fitting.',
                  'Dense-array budget is not an RSS cap. High-water RSS includes earlier modes/imports/evaluation.']}
     args.output.write_text(json.dumps(result,indent=2))

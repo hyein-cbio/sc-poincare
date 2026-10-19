@@ -41,15 +41,23 @@ def test_benchmark_uses_common_initialization_and_never_fits_labels(tmp_path,mon
             else:
                 assert len(record['gradient_norm_trace'])==record['epochs_run']==2
                 assert min(record['gradient_norm_trace'])>0
+            assert record['label_neighbor_purity_k']==4
+            assert record['label_neighbor_purity']['overall']==1
+        label='one' if i==0 else 'different'
+        assert report['label_counts']=={label:12}
+        assert all(r['label_neighbor_purity'][label]==1 for r in report['records'])
         assert all(r['epochs_run']==2 for r in report['records'])
         arrays=[np.load(out.with_name(f'{out.stem}_{mode}_seed0.npz')) for mode in modes]
         for z in arrays:
             np.testing.assert_array_equal(z['initial_coordinates'],arrays[0]['initial_coordinates'])
             assert np.isfinite(z['coordinates']).all()
+            assert z['current_coordinates'].shape==z['coordinates'].shape
+            assert np.isfinite(z['current_coordinates']).all()
     for mode in modes:
-        a=np.load(outputs[0].with_name(f'run0_{mode}_seed0.npz'))['coordinates']
-        b=np.load(outputs[1].with_name(f'run1_{mode}_seed0.npz'))['coordinates']
-        np.testing.assert_array_equal(a,b)
+        a=np.load(outputs[0].with_name(f'run0_{mode}_seed0.npz'))
+        b=np.load(outputs[1].with_name(f'run1_{mode}_seed0.npz'))
+        np.testing.assert_array_equal(a['coordinates'],b['coordinates'])
+        np.testing.assert_array_equal(a['current_coordinates'],b['current_coordinates'])
 
 
 def test_legacy_reference_accumulates_global_gradients_across_chunks():
