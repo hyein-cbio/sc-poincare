@@ -62,22 +62,25 @@ gates below remain open; this does not validate forest time-scale mixtures.
 - [ ] Extend full Planaria from 300 to 1,000 updates under fixed conditions and
   multiple seeds. Check whether global quality degrades while training loss
   continues to decrease.
-- [ ] Compare against the **corrected self-inclusive default**, not only the
-  historical probability-floor baseline.
-- [ ] Select checkpoints by the training objective, not evaluation scores.
+- [x] Compare against the **corrected self-inclusive default**, not only the
+  historical probability-floor baseline. On ToggleSwitch the driver ran
+  corrected `symmetric_kl` and `conditional_symmetric_kl` from the same
+  spectral start. The historical floor was not the baseline. Losses are not
+  compared across objectives. See [toggle-evaluation.md](toggle-evaluation.md).
+  Full Planaria is a separate unchecked item.
+- [x] Select checkpoints by the training objective, not evaluation scores.
   Preserve raw current/best coordinates, loss, gradient norm, radius and stop
-  reason throughout the trajectory. The fitter already returns the lowest
-  training loss, including initialization. `gradient_norm_trace` now stores
-  the max per-point Riemannian norm before each update, aligned with
-  `loss_trace`. The full Planaria trajectory is still unrun.
-- [ ] Check evaluation graphs at k=15/20/30, alternative anchors and direct
+  reason throughout the trajectory. The fitter returns the lowest training
+  loss, including initialization. Each ToggleSwitch run stores 200
+  pre-update Riemannian gradient norms and radius quantiles. The full
+  Planaria trajectory is still unrun.
+- [x] Check evaluation graphs at k=15/20/30, alternative anchors and direct
   feature-distance diagnostics. Declare primary and sensitivity checks before
-  fitting rather than selecting favorable evaluations afterward. The public
-  objective driver now records direct feature-distance Spearman on the same
-  anchors, and it already accepts several `--evaluation-k` and `--anchor-seed`
-  values. That software does not replace the unrun full-Planaria check. The
-  declared metrics are in the
-  [frozen protocol](frozen-conditional-kl-protocol.md).
+  fitting rather than selecting favorable evaluations afterward. Primary was
+  k=15 and anchor seed 714. Sensitivity was k=20, k=30, anchor seed 716, and
+  feature distance. Symmetric KL stays slightly above conditional KL at every
+  one of those checks. See [toggle-evaluation.md](toggle-evaluation.md).
+  That does not replace the unrun full-Planaria check.
 - [x] Inspect isolated, rare and outlier populations for artificial mixing or
   loss of terminal-state information when the RFA diagonal is discarded.
   On Paul, with the rare set fixed before fitting as labels of at most 31
