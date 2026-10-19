@@ -76,4 +76,11 @@ Public `Paul.csv` matches source SHA256
 sklearn 1.9.1 `PCA(20, svd_solver="full")` after dropping the last column does
 not reproduce feature SHA256
 `0386248d2c02c99f82cda2eb18b8e357b8e0399b10aba7e67575599fb115d90b`.
+The same failure occurs for public Olsson.csv under the same PCA call.
 That Paul matrix was not replaced with the nonmatching PCA scores.
+
+The ignored tree `data/moignard_landmark_reference` stores the checked feature
+matrix, report, and checksum manifest. `reevaluate_study_tree` reran the frozen
+check from those bytes and reproduced the primary value with absolute
+difference 0. See [moignard-landmark-restore.json](moignard-landmark-restore.json).
+No off-machine copy was made.

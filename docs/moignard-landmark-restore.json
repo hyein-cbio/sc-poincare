@@ -1,0 +1,14 @@
+{
+  "primary_metric": "landmark_column_max_abs",
+  "stored_primary_value": 1.7763568394002505e-14,
+  "restored_primary_value": 1.7763568394002505e-14,
+  "primary_abs_difference": 0.0,
+  "feature_sha256": "674f8b380ba701d56afdeae8b35edf8b1269dfaa8e8483bc7e9c7e9c12999aa0",
+  "n_cells": 3934,
+  "fits_executed": 0,
+  "biological_validation": false,
+  "source_sha256": "3f45057370d568f87b0ab313bfa91992d76e8551824e3a545014b8d4a47c2ea1",
+  "tree": "data/moignard_landmark_reference",
+  "external_backup": false,
+  "off_machine_destination": null
+}
