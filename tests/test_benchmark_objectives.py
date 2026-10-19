@@ -36,6 +36,11 @@ def test_benchmark_uses_common_initialization_and_never_fits_labels(tmp_path,mon
             feature_rank=record['evaluation']['feature']['global_distance_rank']
             assert np.isfinite(feature_rank)
             assert set(record['evaluation'])=={'4','5','feature'}
+            if record['objective']=='legacy_floor_1e-12':
+                assert record['gradient_norm_trace'] is None
+            else:
+                assert len(record['gradient_norm_trace'])==record['epochs_run']==2
+                assert min(record['gradient_norm_trace'])>0
         assert all(r['epochs_run']==2 for r in report['records'])
         arrays=[np.load(out.with_name(f'{out.stem}_{mode}_seed0.npz')) for mode in modes]
         for z in arrays:

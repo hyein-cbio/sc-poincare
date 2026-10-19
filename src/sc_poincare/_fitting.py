@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Callable
 import warnings
 
@@ -38,6 +38,7 @@ class FitReport:
     objective: str = DEFAULT_OBJECTIVE
     probability_computation: str = "log_softmax"
     zero_target_policy: str = "machine_tiny_logs_only"
+    gradient_norm_trace: list[float] = field(default_factory=list)
 
 
 @dataclass(frozen=True)
@@ -239,6 +240,20 @@ def _riemannian_retract_numpy(points, euclid_grad, step_size: float, max_grad_no
     return confine_to_open_disk(points - step_size * gradient)
 
 
+def _max_metric_grad_norm(points, euclid_grad) -> float:
+    """Max per-point Riemannian norm of an accumulated Euclidean gradient, before clipping."""
+    if torch is not None and isinstance(points, torch.Tensor):
+        points = points.detach()
+        euclid_grad = euclid_grad.detach()
+    points = np.asarray(points, dtype=np.float64)
+    euclid_grad = np.asarray(euclid_grad, dtype=np.float64)
+    inverse_lambda = np.clip(1.0 - np.sum(points * points, axis=-1), 0.0, None) / 2.0
+    metric_norm = inverse_lambda * np.linalg.norm(euclid_grad, axis=-1)
+    if metric_norm.size == 0:
+        return 0.0
+    return float(np.max(metric_norm))
+
+
 def _fit_with_torch(
     target: np.ndarray,
     n_components: int,
@@ -277,6 +292,8 @@ def _fit_with_torch(
 
     chunk_size = min(batch_size or 256, n_obs)
     loss_trace: list[float] = []
+    gradient_norm_trace: list[float] = []
+    applied_grad_norm = None
     best_loss = np.inf
     best_coords = coords.detach().cpu().numpy().copy()
     stall = 0
@@ -304,6 +321,7 @@ def _fit_with_torch(
 
         if epoch > 0:
             loss_trace.append(total_loss)
+            gradient_norm_trace.append(float(applied_grad_norm))
             if verbose and epoch % max(n_epochs // 10, 1) == 0:
                 print(f"poincare_map epoch {epoch}/{n_epochs}  loss={total_loss:.6f}")
         if total_loss < best_loss:
@@ -321,6 +339,7 @@ def _fit_with_torch(
         if epoch == n_epochs or (epoch > burn_in_epochs and stall >= patience):
             break
         step = learning_rate / 10.0 if epoch < burn_in_epochs else learning_rate
+        applied_grad_norm = _max_metric_grad_norm(coords, coords.grad)
         with torch.no_grad():
             coords.copy_(_riemannian_retract(coords, coords.grad, step, max_grad_norm))
 
@@ -333,6 +352,7 @@ def _fit_with_torch(
         batch_size=chunk_size,
         best_loss=best_loss,
         stop_reason="epoch_limit" if len(loss_trace) == n_epochs else "patience",
+        gradient_norm_trace=gradient_norm_trace,
         **init_status,
     )
 
@@ -410,6 +430,7 @@ def _fit_with_numpy(
     # Exact finite differences are cubic; this fallback is only for tiny inputs.
     chunk_size = min(batch_size or 32, n_obs)
     loss_trace: list[float] = []
+    gradient_norm_trace: list[float] = []
     best_loss = evaluate_alignment(coords, target, temperature, objective=objective)
     best_coords = coords.copy()
     stopping_loss = best_loss
@@ -422,6 +443,7 @@ def _fit_with_numpy(
             rows = np.arange(start, min(start + chunk_size, n_obs))
             grad += _numeric_row_grad(coords, target, temperature, rows, objective=objective)
         step = learning_rate / 10.0 if epoch < burn_in_epochs else learning_rate
+        gradient_norm_trace.append(_max_metric_grad_norm(coords, grad))
         coords = _riemannian_retract_numpy(coords, grad, step, max_grad_norm)
 
         total_loss = evaluate_alignment(coords, target, temperature, objective=objective)
@@ -451,6 +473,7 @@ def _fit_with_numpy(
         batch_size=chunk_size,
         best_loss=best_loss,
         stop_reason="epoch_limit" if len(loss_trace) == n_epochs else "patience",
+        gradient_norm_trace=gradient_norm_trace,
         **init_status,
     )
 
