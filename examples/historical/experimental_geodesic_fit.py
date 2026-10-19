@@ -1,4 +1,4 @@
-"""Opt-in research fitter: RFA KL plus graph-geodesic distance stress.
+"""HISTORICAL ONLY: old RFA KL plus graph-geodesic distance stress fitter.
 
 This is an independent extension, NOT the authors' PoincareMaps algorithm or
 Riemannian Adam. It leaves sc_poincare.tl.poincare_map defaults unchanged.
@@ -19,6 +19,7 @@ from sc_poincare._proximity import estimate_proximity, local_affinity
 from sc_poincare._resources import DEFAULT_MAX_DENSE_BYTES, check_dense_budget
 
 
+# BEGIN HISTORICAL GEODESIC FITTER (not current MU; no active API imports)
 @dataclass
 class ExperimentalFit:
     coordinates: np.ndarray
@@ -135,3 +136,4 @@ def fit_geodesic_regularized(
         "learning_rate": learning_rate, "random_state": random_state,
         "proximity_diagnostics": proximity.diagnostics,
     })
+# END HISTORICAL GEODESIC FITTER

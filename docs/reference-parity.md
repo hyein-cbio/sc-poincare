@@ -127,11 +127,13 @@ comparable.
 
 ## Reproduce without loading reference coordinates
 
-These are opt-in research examples, not new defaults in `tl.poincare_map`:
+These are **historical-only** selected recipes, not current recommended
+workflows or new defaults. They live under `examples/historical/` and require
+explicit acknowledgement; closed research/capsule inputs are not replay targets:
 
 ```bash
 pip install -e '.[torch,benchmark]'
-python examples/run_selected_conditions.py MyeloidProgenitors \
+python examples/historical/run_selected_conditions.py --acknowledge-historical MyeloidProgenitors \
   data/facebook_comparison/reference/datasets/MyeloidProgenitors.csv \
   --seed 0 --output data/reproduced/myeloid_seed0.npz
 ```
@@ -140,7 +142,7 @@ Choose any dataset name in the recipe table and a corresponding local CSV.
 Repeat with seeds 1 and 2. The runner writes raw coordinates, labels, per-stage
 loss traces and metadata; it does not load or fit against reference coordinates.
 It refuses to overwrite existing outputs. The extracted research fitter lives
-in `examples/experimental_geodesic_fit.py`. Its outputs reproduced the searched
+in `examples/historical/experimental_geodesic_fit.py`. Its outputs reproduced the searched
 ToggleSwitch and Myeloid seed-0 coordinates exactly in the test environment.
 Unit tests cover its declared objective, stage accounting, row-chunk invariance,
 reproducibility and input validation.

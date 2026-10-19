@@ -16,7 +16,7 @@ from sc_poincare._fitting import evaluate_alignment
 from sc_poincare._proximity import estimate_proximity, local_affinity
 
 spec = importlib.util.spec_from_file_location('experimental_geodesic_example',
-    Path(__file__).resolve().parents[1] / 'examples' / 'experimental_geodesic_fit.py')
+    Path(__file__).resolve().parents[1] / 'experimental_geodesic_fit.py')
 module = importlib.util.module_from_spec(spec)
 sys.modules[spec.name] = module
 spec.loader.exec_module(module)

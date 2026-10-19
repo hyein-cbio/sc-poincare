@@ -46,8 +46,10 @@ jobs:
       - name: Smoke test installed package outside source tree
         working-directory: ${{ runner.temp }}
         run: python -I -c "from sc_poincare.evaluation import evaluate_neighborhoods, compare_neighborhoods; import sc_poincare; print(sc_poincare.__file__)"
-      - name: Run complete synthetic suite (no private datasets)
+      - name: Run active synthetic suite (no private datasets)
         run: python -m pytest tests
+      - name: Check historical examples explicitly (tiny synthetic inputs only)
+        run: python -m pytest examples/historical/tests
 
   numpy-only:
     runs-on: ubuntu-latest

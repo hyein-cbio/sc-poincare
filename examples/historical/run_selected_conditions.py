@@ -1,4 +1,4 @@
-"""Reproduce a selected, dataset-specific research condition from a local CSV.
+"""HISTORICAL ONLY: selected dataset-specific conditions, not current defaults.
 
 Does not download data or read reference coordinates. See docs/reference-parity.md.
 Requires .[torch,benchmark]. Labels are saved for plotting, never passed to fitting.
@@ -7,7 +7,9 @@ from __future__ import annotations
 
 import argparse
 import hashlib
+import importlib.util
 import json
+import sys
 from pathlib import Path
 import time
 
@@ -17,11 +19,21 @@ from sklearn.decomposition import PCA
 from threadpoolctl import threadpool_limits
 import torch
 
-from experimental_geodesic_fit import fit_geodesic_regularized
+from sc_poincare._research_policy import ensure_active_paths
 from sc_poincare._fitting import fit_disk_embedding
 from sc_poincare._proximity import estimate_proximity
 
 
+def _historical_fitter():
+    path = Path(__file__).with_name('experimental_geodesic_fit.py')
+    spec = importlib.util.spec_from_file_location('_sc_poincare_historical_geodesic', path)
+    module = importlib.util.module_from_spec(spec)
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    return module.fit_geodesic_regularized
+
+
+# BEGIN HISTORICAL DATASET-SELECTED RECIPES (not general-purpose defaults)
 RECIPES = {
     "ToggleSwitch": dict(k=15, sigma=1., pca=0, gamma=.5, lr=.02, stages=((800, 10.),)),
     "MyeloidProgenitors": dict(k=30, sigma=2., pca=0, gamma=.5, lr=.02, stages=((800, 10.),)),
@@ -30,16 +42,22 @@ RECIPES = {
     "Paul": dict(k=15, sigma="median", pca=20, gamma=.5, lr=.02, stages=((800, 10.), (150, 20.))),
     "Moignard2015": dict(k=20, sigma="median", pca=0, gamma=.5, lr=.02, stages=((700, 20.), (250, 15.))),
 }
+# END HISTORICAL DATASET-SELECTED RECIPES
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--acknowledge-historical', action='store_true',
+                        help='Explicitly opt into old selected recipes, not the current MU/RFA defaults')
     parser.add_argument("dataset", choices=list(RECIPES))
     parser.add_argument("csv", type=Path)
     parser.add_argument("--label-column", help="Defaults to the last column")
     parser.add_argument("--seed", type=int, default=0)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    if not args.acknowledge_historical:
+        parser.error('Historical recipe execution requires --acknowledge-historical; use run_scanpy_demo.py for current workflows.')
+    ensure_active_paths(args.csv, args.output, args.output.with_suffix('.json'))
     if args.output.suffix != ".npz":
         parser.error("--output must end in .npz")
     if args.output.exists() or args.output.with_suffix('.json').exists():
@@ -55,7 +73,7 @@ def main():
         if config['pca']:
             features = PCA(min(config['pca'], features.shape[0], features.shape[1]), svd_solver='full').fit_transform(features)
         if 'stages' in config:
-            fit = fit_geodesic_regularized(features, n_neighbors=config['k'], sigma=config['sigma'],
+            fit = _historical_fitter()(features, n_neighbors=config['k'], sigma=config['sigma'],
                 gamma=config['gamma'], learning_rate=config['lr'], stages=config['stages'], random_state=args.seed)
             coordinates = fit.coordinates
             arrays = {f'loss_stage_{i}': stage['loss_trace'] for i, stage in enumerate(fit.stages)}
