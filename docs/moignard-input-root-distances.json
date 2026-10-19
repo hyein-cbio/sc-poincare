@@ -1,0 +1,40 @@
+{
+  "input": "moignard2015 feature matrix, labels used only after distances were fixed",
+  "space": "euclidean feature space, not an embedding and not pseudotime",
+  "root_index": 1736,
+  "root_label": "PS",
+  "root_rule": "unique Euclidean sum-distance medoid of PS rows",
+  "n_cells": 3934,
+  "population_counts": {
+    "4SFG": 983,
+    "4SG": 770,
+    "HF": 1005,
+    "NP": 552,
+    "PS": 624
+  },
+  "smallest_population": "NP",
+  "median_feature_distance_from_root": {
+    "4SFG": 47.558871759013556,
+    "4SG": 35.592332605991245,
+    "HF": 36.187499341962614,
+    "NP": 38.19392398348057,
+    "PS": 36.84708480487026
+  },
+  "population_order_by_median_distance": [
+    "4SG",
+    "HF",
+    "PS",
+    "NP",
+    "4SFG"
+  ],
+  "marker_distance_spearman": {
+    "Gata1": 0.656774872642525,
+    "Kdr": -0.6440130532490247,
+    "Runx1": 0.45461531337248545,
+    "Sfpi1": 0.0924432849251193,
+    "Cdh5": -0.2265415788091222
+  },
+  "fits_executed": 0,
+  "biological_validation": false,
+  "promoted": false
+}

@@ -119,7 +119,12 @@ before a new long run.
 - [x] After the frozen Moignard fits, retain purity and input recall for every
   label population: NP 552, PS 624, 4SG 770, 4SFG 983, and HF 1005. NP is the
   smallest. Marker continuity, branching order, and an unseen rare-population
-  audit were not part of this run. Scores did not choose a default. Record:
+  audit were not part of the embedding run. A separate input-space check, with
+  labels applied only after distances were fixed, puts the median Euclidean
+  distance from row 1736 in the order 4SG, HF, PS, NP, 4SFG. Predeclared marker
+  Spearman values against that distance are in
+  [moignard-input-root-distances.json](moignard-input-root-distances.json).
+  This is not embedding pseudotime. Scores did not choose a default. Record:
   [moignard-controlled-probe.json](moignard-controlled-probe.json).
 - [x] Compare classical jitter with an area-uniform random disk that does not
   start from the classical layout, seeds 0 and 1, on exact Moignard. Epoch-40
