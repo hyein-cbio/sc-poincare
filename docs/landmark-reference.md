@@ -73,14 +73,25 @@ it is not an exact-MU continuation. Phase RSS samples are in
 
 Public `Paul.csv` matches source SHA256
 `fed836ed28f148d9ee8efd8ec13ebd468f06ef9b92eeb6f9e218235d4ad2f21d`.
-sklearn 1.9.1 `PCA(20, svd_solver="full")` after dropping the last column does
-not reproduce feature SHA256
+The provenance runtime names NumPy 2.5.4, SciPy 1.18.1, scikit-learn 1.9.1,
+and pandas 3.0.6. On this host those same versions, with one BLAS thread,
+turn the 2,730×1,000 label-stripped matrix into PCA20 scores whose contiguous
+float64 SHA256 is
+`20a9f31a06557fef8e8aa5b0e5cddd96e5adc157663d22cf0fda0959b43ae300`.
+A second call produced the same bytes. The recorded feature SHA256 is
 `0386248d2c02c99f82cda2eb18b8e357b8e0399b10aba7e67575599fb115d90b`.
-The same failure occurs for public Olsson.csv under the same PCA call.
-That Paul matrix was not replaced with the nonmatching PCA scores.
+NumPy's SVD of the centered matrix differs from the sklearn scores by at most
+1.8e-12 and does not match the recorded hash either. The same full-SVD call
+fails for public Olsson.csv. That Paul matrix was not replaced with the
+nonmatching PCA scores.
 
 The ignored tree `data/moignard_landmark_reference` stores the checked feature
 matrix, report, and checksum manifest. `reevaluate_study_tree` reran the frozen
 check from those bytes and reproduced the primary value with absolute
 difference 0. See [moignard-landmark-restore.json](moignard-landmark-restore.json).
-No off-machine copy was made.
+The checksum manifest and the 2,095-byte report were copied to the Drive folder
+`sc-poincare backups` and the downloaded manifest matches
+`262fa3960267a859eac9a29d3b47f3ba0246ae789eea339df6da63f0a535bf19`.
+Hex pieces `arrays.npz.hex.00`, `arrays.npz.hex.01`, and `arrays.npz.hex.31`
+are in that folder. Chunks 02 through 30 are absent, so `arrays.npz` is not
+yet recoverable from the folder.
