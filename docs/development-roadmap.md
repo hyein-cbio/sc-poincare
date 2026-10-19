@@ -63,8 +63,9 @@ gates below remain open; this does not validate forest time-scale mixtures.
   multiple seeds. Check whether global quality degrades while training loss
   continues to decrease. The public CSV is 21,612 by 50 and hashes to
   `d59a30b1…`. The default dense guard refuses it at 13.92 GiB against a
-  0.50 GiB limit, and this host has about 4.2 GiB available. The fit was not
-  started.
+  0.50 GiB limit, and this host has about 4.2 GiB available. The label
+  inventory is fixed in [planaria-label-inventory.md](planaria-label-inventory.md).
+  The fit was not started.
 - [x] Compare against the **corrected self-inclusive default**, not only the
   historical probability-floor baseline. On ToggleSwitch the driver ran
   corrected `symmetric_kl` and `conditional_symmetric_kl` from the same
