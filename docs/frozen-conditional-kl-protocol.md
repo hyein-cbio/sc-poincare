@@ -116,6 +116,7 @@ PYTHONPATH=src python examples/benchmark_objectives.py INPUT.csv \
 
 Repeat with `--anchor-seed 716` and a different `--output` prefix. Do not
 overwrite an existing output. The JSON `provenance` field records the
-process import path, Git revision, worktree dirty flag, `git diff HEAD`
-SHA256, and runtime versions immediately before the first fit. A dirty
+process import path, the Git revision of the repository that contains the
+driver, the worktree dirty flag, `git diff HEAD` SHA256, and runtime
+versions immediately before the first fit. A dirty
 worktree is not a fixed snapshot. Do not start this fit from one.

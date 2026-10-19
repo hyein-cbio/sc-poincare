@@ -2,6 +2,7 @@
 import importlib.util
 import json
 from pathlib import Path
+import subprocess
 import sys
 
 import numpy as np
@@ -64,6 +65,16 @@ def test_benchmark_uses_common_initialization_and_never_fits_labels(tmp_path,mon
         b=np.load(outputs[1].with_name(f'run1_{mode}_seed0.npz'))
         np.testing.assert_array_equal(a['coordinates'],b['coordinates'])
         np.testing.assert_array_equal(a['current_coordinates'],b['current_coordinates'])
+
+
+def test_provenance_uses_the_driver_repository(tmp_path, monkeypatch):
+    module=_module()
+    monkeypatch.chdir(tmp_path)
+    provenance=module._run_provenance()
+    repo=Path(__file__).resolve().parents[1]
+    expected=subprocess.check_output(['git','-C',str(repo),'rev-parse','HEAD'],text=True).strip()
+    assert provenance['git_revision']==expected
+    assert provenance['git_diff_sha256']
 
 
 def test_legacy_reference_accumulates_global_gradients_across_chunks():
