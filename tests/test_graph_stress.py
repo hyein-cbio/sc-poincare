@@ -76,6 +76,23 @@ def test_sgd_matches_adam_at_the_same_start_and_is_not_the_default(setup, torch)
         method.fit_graph_stress(setup, epochs=6, chunk_size=4, resume=adam.state, optimizer_name="sgd")
 
 
+def test_lorentz_starts_at_the_same_disk_distances_and_stays_opt_in(setup):
+    disk = method.fit_graph_stress(setup, epochs=5, chunk_size=4, random_state=1)
+    lorentz = method.fit_graph_stress(setup, epochs=5, chunk_size=4, random_state=1, geometry="lorentz")
+    origin = method.fit_graph_stress(setup, epochs=0, chunk_size=4, random_state=1, geometry="lorentz")
+    assert disk.geometry == "poincare"
+    assert method.fit_graph_stress(setup, epochs=0).geometry == "poincare"
+    np.testing.assert_array_equal(disk.initial, lorentz.initial)
+    np.testing.assert_allclose(origin.coordinates, origin.initial, atol=1e-12)
+    np.testing.assert_allclose(disk.loss_trace[0], lorentz.loss_trace[0], rtol=1e-9, atol=1e-9)
+    assert np.max(np.linalg.norm(lorentz.coordinates, axis=1)) < 1
+    assert not np.allclose(disk.loss_trace, lorentz.loss_trace)
+    assert disk.best_epoch == int(disk.loss_trace.argmin())
+    assert lorentz.best_epoch == int(lorentz.loss_trace.argmin())
+    with pytest.raises(ValueError, match="mismatch"):
+        method.fit_graph_stress(setup, epochs=6, chunk_size=4, random_state=1, geometry="lorentz", resume=disk.state)
+
+
 @pytest.mark.parametrize("geometry", ["poincare", "euclidean"])
 def test_resume_preserves_adam_and_own_best(setup, torch, tmp_path, geometry):
     full = method.fit_graph_stress(setup, epochs=20, geometry=geometry, chunk_size=5)

@@ -331,6 +331,34 @@ def _tangent_from_disk(x):
                          out=np.full_like(radius, 2.), where=radius > 0)
 
 
+def _lorentz_spatial_from_disk(disk):
+    """Spatial coordinates of the hyperboloid point isometric to a disk point."""
+    disk = np.asarray(disk, dtype=np.float64)
+    radius_sq = np.sum(disk * disk, axis=1, keepdims=True)
+    if not np.isfinite(disk).all() or np.any(radius_sq >= 1):
+        raise ValueError("Lorentz initialization must lie in the open unit disk.")
+    return 2 * disk / (1 - radius_sq)
+
+
+def _disk_from_lorentz(u):
+    """Inverse of the disk-to-hyperboloid spatial map."""
+    torch = _torch()
+    time = torch.sqrt(1 + u.square().sum(dim=1, keepdim=True))
+    return u / (time + 1)
+
+
+def _lorentz_distance(rows, points, self_columns):
+    """Hyperboloid distance acosh(-<x,y>). Diagonal entries are exactly zero."""
+    torch = _torch()
+    time_rows = torch.sqrt(1 + rows.square().sum(dim=1))
+    time_points = torch.sqrt(1 + points.square().sum(dim=1))
+    minkowski = -time_rows[:, None] * time_points[None, :] + rows @ points.T
+    distance = torch.acosh(torch.clamp(-minkowski, min=1))
+    distance = distance.clone()
+    distance[torch.arange(distance.shape[0], device=distance.device), self_columns] = 0
+    return distance
+
+
 def _objective(u, target, teacher, config, geometry, chunk_size, *, backward):
     """Exact all-column objective; each row chunk contributes both endpoints."""
     torch = _torch()
@@ -342,11 +370,20 @@ def _objective(u, target, teacher, config, geometry, chunk_size, *, backward):
         for start in range(0, n, chunk_size):
             stop = min(n, start + chunk_size)
             rows = torch.arange(start, stop)
-            x = _disk_from_tangent(u) if geometry == "poincare" else u
+            if geometry == "poincare":
+                x = _disk_from_tangent(u)
+            elif geometry == "lorentz":
+                x = _disk_from_lorentz(u)
+            else:
+                x = u
             if not torch.isfinite(x).all() or (geometry == "poincare" and torch.any(torch.linalg.vector_norm(x, dim=1) >= 1)):
                 raise FloatingPointError("Nonfinite coordinates or a point outside the open disk.")
-            d = (_torch_disk_length(x[start:stop], x, self_columns=rows) if geometry == "poincare"
-                 else torch.cdist(x[start:stop], x, compute_mode="donot_use_mm_for_euclid_dist"))
+            if geometry == "poincare":
+                d = _torch_disk_length(x[start:stop], x, self_columns=rows)
+            elif geometry == "lorentz":
+                d = _lorentz_distance(u[start:stop], u, rows)
+            else:
+                d = torch.cdist(x[start:stop], x, compute_mode="donot_use_mm_for_euclid_dist")
             t = target[start:stop]
             error = ((d - t) / config.distance_scale).square() / (t / config.distance_scale).clamp_min(config.relative_floor).square()
             global_loss = error.sum() / (n * (n - 1))
@@ -430,8 +467,8 @@ def fit_graph_stress(setup, *, epochs=1500, random_state=0, geometry="poincare",
     random_state = _integer("random_state", random_state, 0)
     chunk_size = _integer("chunk_size", chunk_size)
     checkpoint_every = _integer("checkpoint_every", checkpoint_every)
-    if geometry not in ("poincare", "euclidean"):
-        raise ValueError("geometry must be 'poincare' or 'euclidean'.")
+    if geometry not in ("poincare", "euclidean", "lorentz"):
+        raise ValueError("geometry must be 'poincare', 'euclidean', or 'lorentz'.")
     if optimizer_name not in ("adam", "sgd"):
         raise ValueError("optimizer_name must be 'adam' or 'sgd'.")
     if callback is not None and not callable(callback):
@@ -441,7 +478,8 @@ def fit_graph_stress(setup, *, epochs=1500, random_state=0, geometry="poincare",
     config = setup.config
     initial = setup.base_initial + np.random.default_rng(random_state).normal(scale=config.jitter, size=setup.base_initial.shape)
     initial_u = _tangent_from_disk(initial)
-    u = torch.tensor(initial_u, dtype=torch.float64, requires_grad=True)
+    chart = _lorentz_spatial_from_disk(initial) if geometry == "lorentz" else initial_u
+    u = torch.tensor(chart, dtype=torch.float64, requires_grad=True)
     def make_optimizer(parameter):
         if optimizer_name == "sgd":
             return torch.optim.SGD([parameter], lr=config.learning_rate)
@@ -452,7 +490,7 @@ def fit_graph_stress(setup, *, epochs=1500, random_state=0, geometry="poincare",
     fit_config = dict(geometry=geometry, random_state=random_state, chunk_size=chunk_size)
     if optimizer_name != "adam":
         fit_config["optimizer"] = optimizer_name
-    best = initial.copy() if geometry == "poincare" else initial_u.copy()
+    best = initial.copy() if geometry in ("poincare", "lorentz") else initial_u.copy()
     best_loss, best_epoch, trace, start_epoch = np.inf, 0, [], 0
     if resume is not None:
         if not isinstance(resume, dict) or resume.get("schema_version") != 1:
@@ -467,7 +505,7 @@ def fit_graph_stress(setup, *, epochs=1500, random_state=0, geometry="poincare",
             raise ValueError("epochs must exceed the checkpoint's evaluated epoch.")
         for name in ("u", "best"):
             value = resume[name]
-            if not isinstance(value, torch.Tensor) or value.dtype != torch.float64 or tuple(value.shape) != initial_u.shape or not torch.isfinite(value).all():
+            if not isinstance(value, torch.Tensor) or value.dtype != torch.float64 or tuple(value.shape) != chart.shape or not torch.isfinite(value).all():
                 raise ValueError(f"Invalid checkpoint {name} tensor.")
         saved_trace = np.asarray(resume["trace"], dtype=float)
         if (saved_trace.shape != (start_epoch + 1,) or not np.isfinite(saved_trace).all()
@@ -482,7 +520,12 @@ def fit_graph_stress(setup, *, epochs=1500, random_state=0, geometry="poincare",
         trace = list(resume["trace"][:-1])
     for epoch in range(start_epoch, epochs + 1):
         loss, global_loss, local_loss = _objective(u, target, teacher, config, geometry, chunk_size, backward=epoch < epochs)
-        current = (_disk_from_tangent(u) if geometry == "poincare" else u).detach().numpy().copy()
+        if geometry == "poincare":
+            current = _disk_from_tangent(u).detach().numpy().copy()
+        elif geometry == "lorentz":
+            current = _disk_from_lorentz(u).detach().numpy().copy()
+        else:
+            current = u.detach().numpy().copy()
         trace.append(loss)
         if loss < best_loss:
             best_loss, best_epoch, best = loss, epoch, current.copy()
@@ -500,7 +543,7 @@ def fit_graph_stress(setup, *, epochs=1500, random_state=0, geometry="poincare",
                                               best_epoch, deepcopy(state)))
         if epoch < epochs:
             optimizer.step()
-    return GraphStressResult(best, current, initial, initial_u, np.asarray(trace),
+    return GraphStressResult(best, current, initial, chart, np.asarray(trace),
                              epochs, geometry, best_loss, best_epoch, loss, state)
 
 
