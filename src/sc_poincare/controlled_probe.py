@@ -75,9 +75,11 @@ def promotion_allowed(*, development_input, joint_improvements):
 
 
 def fit_from_initial(setup, initial, *, epochs, chunk_size=256, geometry="poincare",
-                     max_dense_bytes, teacher=None):
-    """Adam on an exact setup from a caller-supplied disk or tangent start.
+                     max_dense_bytes, teacher=None, optimizer_name="adam"):
+    """Adam or plain SGD on an exact setup from a caller-supplied start.
 
+    ``optimizer_name='adam'`` is the existing tangent Adam update. ``'sgd'``
+    uses the same learning rate and is a separate ablation, not a new default.
     ``teacher=None`` uses the prepared teacher. A replacement teacher must be
     row-stochastic, finite, and shaped N-by-N. The prepared target is unchanged.
     No jitter is added here.
@@ -87,6 +89,8 @@ def fit_from_initial(setup, initial, *, epochs, chunk_size=256, geometry="poinca
     chunk_size = experimental._integer("chunk_size", chunk_size)
     if geometry not in ("poincare", "euclidean"):
         raise ValueError("geometry must be 'poincare' or 'euclidean'.")
+    if optimizer_name not in ("adam", "sgd"):
+        raise ValueError("optimizer_name must be 'adam' or 'sgd'.")
     torch = experimental._torch()
     config = setup.config
     if geometry == "poincare":
@@ -104,7 +108,10 @@ def fit_from_initial(setup, initial, *, epochs, chunk_size=256, geometry="poinca
         if not np.allclose(teacher_matrix.sum(1), 1., rtol=0., atol=1e-8):
             raise ValueError("Replacement teacher rows must sum to 1.")
     u = torch.tensor(tangent, dtype=torch.float64, requires_grad=True)
-    optimizer = torch.optim.Adam([u], lr=config.learning_rate)
+    if optimizer_name == "adam":
+        optimizer = torch.optim.Adam([u], lr=config.learning_rate)
+    else:
+        optimizer = torch.optim.SGD([u], lr=config.learning_rate)
     target = torch.tensor(np.array(setup.target, dtype=np.float64, copy=True), dtype=torch.float64)
     teacher_t = torch.tensor(teacher_matrix, dtype=torch.float64)
     best_loss, best_epoch, trace = np.inf, 0, []
@@ -119,13 +126,32 @@ def fit_from_initial(setup, initial, *, epochs, chunk_size=256, geometry="poinca
             best_loss, best_epoch = float(loss), epoch
         if epoch < epochs:
             optimizer.step()
-    return dict(loss_trace=trace, current=current, best_loss=best_loss, best_epoch=best_epoch, epochs=epochs)
+    return dict(loss_trace=trace, current=current, best_loss=best_loss, best_epoch=best_epoch,
+                epochs=epochs, optimizer_name=optimizer_name)
+
+
+def fixed_multiscale_accessibility(affinity, *, max_dense_bytes):
+    """Equal mixture of forest times 0.1 and 10, then row-normalized.
+
+    This is not ``forest_tau=1`` and it is not selected as a default. Both
+    components are built by the existing solver.
+    """
+    from sc_poincare._proximity import forest_accessibility
+    parts = [forest_accessibility(affinity, max_dense_bytes=max_dense_bytes, forest_tau=tau)
+             for tau in (0.1, 10.)]
+    mixed = 0.5 * (parts[0] + parts[1])
+    mixed = np.maximum(mixed, 0.)
+    mixed /= np.clip(mixed.sum(axis=1, keepdims=True), a_min=1e-12, a_max=None)
+    if not np.isfinite(mixed).all():
+        raise FloatingPointError("Multiscale mixture is nonfinite.")
+    return mixed
 
 
 __all__ = [
     "classical_jitter",
     "degree_aware_teacher",
     "fit_from_initial",
+    "fixed_multiscale_accessibility",
     "promotion_allowed",
     "random_disk",
 ]
