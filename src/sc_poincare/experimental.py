@@ -410,7 +410,7 @@ def _validate_setup(setup, max_dense_bytes):
 def fit_graph_stress(setup, *, epochs=1500, random_state=0, geometry="poincare",
                     chunk_size=256, max_dense_bytes=DEFAULT_MAX_DENSE_BYTES,
                     resume=None, callback: Callable[[GraphStressProgress], None] | None = None,
-                    checkpoint_every=100):
+                    checkpoint_every=100, optimizer_name="adam"):
     """Fit exact relative stress + weighted forward conditional cross-entropy.
 
     Full nonself denominators are retained in every row chunk. Tangent Adam
@@ -432,6 +432,8 @@ def fit_graph_stress(setup, *, epochs=1500, random_state=0, geometry="poincare",
     checkpoint_every = _integer("checkpoint_every", checkpoint_every)
     if geometry not in ("poincare", "euclidean"):
         raise ValueError("geometry must be 'poincare' or 'euclidean'.")
+    if optimizer_name not in ("adam", "sgd"):
+        raise ValueError("optimizer_name must be 'adam' or 'sgd'.")
     if callback is not None and not callable(callback):
         raise TypeError("callback must be callable or None.")
     _validate_setup(setup, max_dense_bytes)
@@ -440,10 +442,16 @@ def fit_graph_stress(setup, *, epochs=1500, random_state=0, geometry="poincare",
     initial = setup.base_initial + np.random.default_rng(random_state).normal(scale=config.jitter, size=setup.base_initial.shape)
     initial_u = _tangent_from_disk(initial)
     u = torch.tensor(initial_u, dtype=torch.float64, requires_grad=True)
-    optimizer = torch.optim.Adam([u], lr=config.learning_rate)
+    def make_optimizer(parameter):
+        if optimizer_name == "sgd":
+            return torch.optim.SGD([parameter], lr=config.learning_rate)
+        return torch.optim.Adam([parameter], lr=config.learning_rate)
+    optimizer = make_optimizer(u)
     target = torch.tensor(setup.target, dtype=torch.float64)
     teacher = torch.tensor(setup.teacher, dtype=torch.float64)
     fit_config = dict(geometry=geometry, random_state=random_state, chunk_size=chunk_size)
+    if optimizer_name != "adam":
+        fit_config["optimizer"] = optimizer_name
     best = initial.copy() if geometry == "poincare" else initial_u.copy()
     best_loss, best_epoch, trace, start_epoch = np.inf, 0, [], 0
     if resume is not None:
@@ -467,7 +475,7 @@ def fit_graph_stress(setup, *, epochs=1500, random_state=0, geometry="poincare",
                 or int(saved_trace.argmin()) != resume["best_epoch"]):
             raise ValueError("Checkpoint objective history is inconsistent.")
         u = resume["u"].detach().cpu().clone().requires_grad_(True)
-        optimizer = torch.optim.Adam([u], lr=config.learning_rate)
+        optimizer = make_optimizer(u)
         optimizer.load_state_dict(deepcopy(resume["optimizer"]))
         best = resume["best"].detach().cpu().numpy().copy()
         best_loss, best_epoch = resume["best_loss"], resume["best_epoch"]

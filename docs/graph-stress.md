@@ -81,7 +81,9 @@ These are preprocessing choices for those comparisons, not core branches.
    scaled to maximum initial disk radius 0.2. The study adds normal jitter
    with standard deviation 0.0002. Optimize tangent coordinates u with Adam
    (`learning_rate=0.02*2/3`), mapping them to
-   `x=tanh(norm(u)/2)*u/norm(u)` in the disk.
+   `x=tanh(norm(u)/2)*u/norm(u)` in the disk. `optimizer_name="sgd"` uses that
+   same objective, learning rate and initial tangent array. It is not the
+   default, and an Adam checkpoint does not resume as SGD.
 
 Local radii are bounded below by the median positive radius times 1e-6. The
 diagnostics record zero radii and Gaussian underflow. A row with no positive
