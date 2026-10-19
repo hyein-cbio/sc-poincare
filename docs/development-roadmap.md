@@ -170,8 +170,9 @@ have not been satisfied merely by selecting MU as the new provisional default.
   and `b24766fa…` (Penryn). Their default thread pools hash to `89beec8b…`,
   `3603a5ed…`, `0fc2e924…`, and `b0fab7f4…`. SciPy `gesvd` on one SkylakeX
   thread hashes to `b96251a8…`. sklearn's full solver matches SciPy `gesdd`
-  with the V-based sign flip. None of these bytes is the recorded array, and
-  that array was not substituted.
+  with the V-based sign flip. This checkout has no `data/astra37_handoff/`
+  capsule, and the connected Drive has no Astra handoff or PCA feature file,
+  so the recorded array is not on this machine and was not substituted.
 - [x] Fit landmark columns without storing an N-by-N target. The teacher stays
   sparse and each update materializes one row-chunk of embedding distances.
   When every cell is a landmark, a 3-epoch synthetic trajectory matches exact
