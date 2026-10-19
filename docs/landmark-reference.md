@@ -89,7 +89,9 @@ gray-code enumeration of all 1,048,576 column-sign patterns misses the recorded
 hash for the one-thread scores, the default-thread scores, the one-thread
 Haswell, Sandybridge, Nehalem, and Penryn scores, SciPy `gesvd`, and the stable
 Torch 2.14.1 scores `c6e41671…`. The same full-SVD call misses the recorded
-Olsson hash. The recorded Paul matrix was not replaced with these scores.
+Olsson hash. This checkout has no `data/astra37_handoff/` capsule, and the
+connected Drive has no Astra handoff or PCA feature file. The recorded Paul
+matrix is not on this machine and was not replaced with these scores.
 
 The ignored tree `data/moignard_landmark_reference` stores the checked feature
 matrix, report, and checksum manifest. `reevaluate_study_tree` reran the frozen
