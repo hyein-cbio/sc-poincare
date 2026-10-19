@@ -80,8 +80,13 @@ gates below remain open; this does not validate forest time-scale mixtures.
   [frozen protocol](frozen-conditional-kl-protocol.md).
 - [ ] Evaluate seed consistency separately from accuracy; plan more than three
   seeds and uncertainty estimates.
-- [ ] Inspect isolated, rare and outlier populations for artificial mixing or
+- [x] Inspect isolated, rare and outlier populations for artificial mixing or
   loss of terminal-state information when the RFA diagonal is discarded.
+  On Paul, with the rare set fixed before fitting as labels of at most 31
+  cells, 200-update conditional KL lowers all-cell K15 purity in all five
+  seeds and does not lower the rare-label mean. 17Neu stays near 0.02 either
+  way. See [rare-population-diagonal.md](rare-population-diagonal.md). The
+  representation is the 1,000 gene columns, not the historical PCA20 hash.
 - [ ] Evaluate biological markers, branch continuity, root distances and
   pseudotime. Good graph scores alone do not establish central branching.
 - [ ] Apply a frozen hyperparameter rule to independent biological data not used

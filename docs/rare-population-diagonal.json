@@ -1,0 +1,199 @@
+{
+  "input_sha256": "fed836ed28f148d9ee8efd8ec13ebd468f06ef9b92eeb6f9e218235d4ad2f21d",
+  "n_cells": 2730,
+  "n_features": 1000,
+  "representation": "all numeric columns after dropping the last label column; no PCA",
+  "rare_rule": "label count <= 31, fixed before fitting",
+  "rare_counts": {
+    "11DC": 30,
+    "17Neu": 22,
+    "18Eos": 9,
+    "19Lymph": 31,
+    "root": 1
+  },
+  "sigma_effective": 30.071945321145026,
+  "preparation_seconds": 0.5541187419999005,
+  "epochs": 200,
+  "runs": [
+    {
+      "objective": "symmetric_kl",
+      "seed": 0,
+      "initialization": "spectral",
+      "best_loss": 23345.75036461452,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "fitting_seconds": 34.25010571800021,
+      "overall_purity_k15": 0.262954822954823,
+      "rare_purity_k15": {
+        "11DC": 0.7355555555555555,
+        "17Neu": 0.01515151515151515,
+        "18Eos": 0.3111111111111111,
+        "19Lymph": 0.04946236559139785,
+        "root": 0.0
+      },
+      "rare_mean_purity_k15": 0.22225610948191593
+    },
+    {
+      "objective": "conditional_symmetric_kl",
+      "seed": 0,
+      "initialization": "spectral",
+      "best_loss": 14807.789939103119,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "fitting_seconds": 36.10626094199961,
+      "overall_purity_k15": 0.24905982905982907,
+      "rare_purity_k15": {
+        "11DC": 0.7377777777777778,
+        "17Neu": 0.018181818181818184,
+        "18Eos": 0.3111111111111111,
+        "19Lymph": 0.06666666666666668,
+        "root": 0.0
+      },
+      "rare_mean_purity_k15": 0.22674747474747475
+    },
+    {
+      "objective": "symmetric_kl",
+      "seed": 1,
+      "initialization": "spectral",
+      "best_loss": 23339.68599254128,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "fitting_seconds": 28.218843488999937,
+      "overall_purity_k15": 0.2584126984126984,
+      "rare_purity_k15": {
+        "11DC": 0.7355555555555555,
+        "17Neu": 0.01818181818181818,
+        "18Eos": 0.3111111111111111,
+        "19Lymph": 0.040860215053763436,
+        "root": 0.0
+      },
+      "rare_mean_purity_k15": 0.22114173998044967
+    },
+    {
+      "objective": "conditional_symmetric_kl",
+      "seed": 1,
+      "initialization": "spectral",
+      "best_loss": 14808.608667756786,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "fitting_seconds": 36.55863962800004,
+      "overall_purity_k15": 0.25145299145299144,
+      "rare_purity_k15": {
+        "11DC": 0.7377777777777778,
+        "17Neu": 0.021212121212121213,
+        "18Eos": 0.3111111111111111,
+        "19Lymph": 0.06021505376344086,
+        "root": 0.0
+      },
+      "rare_mean_purity_k15": 0.22606321277289018
+    },
+    {
+      "objective": "symmetric_kl",
+      "seed": 2,
+      "initialization": "spectral",
+      "best_loss": 23346.591428548276,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "fitting_seconds": 37.950244483999995,
+      "overall_purity_k15": 0.2611965811965812,
+      "rare_purity_k15": {
+        "11DC": 0.7355555555555555,
+        "17Neu": 0.018181818181818184,
+        "18Eos": 0.3111111111111111,
+        "19Lymph": 0.051612903225806445,
+        "root": 0.0
+      },
+      "rare_mean_purity_k15": 0.22329227761485826
+    },
+    {
+      "objective": "conditional_symmetric_kl",
+      "seed": 2,
+      "initialization": "spectral",
+      "best_loss": 14808.212119518754,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "fitting_seconds": 35.02376881700002,
+      "overall_purity_k15": 0.2552625152625152,
+      "rare_purity_k15": {
+        "11DC": 0.7377777777777778,
+        "17Neu": 0.024242424242424242,
+        "18Eos": 0.3111111111111111,
+        "19Lymph": 0.06021505376344086,
+        "root": 0.0
+      },
+      "rare_mean_purity_k15": 0.22666927337895082
+    },
+    {
+      "objective": "symmetric_kl",
+      "seed": 3,
+      "initialization": "spectral",
+      "best_loss": 23333.64950294967,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "fitting_seconds": 35.145204337999985,
+      "overall_purity_k15": 0.26004884004884005,
+      "rare_purity_k15": {
+        "11DC": 0.7355555555555555,
+        "17Neu": 0.01515151515151515,
+        "18Eos": 0.3111111111111111,
+        "19Lymph": 0.04516129032258064,
+        "root": 0.0
+      },
+      "rare_mean_purity_k15": 0.2213958944281525
+    },
+    {
+      "objective": "conditional_symmetric_kl",
+      "seed": 3,
+      "initialization": "spectral",
+      "best_loss": 14808.531521788998,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "fitting_seconds": 36.5991319499999,
+      "overall_purity_k15": 0.25343101343101343,
+      "rare_purity_k15": {
+        "11DC": 0.7377777777777778,
+        "17Neu": 0.021212121212121213,
+        "18Eos": 0.3111111111111111,
+        "19Lymph": 0.060215053763440864,
+        "root": 0.0
+      },
+      "rare_mean_purity_k15": 0.22606321277289018
+    },
+    {
+      "objective": "symmetric_kl",
+      "seed": 4,
+      "initialization": "spectral",
+      "best_loss": 23349.15451493696,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "fitting_seconds": 34.41383547000032,
+      "overall_purity_k15": 0.25965811965811963,
+      "rare_purity_k15": {
+        "11DC": 0.7355555555555555,
+        "17Neu": 0.01515151515151515,
+        "18Eos": 0.3111111111111111,
+        "19Lymph": 0.04946236559139785,
+        "root": 0.0
+      },
+      "rare_mean_purity_k15": 0.22225610948191593
+    },
+    {
+      "objective": "conditional_symmetric_kl",
+      "seed": 4,
+      "initialization": "spectral",
+      "best_loss": 14811.237654960547,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "fitting_seconds": 37.265594023000176,
+      "overall_purity_k15": 0.25081807081807084,
+      "rare_purity_k15": {
+        "11DC": 0.7377777777777778,
+        "17Neu": 0.024242424242424242,
+        "18Eos": 0.3111111111111111,
+        "19Lymph": 0.05806451612903226,
+        "root": 0.0
+      },
+      "rare_mean_purity_k15": 0.2262391658520691
+    }
+  ]
+}
