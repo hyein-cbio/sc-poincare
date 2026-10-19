@@ -214,7 +214,7 @@ Remaining research candidates are unvalidated:
   Planaria, pbmc, ToggleSwitch, and Olsson finds no matches. Dataset names stay
   in examples and docs.
 - [x] Test this branch and inspect privacy, artifact and license implications.
-  `python3 -m pytest tests` passed 211 tests. The published result JSON files
+  `python3 -m pytest tests` passed 236 tests on the 2026-10-19 re-check. The published result JSON files
   contain no raw cells and no home-directory paths. `data/` stays gitignored.
   Follow the [provenance constraints](benchmarking.md#scope-and-provenance);
   local inputs and reference artifacts are not covered by MIT. An external
