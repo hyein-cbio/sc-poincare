@@ -65,13 +65,20 @@ the current baseline or research gates.
 
 ## P0 — Maintain a reproducible starting point
 
-- [ ] Freeze new comparisons before fitting: input representation/IDs, primary
-  and sensitivity metrics, own-objective selection and execution limits.
+- [x] Freeze the landmark-versus-exact reference check before it runs: input id
+  and feature hash, primary and sensitivity metrics, the exact MU configuration,
+  landmark count, seeds and the dense-byte limit. The check fits nothing
+  (`max_epochs` must be 0). Historical benchmark drivers are unchanged and are
+  not covered by this gate. See [landmark-reference.md](landmark-reference.md).
 - [ ] Complete the specifically scoped external review of historical commit
   `494367a` if needed; a current uncommitted-diff review does not prove that older
-  committed scope was reviewed. Preserve that distinction.
-- [ ] Keep one latest small result tree with checksum/config manifests rather
-  than source/cache duplicates. Long or unique jobs still need external backup
+  committed scope was reviewed. Preserve that distinction. That commit only adds
+  objective-ablation docs and `examples/benchmark_objectives.py`; reading it in
+  this tree is not the external review.
+- [x] Write a landmark reference tree with a checksum manifest and require a
+  successful local reread before the writer returns. The tested tree is synthetic.
+- [ ] Keep one latest small result tree for a real study rather than
+  source/cache duplicates. Long or unique jobs still need external backup
   and an actual restore/re-evaluation check.
 
 ## P1 — Independent biological validation
@@ -84,6 +91,9 @@ before a new long run.
 
 - [ ] Freeze input-only rules and test measured datasets not used in development.
   No labels enter fitting, initialization, bandwidth/condition selection.
+  The landmark reference check rejects Paul, Moignard, Moignard2015, Pancreas
+  and Nestorowa as unseen declarations, and it refuses every unseen role.
+  LARRY was not fit.
 - [ ] Inspect every rare/outlier population, marker continuity, branching order,
   root distances and pseudotime. Purity and graph scores are not sufficient.
 - [ ] Compare arbitrary initialization policies and more seeds, with uncertainty
@@ -103,9 +113,14 @@ have not been satisfied merely by selecting MU as the new provisional default.
   convergence/residuals and seeded fallback; complete the fixed small quality probe.
 - [ ] Extend initialization/convergence budgets on independent inputs before
   changing spectral defaults. Short-run gains and residuals are not equivalence.
-- [ ] For MU, benchmark alternatives to dense classical scaling and dense global
-  targets. Validate landmark/matrix-free/sparse approximations against the exact
-  few-thousand-cell reference, including normalization and endpoint gradients.
+- [x] For MU, check one declared landmark-triangle approximation against the
+  exact dense target on synthetic inputs: landmark columns, nonself-mean
+  normalization, classical-scaling initialization and both-endpoint gradients.
+  The exact guard stays on. No default changes. Details:
+  [landmark-reference.md](landmark-reference.md).
+- [ ] Repeat that check on the exact few-thousand-cell Paul and Moignard
+  reference. Synthetic recovery does not substitute for those arrays. Matrix-free
+  training that avoids storing the dense target is still a separate experiment.
 - [ ] Treat full Planaria as a separate protocol. No exact large-data claim follows
   from the source branch's lost observations or this study's n<=3934 results.
 - [ ] Do not disable the default memory guard to claim scalability. Measure process
