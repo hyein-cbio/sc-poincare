@@ -195,7 +195,12 @@ These are not default changes and require their own controlled experiments:
   1.0379, macro purity 0.528, and input recall 0.091, against the disk Adam
   values 0.6952, 0.546, and 0.136. The retraction is not promoted. Record:
   [moignard-lorentz-probe.json](moignard-lorentz-probe.json).
-- [ ] Intrinsic adaptive updates remain separate from that Lorentz retraction.
+- [x] On exact Moignard, run bias-corrected Riemannian RMSProp for 20 updates
+  from the same classical jitter start. The initial loss matches tangent Adam
+  at 1.0369. At update 20 the intrinsic loss is 0.4936, macro purity 0.565,
+  and input recall 0.213, against Adam's 0.6952, 0.546, and 0.136. One short
+  development run does not change the tangent-Adam default. Record:
+  [moignard-intrinsic-probe.json](moignard-intrinsic-probe.json).
 - [x] Keep the failed source row-temperature alternative unpromoted. One
   improved score is not a reason to enable it. See
   [astra-adoption-status.md](astra-adoption-status.md).

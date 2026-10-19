@@ -132,6 +132,19 @@ def test_lorentz_chart_matches_disk_distance_and_stays_on_the_hyperboloid(featur
     np.testing.assert_allclose(lorentz_fit["minkowski_diag"], -1., atol=1e-6)
 
 
+def test_intrinsic_rmsprop_matches_the_initial_loss_and_stays_in_the_disk(features):
+    pytest.importorskip("torch")
+    from sc_poincare.controlled_probe import fit_intrinsic_rmsprop
+    config = experimental.GraphStressConfig(n_neighbors=4)
+    setup = experimental.prepare_graph_stress(features, config=config)
+    initial = classical_jitter(setup, 0)
+    adam = fit_from_initial(setup, initial, epochs=2, chunk_size=5, max_dense_bytes=1 << 20)
+    intrinsic = fit_intrinsic_rmsprop(setup, initial, epochs=2, chunk_size=5, max_dense_bytes=1 << 20)
+    assert intrinsic["loss_trace"][0] == pytest.approx(adam["loss_trace"][0], rel=1e-6, abs=1e-6)
+    assert intrinsic["loss_trace"][-1] != pytest.approx(adam["loss_trace"][-1])
+    assert np.max(np.sum(intrinsic["current"] ** 2, axis=1)) < 1
+
+
 def test_development_input_blocks_promotion():
     assert promotion_allowed(development_input=True, joint_improvements=[True, True]) is False
     assert promotion_allowed(development_input=False, joint_improvements=[True, False]) is False

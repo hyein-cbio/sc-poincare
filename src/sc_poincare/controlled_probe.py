@@ -342,12 +342,70 @@ def fit_lorentz(setup, initial, *, epochs, chunk_size=256, max_dense_bytes, lear
     return dict(loss_trace=trace, current=current.numpy(), minkowski_diag=_minkowski(current, current).numpy(), epochs=epochs)
 
 
+def fit_intrinsic_rmsprop(setup, initial, *, epochs, chunk_size=256, max_dense_bytes, beta=0.9, eps=1e-8):
+    """RMSProp on the Riemannian gradient, retracted in the Poincaré metric.
+
+    The loss is the exact MU objective at the current disk point. The second
+    moment is bias-corrected. This is not tangent Adam and not a default.
+    """
+    experimental._validate_setup(setup, max_dense_bytes)
+    epochs = experimental._integer("epochs", epochs, 0)
+    chunk_size = experimental._integer("chunk_size", chunk_size)
+    torch = experimental._torch()
+    from sc_poincare._fitting import _shrink_torch, _torch_disk_length
+    config = setup.config
+    point = torch.tensor(np.asarray(initial, dtype=np.float64), dtype=torch.float64, requires_grad=True)
+    target = torch.tensor(np.array(setup.target, dtype=np.float64, copy=True), dtype=torch.float64)
+    teacher = torch.tensor(np.array(setup.teacher, dtype=np.float64, copy=True), dtype=torch.float64)
+    second = torch.zeros_like(point)
+    trace = []
+    for epoch in range(epochs + 1):
+        if point.grad is not None:
+            point.grad = None
+        n = len(point)
+        total = 0.
+        for start in range(0, n, chunk_size):
+            stop = min(n, start + chunk_size)
+            rows = torch.arange(start, stop)
+            distance = _torch_disk_length(point[start:stop], point, self_columns=rows)
+            t = target[start:stop]
+            error = ((distance - t) / config.distance_scale).square() / (
+                t / config.distance_scale).clamp_min(config.relative_floor).square()
+            global_loss = error.sum() / (n * (n - 1))
+            mask = torch.zeros_like(distance, dtype=torch.bool)
+            mask[torch.arange(stop - start), rows] = True
+            logits = (-distance / config.gamma).masked_fill(mask, -torch.inf)
+            logq = (logits - torch.logsumexp(logits, dim=1, keepdim=True)).masked_fill(mask, 0)
+            local_loss = -(teacher[start:stop] * logq).sum() / n
+            total = total + global_loss + config.local_weight * local_loss
+        trace.append(float(total.detach()))
+        if epoch == epochs:
+            break
+        total.backward()
+        grad = point.grad
+        if not torch.isfinite(grad).all():
+            raise FloatingPointError("Non-finite intrinsic gradient.")
+        sqnorm = (point * point).sum(dim=-1, keepdim=True)
+        inverse_lambda = (1. - sqnorm).clamp_min(0.) / 2.
+        riemannian = inverse_lambda.square() * grad
+        second = beta * second + (1. - beta) * riemannian.square()
+        corrected = second / (1. - beta ** (epoch + 1))
+        delta = config.learning_rate * riemannian / (torch.sqrt(corrected) + eps)
+        updated = _shrink_torch(point.detach() - delta.detach())
+        point = updated.detach().requires_grad_(True)
+    current = point.detach().numpy()
+    if np.any(np.sum(current * current, axis=1) >= 1):
+        raise FloatingPointError("Intrinsic update left the open disk.")
+    return dict(loss_trace=trace, current=current, epochs=epochs, beta=beta)
+
+
 __all__ = [
     "classical_ball",
     "classical_jitter",
     "degree_aware_teacher",
     "disk_from_lorentz",
     "fit_from_initial",
+    "fit_intrinsic_rmsprop",
     "fit_lorentz",
     "fixed_multiscale_accessibility",
     "lorentz_from_disk",
