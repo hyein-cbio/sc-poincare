@@ -1,0 +1,19 @@
+{
+  "input_id": "moignard2015-development-reference",
+  "labels_entered_fitting": false,
+  "epochs": 0,
+  "seed": 0,
+  "bandwidths": [
+    {
+      "local_bandwidth": "global",
+      "loss_at_0": 1.0369251291534152
+    },
+    {
+      "local_bandwidth": "local_radius",
+      "loss_at_0": 1.0368265433936994
+    }
+  ],
+  "promoted": false,
+  "biological_validation": false,
+  "spectral_defaults_changed": false
+}

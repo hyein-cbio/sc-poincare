@@ -133,11 +133,14 @@ before a new long run.
   root only. Pseudotime medians are 0.929 from the classical start and 0.640
   from the random disk. An epoch-0 comparison on the same supplied matrix gives
   loss 1.0369 in 42 dimensions and 1.0250 after one-thread full-SVD PCA20.
-  The PCA representation is not promoted. On the stored exact classical initial
+  The PCA representation is not promoted. The same supplied matrix at epoch 0
+  has loss 1.0369 with the global bandwidth and 1.0368 with local radius.
+  Local radius is not promoted. On the stored exact classical initial
   coordinates, seed-714 anchor counts 64, 128, and 256 give mean feature-distance
   Spearman 0.7697, 0.7852, and 0.7640, with every correlation defined. The
   anchor count is not changed. No picture was chosen afterward. Record:
-  [moignard-representation-probe.json](moignard-representation-probe.json) and
+  [moignard-representation-probe.json](moignard-representation-probe.json),
+  [moignard-bandwidth-probe.json](moignard-bandwidth-probe.json), and
   [moignard-anchor-sensitivity.json](moignard-anchor-sensitivity.json).
 
 The earlier RFA conditional-KL work remains experimental. Its pending fixed-rule
