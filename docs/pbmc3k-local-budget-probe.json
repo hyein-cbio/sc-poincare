@@ -1,0 +1,20 @@
+{
+  "input_id": "pbmc3k-local-h5ad",
+  "distinct_from_recorded_probe": true,
+  "recorded_probe_feature_sha256": "076856d9ccc8913d268625b693f019c5974c2f8b35510723f045d1adb24947b6",
+  "feature_sha256": "fef3efcc8ab6f7504cdc2af483bd20c2a740845c5772ebc4f90969c326c9d98b",
+  "feature_shape": [
+    2700,
+    20
+  ],
+  "labels_entered_fitting": false,
+  "epochs": 40,
+  "seed": 0,
+  "loss_at_0": 1.068616122353061,
+  "loss_at_20": 0.7431210548756442,
+  "loss_at_40": 0.5660112264156456,
+  "still_decreasing_at_40": true,
+  "promoted": false,
+  "biological_validation": false,
+  "spectral_defaults_changed": false
+}
