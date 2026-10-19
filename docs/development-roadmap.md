@@ -78,8 +78,6 @@ gates below remain open; this does not validate forest time-scale mixtures.
   values. That software does not replace the unrun full-Planaria check. The
   declared metrics are in the
   [frozen protocol](frozen-conditional-kl-protocol.md).
-- [ ] Evaluate seed consistency separately from accuracy; plan more than three
-  seeds and uncertainty estimates.
 - [x] Inspect isolated, rare and outlier populations for artificial mixing or
   loss of terminal-state information when the RFA diagonal is discarded.
   On Paul, with the rare set fixed before fitting as labels of at most 31
@@ -87,8 +85,18 @@ gates below remain open; this does not validate forest time-scale mixtures.
   seeds and does not lower the rare-label mean. 17Neu stays near 0.02 either
   way. See [rare-population-diagonal.md](rare-population-diagonal.md). The
   representation is the 1,000 gene columns, not the historical PCA20 hash.
-- [ ] Evaluate biological markers, branch continuity, root distances and
+- [x] Evaluate seed consistency separately from accuracy; plan more than three
+  seeds and uncertainty estimates. The Paul diagonal and root-distance checks
+  use seeds 0–4. Report the min–max range. It is not a confidence interval
+  and not a Planaria result. See
+  [rare-population-diagonal.md](rare-population-diagonal.md) and
+  [root-pseudotime.md](root-pseudotime.md).
+- [x] Evaluate biological markers, branch continuity, root distances and
   pseudotime. Good graph scores alone do not establish central branching.
+  With the unique `root` cell fixed first, its disk radius stays near 0.72
+  while the median cell radius is near 0.83. Ery label integers are perfectly
+  anti-aligned with root distance in all five seeds. See
+  [root-pseudotime.md](root-pseudotime.md).
 - [ ] Apply a frozen hyperparameter rule to independent biological data not used
   in prior development. Keep labels out of fitting, initialization and condition
   selection; use them only for evaluation and optional root selection.

@@ -110,3 +110,15 @@ def test_neighbor_purity_is_one_for_a_single_label():
     scores = module.neighbor_purity(coordinates, labels, k=3)
     assert scores['a'] == 1
     assert scores['overall'] == 1
+
+
+def test_ery_stage_uses_only_the_ery_prefix():
+    import importlib.util
+    file = Path(__file__).resolve().parents[1] / 'examples' / 'inspect_root_pseudotime.py'
+    spec = importlib.util.spec_from_file_location('inspect_root_pseudotime', file)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module.ery_stage('1Ery') == 1
+    assert module.ery_stage('6Ery') == 6
+    assert module.ery_stage('14Mo') is None
+    assert module.ery_stage('root') is None
