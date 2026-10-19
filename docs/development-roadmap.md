@@ -184,8 +184,13 @@ These are not default changes and require their own controlled experiments:
   from the same classical jitter. Update-20 losses are 0.6952 and 0.6985.
   Macro purity is 0.546 and 0.545. Curvature 1 remains the default. Record:
   [moignard-curvature-probe.json](moignard-curvature-probe.json).
-- [ ] Intrinsic adaptive updates and Lorentz geometry remain separate from that
-  curvature comparison.
+- [x] On exact Moignard, map the classical jitter start onto the Lorentz
+  hyperboloid and take 20 Minkowski retractions at the disk learning rate.
+  The initial loss matches the disk, 1.0369. At update 20 the Lorentz loss is
+  1.0379, macro purity 0.528, and input recall 0.091, against the disk Adam
+  values 0.6952, 0.546, and 0.136. The retraction is not promoted. Record:
+  [moignard-lorentz-probe.json](moignard-lorentz-probe.json).
+- [ ] Intrinsic adaptive updates remain separate from that Lorentz retraction.
 - [x] Keep the failed source row-temperature alternative unpromoted. One
   improved score is not a reason to enable it. See
   [astra-adoption-status.md](astra-adoption-status.md).

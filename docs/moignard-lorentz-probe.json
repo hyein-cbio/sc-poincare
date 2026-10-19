@@ -1,0 +1,52 @@
+{
+  "input_id": "moignard2015-development-reference",
+  "feature_sha256": "674f8b380ba701d56afdeae8b35edf8b1269dfaa8e8483bc7e9c7e9c12999aa0",
+  "labels_entered_fitting": false,
+  "chart": "lorentz_hyperboloid",
+  "epochs": 20,
+  "learning_rate": 0.013333333333333334,
+  "loss_at_0": 1.0369251291534152,
+  "loss_at_20": 1.0378667202542602,
+  "minkowski_max_abs_error": 6.661338147750939e-16,
+  "macro_purity": 0.5278660853742471,
+  "input_neighbor_recall": 0.09071343840027114,
+  "populations": [
+    {
+      "label": "NP",
+      "n_cells": 552,
+      "purity": 0.28442028985507245,
+      "input_neighbor_recall": 0.09915458937198068,
+      "purity_ceiling": 1.0
+    },
+    {
+      "label": "PS",
+      "n_cells": 624,
+      "purity": 0.4074786324786325,
+      "input_neighbor_recall": 0.09561965811965811,
+      "purity_ceiling": 1.0
+    },
+    {
+      "label": "4SG",
+      "n_cells": 770,
+      "purity": 0.5456277056277056,
+      "input_neighbor_recall": 0.06943722943722944,
+      "purity_ceiling": 1.0
+    },
+    {
+      "label": "4SFG",
+      "n_cells": 983,
+      "purity": 0.949067480501865,
+      "input_neighbor_recall": 0.12288911495422176,
+      "purity_ceiling": 1.0
+    },
+    {
+      "label": "HF",
+      "n_cells": 1005,
+      "purity": 0.4527363184079602,
+      "input_neighbor_recall": 0.06786069651741293,
+      "purity_ceiling": 1.0
+    }
+  ],
+  "promoted": false,
+  "biological_validation": false
+}

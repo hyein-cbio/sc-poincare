@@ -108,6 +108,30 @@ def test_unit_curvature_matches_the_default_disk(features):
         fit_from_initial(setup, initial, epochs=1, chunk_size=5, max_dense_bytes=1 << 20, curvature=0)
 
 
+def test_lorentz_chart_matches_disk_distance_and_stays_on_the_hyperboloid(features):
+    pytest.importorskip("torch")
+    from sc_poincare._disk import pairwise_disk_length
+    from sc_poincare.controlled_probe import disk_from_lorentz, fit_lorentz, lorentz_from_disk
+    config = experimental.GraphStressConfig(n_neighbors=4)
+    setup = experimental.prepare_graph_stress(features, config=config)
+    initial = classical_jitter(setup, 0)
+    hyperboloid = lorentz_from_disk(initial)
+    assert hyperboloid.shape == (len(features), 3)
+    minkowski = -hyperboloid[:, 0] ** 2 + np.sum(hyperboloid[:, 1:] ** 2, axis=1)
+    np.testing.assert_allclose(minkowski, -1., atol=1e-8)
+    disk = pairwise_disk_length(initial)
+    left, right = hyperboloid, hyperboloid
+    inner = -left[:, :1] * right[:, 0] + left[:, 1:] @ right[:, 1:].T
+    lorentz = np.arccosh(np.clip(-inner, 1., None))
+    np.fill_diagonal(lorentz, 0.)
+    np.testing.assert_allclose(lorentz, disk, rtol=1e-8, atol=1e-8)
+    np.testing.assert_allclose(disk_from_lorentz(hyperboloid), initial, rtol=1e-8, atol=1e-8)
+    disk_fit = fit_from_initial(setup, initial, epochs=0, chunk_size=5, max_dense_bytes=1 << 20)
+    lorentz_fit = fit_lorentz(setup, initial, epochs=2, chunk_size=5, max_dense_bytes=1 << 20)
+    assert lorentz_fit["loss_trace"][0] == pytest.approx(disk_fit["loss_trace"][0], rel=1e-6, abs=1e-6)
+    np.testing.assert_allclose(lorentz_fit["minkowski_diag"], -1., atol=1e-6)
+
+
 def test_development_input_blocks_promotion():
     assert promotion_allowed(development_input=True, joint_improvements=[True, True]) is False
     assert promotion_allowed(development_input=False, joint_improvements=[True, False]) is False
