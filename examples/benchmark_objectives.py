@@ -122,6 +122,8 @@ def main():
             ranked=distances.copy();ranked[~mask]=np.inf
             nn=np.argsort(ranked,axis=1)[:,:min(15,len(features)-1)]
             evaluations[k]=(distances,nn)
+        # Same anchors as the graph scores. This is not a graph geodesic.
+        feature_d=np.linalg.norm(features[anchors,None,:]-features[None,:,:],axis=-1)
         for seed in args.seeds:
             init_status={};initial=_seed_from_connectivities(proximity.weights,2,np.random.default_rng(seed),status=init_status)
             for mode in modes:
@@ -142,6 +144,7 @@ def main():
                 for k,(g,gn) in evaluations.items():
                     scores[str(k)]={'global_distance_rank':float(spearmanr(g[mask],h[mask]).statistic),
                         'local_overlap_at15':float(np.mean([len(set(a)&set(b))/len(a) for a,b in zip(gn,hn)]))}
+                scores['feature']={'global_distance_rank':float(spearmanr(feature_d[mask],h[mask]).statistic)}
                 rss=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
                 if sys.platform!='darwin':rss*=1024
                 row={'seed':seed,'objective':mode,'epochs_run':len(trace),'stop_reason':stop_reason,
@@ -161,6 +164,7 @@ def main():
         'notes':['All objectives share the same initial coordinates per seed.',
                  'Epoch limits do not imply convergence. Losses differ across objectives.',
                  'Evaluation graph/anchors are diagnostic, not blinded biological holdouts.',
+                 'feature.global_distance_rank compares embedding distances with direct feature distances on the same anchors.',
                  'No labels or reference coordinates enter fitting.',
                  'Dense-array budget is not an RSS cap. High-water RSS includes earlier modes/imports/evaluation.']}
     args.output.write_text(json.dumps(result,indent=2))
