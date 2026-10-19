@@ -35,7 +35,7 @@ and stress-weighting records (`36e88a1`). Those stay on `main`.
 | More than three seeds, rare-population and marker checks, independent data | Not on `main`. Not run here. |
 | Direct feature-distance diagnostic in the public objective driver | Not on `main`. Added here. The full-Planaria check that must use it is still unrun. |
 | Initial-distance quality of a faster spectral tolerance | Not established here. `benchmarking.md` still says the faster setting was not applied to this initializer. `main` has the controls and its own small probe; that probe is not copied. |
-| Matrix-free or sparse approximation validated against an exact reference | Not on `main` and not added here. |
+| Matrix-free or sparse approximation validated against an exact reference | Not on `main`. Added here as `sc_poincare.landmark`, with 16 exact-reference tests. The public Paul feature hash still does not match sklearn 1.9.1 PCA20, so that measured matrix was not used. |
 | Dimension, curvature, optimizer and coordinate-chart comparisons | Not on `main` and not started here. The failed temperature result does not justify them. |
 | Resolve rare-population and developmental-order trade-offs | Unresolved. No candidate was promoted. |
 | Privacy, license and test inspection of this branch's public files | Tests: 211 passed (`python3 -m pytest tests`). Result JSON has no raw cells and no home-directory paths. `data/` stays gitignored. Package MIT does not relicense inputs. |

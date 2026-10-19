@@ -145,11 +145,13 @@ Remaining research candidates are unvalidated:
   [embedding-study.md](embedding-study.md).
 - [ ] Dimension or curvature changes are not justified by that negative result
   and are not started here. `main` does not contain them either.
-- [ ] Explore matrix-free, row-solve or sparse approximations for scalability.
+- [x] Explore matrix-free, row-solve or sparse approximations for scalability.
   Validate against an exact reference because approximation can change global
-  normalization and gradients. `main` does not have this path. Do not add a
-  second implementation beside the unmerged landmark branch described in
-  [additional-work.md](additional-work.md).
+  normalization and gradients. `sc_poincare.landmark` keeps a sparse teacher
+  and landmark-column distances. When every cell is a landmark, paths, scale,
+  initialization, teacher and a short Adam trajectory match exact graph stress.
+  Fewer landmarks change the endpoint gradient. `max_dense_bytes=None` is
+  rejected. This is the synthetic exact reference, not a Paul or Planaria claim.
 
 ## P4 — Software and publication readiness
 

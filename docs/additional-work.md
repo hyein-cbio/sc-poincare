@@ -6,10 +6,11 @@ not authorized runs. Each one is narrower than repeating work already on
 
 ## 1. Land one approximation, after the Paul matrix matches
 
-`main` has no matrix-free graph-stress path. A separate unmerged branch,
-`cursor/landmark-reference-check-a572` at `a9f03d1`, already compares landmark
-columns with exact mutual-graph stress and refuses a disabled dense guard.
-This branch does not add a second implementation.
+`main` has no matrix-free graph-stress path. This branch now has
+`sc_poincare.landmark`: sparse teacher, landmark-column distances, and tests
+that match exact graph stress when every cell is a landmark. A separate
+unmerged branch, `cursor/landmark-reference-check-a572` at `a9f03d1`, also
+ran the Moignard zero-epoch check. That measured run is not repeated here.
 
 That branch's open Paul check is still blocked. This session confirmed the
 public `Paul.csv` source hash and confirmed that scikit-learn 1.9.1 full-SVD
