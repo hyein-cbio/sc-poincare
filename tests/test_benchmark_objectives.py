@@ -32,6 +32,10 @@ def test_benchmark_uses_common_initialization_and_never_fits_labels(tmp_path,mon
         module.main()
         report=json.loads(out.read_text());assert len(report['records'])==3
         assert [r['objective'] for r in report['records']]==modes
+        for record in report['records']:
+            feature_rank=record['evaluation']['feature']['global_distance_rank']
+            assert np.isfinite(feature_rank)
+            assert set(record['evaluation'])=={'4','5','feature'}
         assert all(r['epochs_run']==2 for r in report['records'])
         arrays=[np.load(out.with_name(f'{out.stem}_{mode}_seed0.npz')) for mode in modes]
         for z in arrays:
