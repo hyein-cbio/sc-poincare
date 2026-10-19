@@ -103,6 +103,13 @@ def test_rfa_factorizes_once_and_solves_only_small_rhs(monkeypatch):
     assert shapes == [(11, 3), (11, 3), (11, 3), (11, 2)]
 
 
+def test_measured_planaria_shape_is_refused_by_the_default_guard():
+    """21,612 cells is the public Planaria CSV. Do not allocate its dense RFA."""
+    from sc_poincare._resources import DEFAULT_MAX_DENSE_BYTES
+    with pytest.raises(MemoryError, match=r"21,612 cells budgets approximately 13\.92 GiB"):
+        check_dense_budget(21612, DEFAULT_MAX_DENSE_BYTES)
+
+
 def test_dense_guard_runs_before_graph_or_factorization(monkeypatch):
     def forbidden(*args, **kwargs):
         raise AssertionError('Guard should run before allocating or solving')
