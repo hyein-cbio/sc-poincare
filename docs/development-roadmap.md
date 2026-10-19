@@ -133,7 +133,10 @@ Remaining research candidates are unvalidated:
   `(I+L)^{-1}`, stays row-stochastic, and is not the `estimate_proximity`
   target. Tau is not sigma: repeating tau=1 recovers the unit target, while a
   different sigma changes that target. No Planaria-specific tau was selected.
-- [ ] Degree-aware edge rules remain unvalidated. The public scalar `forest_tau`
+- [x] Degree-aware widths ``sigma_ij = sigma * sqrt(deg_i deg_j) / mean(deg)``
+  are available as `degree_aware_affinity`. Equal degrees reproduce the plain
+  Gaussian. Unequal degrees change the edge weight. `local_affinity` and
+  `estimate_proximity` do not use the rule. The public scalar `forest_tau`
   control is on `main` (`3cbdd5f`) and is not copied here.
 - [ ] Test robustness to mutual versus union kNN, long MST bridges, local
   bandwidth and rare-population coverage. Do not normalize provided PCA scores

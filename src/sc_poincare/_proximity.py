@@ -219,6 +219,33 @@ def local_affinity(
     return affinity, stitched
 
 
+def degree_aware_affinity(lengths: sparse.spmatrix, sigma: float) -> sparse.csr_matrix:
+    """Gaussian weights with ``sigma_ij = sigma * sqrt(deg_i deg_j) / mean(deg)``.
+
+    Degrees are the row degrees of ``lengths``. This does not change
+    ``local_affinity`` or ``estimate_proximity``.
+    """
+    if isinstance(sigma, (bool, np.bool_)) or not np.isscalar(sigma):
+        raise ValueError("sigma must be a finite positive number.")
+    sigma = float(sigma)
+    if not np.isfinite(sigma) or sigma <= 0:
+        raise ValueError("sigma must be a finite positive number.")
+    lengths = lengths.tocsr().astype(np.float64)
+    if lengths.shape[0] != lengths.shape[1] or lengths.shape[0] == 0:
+        raise ValueError("lengths must be a nonempty square matrix.")
+    if not np.all(np.isfinite(lengths.data)) or np.any(lengths.data < 0):
+        raise ValueError("lengths must be finite and nonnegative.")
+    degree = np.diff(lengths.indptr).astype(np.float64)
+    if np.any(degree <= 0):
+        raise ValueError("degree-aware widths need a positive degree on every row.")
+    mean_degree = float(np.mean(degree))
+    coo = lengths.tocoo()
+    edge_sigma = sigma * np.sqrt(degree[coo.row] * degree[coo.col]) / mean_degree
+    with np.errstate(over="ignore", under="ignore"):
+        data = np.exp(-0.5 * (coo.data / edge_sigma) ** 2)
+    return sparse.csr_matrix((data, (coo.row, coo.col)), shape=lengths.shape)
+
+
 def forest_accessibility(
     affinity: sparse.spmatrix,
     *,
