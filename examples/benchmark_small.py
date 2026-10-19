@@ -20,6 +20,7 @@ from threadpoolctl import threadpool_limits
 from sc_poincare._disk import pairwise_disk_length, place_point_at_origin
 from sc_poincare._fitting import evaluate_alignment, fit_disk_embedding
 from sc_poincare._proximity import estimate_proximity
+from sc_poincare._research_policy import ensure_active_paths
 from sc_poincare.evaluation import evaluate_neighborhoods
 
 
@@ -44,6 +45,8 @@ def main():
     parser.add_argument("--terminal-labels", nargs="*", default=[])
     parser.add_argument("--output", type=Path, required=True, help="JSON report, preferably under ignored data/")
     args = parser.parse_args()
+    ensure_active_paths(args.csv, args.output,
+                        *(args.output.with_name(f'{args.output.stem}_seed{seed}.npz') for seed in args.seeds))
     if args.threads < 1:
         parser.error("--threads must be positive")
     try:

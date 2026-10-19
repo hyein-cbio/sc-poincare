@@ -30,8 +30,11 @@ from sc_poincare._fitting import (
 from sc_poincare._objectives import DEFAULT_OBJECTIVE, CONDITIONAL_OBJECTIVE
 from sc_poincare._proximity import estimate_proximity, local_affinity
 from sc_poincare._resources import DEFAULT_MAX_DENSE_BYTES
+from sc_poincare._research_policy import ensure_active_paths
 
 
+# BEGIN LEGACY FLOOR CONTROL — historical ablation only, never a default
+# The explicit --include-legacy-floor flag is the sole CLI entry to this block.
 def _legacy_reference(target, initial, args):
     """Isolated historical 1e-12 policy; all columns/global gradients retained."""
     import torch
@@ -58,6 +61,7 @@ def _legacy_reference(target, initial, args):
             step=args.learning_rate/10 if epoch<args.burn_in else args.learning_rate
             x.copy_(_riemannian_retract(x,x.grad,step,2.5))
     return best_xy,trace,best
+# END LEGACY FLOOR CONTROL
 
 
 def main():
@@ -77,10 +81,17 @@ def main():
     parser.add_argument('--evaluation-k',type=int,nargs='+',default=[15,20])
     parser.add_argument('--anchor-seed',type=int,default=714)
     parser.add_argument('--anchors',type=int,default=128)
-    parser.add_argument('--include-legacy-floor',action='store_true')
+    # LEGACY ONLY: explicit historical control, not a model recommendation.
+    parser.add_argument('--include-legacy-floor',action='store_true',
+                        help='LEGACY historical probability-floor ablation only; never changes the corrected default')
     parser.add_argument('--max-dense-mib',type=float,default=DEFAULT_MAX_DENSE_BYTES/1024**2)
     parser.add_argument('--output',type=Path,required=True,help='JSON plus NPZ outputs; preferably under ignored data/')
     args=parser.parse_args()
+    modes=[DEFAULT_OBJECTIVE,CONDITIONAL_OBJECTIVE]
+    if args.include_legacy_floor:modes.insert(0,'legacy_floor_1e-12')
+    outputs=[args.output]+[args.output.with_name(f'{args.output.stem}_{mode}_seed{seed}.npz')
+                           for mode in modes for seed in args.seeds]
+    ensure_active_paths(args.csv, *outputs)
     for name in ['threads','epochs','batch_size','anchors']:
         if getattr(args,name)<1:parser.error(f'--{name.replace("_","-")} must be positive')
     if args.burn_in<0 or not np.isfinite(args.max_dense_mib) or args.max_dense_mib<=0:
@@ -100,10 +111,6 @@ def main():
     features=frame.drop(columns=label_column).to_numpy(dtype=np.float64)
     if len(features)<3:parser.error('At least three cells are required')
     args.output.parent.mkdir(parents=True,exist_ok=True)
-    modes=[DEFAULT_OBJECTIVE,CONDITIONAL_OBJECTIVE]
-    if args.include_legacy_floor:modes.insert(0,'legacy_floor_1e-12')
-    outputs=[args.output]+[args.output.with_name(f'{args.output.stem}_{mode}_seed{seed}.npz')
-                           for mode in modes for seed in args.seeds]
     if any(path.exists() for path in outputs):
         parser.error('Output evidence already exists; use a fresh --output prefix')
     records=[]

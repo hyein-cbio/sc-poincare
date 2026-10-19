@@ -23,6 +23,8 @@ from threadpoolctl import threadpool_limits
 
 from sc_poincare import experimental as mu, _fitting, _proximity, evaluation, visibility
 
+from sc_poincare._research_policy import ensure_active_paths
+
 METHODS = ('rfa', 'mu_fixed', 'mu_local', 'euclidean_fixed', 'euclidean_local')
 
 
@@ -52,6 +54,7 @@ def main(argv=None):
     parser.add_argument('--checkpoint-every', type=int, default=100)
     parser.add_argument('--resume', type=Path, help='Trusted bare MU Adam state; epochs is the total target')
     args = parser.parse_args(argv)
+    ensure_active_paths(args.input, args.resume, args.output)
     if args.resume is not None and args.method == 'rfa':
         parser.error('RFA coordinate warm starts are new runs, not exact Adam resume.')
     if args.output.exists(): parser.error('Output directory must not exist.')

@@ -10,7 +10,9 @@ initialization jitter was changed.
 
 The original 37-fit capsule remains immutable under `data/astra37_handoff/`.
 New records live separately in
-`data/graph_diagnostics_integration/algorithm_followup/`. Original closure and
+`data/research_archive/graph_diagnostics_integration/algorithm_followup/`.
+The completed tree is preserved and excluded from normal replay; see
+[containment policy](research-containment.md). Original closure and
 cancellation records are history, not rewritten as if the prior run continued
 uninterrupted. No previous checkpoint hash was changed to authorize resume.
 

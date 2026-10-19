@@ -28,6 +28,7 @@ from threadpoolctl import threadpool_limits
 from sc_poincare._fitting import _seed_from_connectivities, fit_disk_embedding
 from sc_poincare._proximity import estimate_proximity
 from sc_poincare._resources import check_dense_budget
+from sc_poincare._research_policy import ensure_active_paths
 from sc_poincare.evaluation import compare_neighborhoods, evaluate_neighborhoods, plot_neighborhood_diagnostics
 
 
@@ -54,6 +55,7 @@ def main(argv=None):
     parser.add_argument('--threads', type=int, default=1)
     parser.add_argument('--wall-seconds', type=float, default=600)
     args = parser.parse_args(argv)
+    ensure_active_paths(*args.inputs, args.output)
     if args.output.exists():
         parser.error('Output directory must not exist.')
     if any(value < 1 for value in (args.epochs, args.neighbors, args.batch_size, args.threads)):

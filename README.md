@@ -207,7 +207,12 @@ geometry/fitting. Initialization `GraphStressConfig.jitter` remains unchanged.
 Do not score artificial layouts
 as learned embeddings. Exact few-thousand-cell results are not full Planaria validation.
 
-The extraction intentionally changes the `_disk.py` checkpoint source hash;
+Legacy APIs and old probability wrappers are explicitly contained; old selected
+recipes live only under `examples/historical/`. Completed local experiments are
+preserved under ignored `data/research_archive/`, with closure-marker checks in
+maintained training CLIs. See [containment policy](docs/research-containment.md).
+
+The earlier display extraction intentionally changed the `_disk.py` checkpoint source hash;
 old optimizer states are not automatically migrated or hash-rewritten. Historical
 coordinates/results remain readable. See the deprecation guide for the boundary.
 

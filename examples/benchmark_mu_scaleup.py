@@ -20,6 +20,8 @@ import time
 
 import psutil
 
+from sc_poincare._research_policy import ensure_active_paths
+
 
 def atomic_json(path, value):
     temporary=path.with_suffix('.json.tmp')
@@ -44,6 +46,7 @@ def main(argv=None):
     parser.add_argument('--min-available-gib',type=float,default=2)
     parser.add_argument('--keep-checkpoints',action='store_true')
     args=parser.parse_args(argv)
+    ensure_active_paths(args.jobs, args.output)
     if args.output.exists(): parser.error('Output directory must not exist.')
     if args.workers<1 or any(not (0 < value < float('inf')) for value in
         (args.wall_seconds,args.rss_limit_gib,args.min_available_gib)):
@@ -75,6 +78,7 @@ def main(argv=None):
         if type(job['seed']) is not int or job['seed']<0:parser.error('Seeds must be nonnegative integers.')
         if job.get('resume') is not None and (job['method']=='rfa' or not isinstance(job['resume'],str) or not job['resume']):
             parser.error('resume requires a trusted MU checkpoint path, not an RFA warm start.')
+        ensure_active_paths(job['input'], job.get('resume'))
         seen.add(name)
     if not jobs:parser.error('Jobs must not be empty.')
     root=Path(__file__).resolve().parents[1]

@@ -13,6 +13,9 @@ including zero-strength identity calls. There is no import-time warning and
 normal fitting does not call these helpers. Public signatures, default output
 keys, copy behavior and coordinate transformations are retained until removal.
 No removal release/date is promised; removal is a separate explicit cleanup.
+These APIs remain callable within explicit BEGIN/END LEGACY implementation and
+export blocks; the [containment policy](research-containment.md) also isolates
+retired numerical helpers and historical examples.
 
 **Initialization jitter is not deprecated.** `GraphStressConfig.jitter` remains
 0.0002 and still perturbs the initial disk coordinates before tangent Adam.

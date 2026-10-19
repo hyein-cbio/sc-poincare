@@ -164,7 +164,9 @@ independent biological validation, not extending this small study indefinitely.
 
 Local records, source/protocol hashes, complete per-population/gene scores,
 budget trajectories, semantic states and figures live under
-`data/graph_diagnostics_integration/stress_validation_34/`. Dense setup targets
+`data/research_archive/graph_diagnostics_integration/stress_validation_34/`.
+The completed tree is preserved and excluded from normal replay; see
+[containment policy](research-containment.md). Dense setup targets
 are transient rather than archived repeatedly. Original capsule files are
 reverified after the batch. These ignored local results are not an off-machine
 backup and do not get pushed with code.

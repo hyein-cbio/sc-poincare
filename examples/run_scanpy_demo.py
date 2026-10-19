@@ -26,6 +26,7 @@ import numpy as np
 import scanpy as sc
 
 import sc_poincare as dr
+from sc_poincare._research_policy import ensure_active_paths
 
 
 def load_dataset(name: str):
@@ -97,6 +98,7 @@ def main(argv=None) -> None:
     parser.add_argument("--outdir", type=Path, default=Path("examples/output"))
     parser.add_argument("--show", action="store_true", help="Also open an interactive window.")
     args = parser.parse_args(argv)
+    ensure_active_paths(args.outdir, sc.settings.figdir)
     if args.n_epochs is not None and args.n_epochs < 1:
         parser.error('Demo n-epochs must be positive.')
     if args.method == 'rfa' and args.local_bandwidth is not None:

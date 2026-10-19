@@ -18,11 +18,14 @@ from pathlib import Path
 import os
 import sys
 
+from sc_poincare._research_policy import ensure_active_paths
+
 
 def load_features(path, *, csv_label_column=None, pca=None):
     """Remove the explicitly selected CSV label BEFORE numeric conversion/PCA."""
     import numpy as np
     path = Path(path)
+    ensure_active_paths(path)
     if path.suffix.lower() == ".npy":
         if csv_label_column is not None:
             raise ValueError("--csv-label-column applies only to CSV input.")
@@ -67,6 +70,7 @@ def main(argv=None):
     parser.add_argument("--max-dense-bytes", type=int, default=512 * 1024**2)
     parser.add_argument("--resume", type=Path, help="Previously generated checkpoint.pt (weights_only load)")
     args = parser.parse_args(argv)
+    ensure_active_paths(args.input, args.resume, args.output)
     if args.output.exists():
         parser.error("Output directory must not exist; all existing artifacts are preserved.")
     if args.threads < 1:
