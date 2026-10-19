@@ -14,7 +14,7 @@ from scipy.sparse.linalg import ArpackNoConvergence, eigsh
 
 from sc_poincare._disk import confine_to_open_disk, pairwise_disk_length
 from sc_poincare._objectives import (
-    _numpy_alignment_loss, _numpy_kl_from_logs, _numpy_log_probabilities,
+    _numpy_alignment_loss,
     _torch_alignment_loss, _torch_kl_from_logs,
     DEFAULT_OBJECTIVE, CONDITIONAL_OBJECTIVE, _validate_objective,
 )
@@ -64,17 +64,6 @@ def _emit_progress(callback, epoch, coordinates, loss, best_loss, best_coordinat
             best_loss=float(best_loss), best_coordinates=np.array(best_coordinates, copy=True),
             **deepcopy(init_status),
         ))
-
-
-def _row_softmax_neg_distance(distance: np.ndarray, temperature: float) -> np.ndarray:
-    return np.exp(_numpy_log_probabilities(distance, temperature))
-
-
-def _sym_kl(target: np.ndarray, predicted: np.ndarray) -> float:
-    q = np.asarray(predicted, dtype=np.float64)
-    q = q / q.sum(axis=1, keepdims=True)
-    logq = np.log(np.where(q > 0, q, np.finfo(q.dtype).tiny))
-    return _numpy_kl_from_logs(target, logq)
 
 
 def _seed_coordinates(n_obs: int, n_components: int, rng: np.random.Generator) -> np.ndarray:

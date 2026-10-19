@@ -23,8 +23,10 @@ __all__ = [
     "poincare_lineages",
 ]
 
-# Deprecated display-only API: delete this isolated block and _legacy_display.py
-# when retiring the feature. Fitting and core geometry do not import that module.
+# Deprecated display-only API: BEGIN LEGACY DISPLAY EXPORTS
+# Retained only for deprecated callers, never part of the learned embedding.
+# Delete this entire block and _legacy_display.py together on retirement.
+# Fitting, initialization and core geometry do not import that module.
 from sc_poincare._legacy_display import (
     fan_branches as poincare_fan,
     jitter_embedding as poincare_jitter,
@@ -32,3 +34,4 @@ from sc_poincare._legacy_display import (
 )
 
 __all__ += ["poincare_fan", "poincare_jitter", "poincare_repel"]
+# END LEGACY DISPLAY EXPORTS

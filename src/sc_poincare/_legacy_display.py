@@ -1,4 +1,4 @@
-"""Deprecated display-only jitter/fan/repel layouts, isolated for future deletion.
+"""LEGACY ONLY: deprecated display jitter/fan/repel, retained for later deletion.
 
 Nothing in fitting, initialization or core geometry imports this module.
 Only the three legacy tl exports use these wrappers. No warning is emitted on
@@ -13,6 +13,7 @@ import numpy as np
 
 from sc_poincare._disk import polar_angles
 
+# BEGIN LEGACY DISPLAY IMPLEMENTATION (no fitting/initialization consumers)
 DEFAULT_BASIS = "X_poincare"
 
 
@@ -275,3 +276,5 @@ def fan_branches(
     groups = adata.obs[groupby].astype(str).to_numpy()
     adata.obsm[key_added] = _fan_dendrogram_angles(coordinates, groups, spread=spread)
     return adata if copy else None
+
+# END LEGACY DISPLAY IMPLEMENTATION
