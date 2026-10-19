@@ -1,0 +1,83 @@
+{
+  "n_cells": 200,
+  "n_features": 2,
+  "runs": [
+    {
+      "initialization": "spectral",
+      "initialization_reason": "",
+      "seed": 0,
+      "initialization_seconds": 0.0052711810003529536,
+      "fitting_seconds": 0.46690797100018244,
+      "initial_feature_distance_rank": 0.8011306940624433,
+      "final_feature_distance_rank": 0.7170005889215452,
+      "best_loss": 354.6479828309889,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200
+    },
+    {
+      "initialization": "spectral",
+      "initialization_reason": "",
+      "seed": 1,
+      "initialization_seconds": 0.0032794720000310917,
+      "fitting_seconds": 0.45720359400002053,
+      "initial_feature_distance_rank": 0.800935738120148,
+      "final_feature_distance_rank": 0.7170176265239331,
+      "best_loss": 354.6497464145597,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200
+    },
+    {
+      "initialization": "spectral",
+      "initialization_reason": "",
+      "seed": 2,
+      "initialization_seconds": 0.003168047999679402,
+      "fitting_seconds": 0.44788126799994643,
+      "initial_feature_distance_rank": 0.801066702568741,
+      "final_feature_distance_rank": 0.7169754142024023,
+      "best_loss": 354.6242303168349,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200
+    },
+    {
+      "initialization": "random",
+      "initialization_reason": "",
+      "seed": 0,
+      "initialization_seconds": 9.231600006387453e-05,
+      "fitting_seconds": 0.4548574780001218,
+      "initial_feature_distance_rank": 0.014155876528026745,
+      "final_feature_distance_rank": 0.6986038980243635,
+      "best_loss": 446.4469614823474,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200
+    },
+    {
+      "initialization": "random",
+      "initialization_reason": "",
+      "seed": 1,
+      "initialization_seconds": 8.985399972516461e-05,
+      "fitting_seconds": 0.45679644399979225,
+      "initial_feature_distance_rank": -0.008427811326832058,
+      "final_feature_distance_rank": 0.6632451836661518,
+      "best_loss": 613.5742025270256,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200
+    },
+    {
+      "initialization": "random",
+      "initialization_reason": "",
+      "seed": 2,
+      "initialization_seconds": 8.60840000314056e-05,
+      "fitting_seconds": 0.45265420599980644,
+      "initial_feature_distance_rank": -0.006272037751868914,
+      "final_feature_distance_rank": 0.723869591296272,
+      "best_loss": 593.4634047825687,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200
+    }
+  ],
+  "input_sha256": "25769c7044c1411a043ce00c41177aaf1e2091a950106caaa5976d7649e94fc1",
+  "label_column": "labels",
+  "sigma": 1.0,
+  "n_neighbors": 15,
+  "epochs": 200
+}

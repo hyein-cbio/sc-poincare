@@ -102,8 +102,13 @@ conditional KL remains experimental in the meantime.
   than silently lowering accuracy. `_seed_from_connectivities` already does
   this on this branch. Explicit `tol` / `maxiter` controls are a separate item
   and already exist on `main`; they are not copied here.
-- [ ] Compare initial distance structure, seed stability and final quality, not
-  just initialization speed.
+- [x] Compare initial distance structure, seed stability and final quality, not
+  just initialization speed. On ToggleSwitch (200 cells, k=15, sigma=1, 200
+  updates, seeds 0–2) spectral initialization keeps feature-distance rank near
+  0.801 and best loss near 354.6. Random initialization is faster, starts near
+  rank 0, and finishes with losses 446–614. See
+  [spectral-init-quality.md](spectral-init-quality.md). This does not adopt the
+  faster `tol` / `maxiter` setting from `main`.
 
 The [historical initialization probe](benchmarking.md#historical-resource-observations)
 identified a runtime bottleneck and a faster bounded setting. That setting has
