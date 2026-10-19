@@ -44,8 +44,9 @@ None of these is on `main`, and none should become a default from a
 20-update development fit. The pre-registered Adam-versus-RMSProp rule is
 [adam-rmsprop-protocol.md](adam-rmsprop-protocol.md): the same graph-stress
 objective and initialization, seed 0 for selection, seeds 1–4 only as
-confirmation, 1,500 updates, and the existing Paul and Moignard promotion
-guardrails. The fit is not started. Riemannian
+confirmation, 1,500 updates, and the existing Paul and Moignard development
+screen. That screen does not promote the optimizer, because those scores are
+transductive. The fit is not started. Riemannian
 RMSProp is not implemented here, and Paul still needs feature SHA256
 `0386248d…` before that comparison can be scored.
 
