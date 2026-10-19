@@ -4,6 +4,11 @@ These items are outside the checklist in `development-roadmap.md`. They are
 not authorized runs. Each one is narrower than repeating work already on
 `main`.
 
+The checklist itself still has three open items: the external review of
+`494367a` (CodeRabbit is not authenticated), the full Planaria 1,000-update
+comparison (this host has about 4.2 GiB available and no swap), and a fresh
+approval before any further expensive run.
+
 ## 1. Land one approximation, after the Paul matrix matches
 
 `main` has no matrix-free graph-stress path. This branch now has
