@@ -42,6 +42,7 @@ class FitReport:
     zero_target_policy: str = "machine_tiny_logs_only"
     initialization_diagnostics: dict = field(default_factory=dict)
     gradient_norm_trace: list[float] = field(default_factory=list)
+    current_coordinates: np.ndarray | None = None
 
 
 @dataclass(frozen=True)
@@ -378,6 +379,7 @@ def _fit_with_torch(
         best_loss=best_loss,
         stop_reason="epoch_limit" if len(loss_trace) == n_epochs else "patience",
         gradient_norm_trace=gradient_norm_trace,
+        current_coordinates=confine_to_open_disk(coords.detach().cpu().numpy()),
         **init_status,
     )
 
@@ -502,6 +504,7 @@ def _fit_with_numpy(
         best_loss=best_loss,
         stop_reason="epoch_limit" if len(loss_trace) == n_epochs else "patience",
         gradient_norm_trace=gradient_norm_trace,
+        current_coordinates=confine_to_open_disk(coords),
         **init_status,
     )
 

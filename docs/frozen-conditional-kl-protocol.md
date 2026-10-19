@@ -58,7 +58,9 @@ Return the lowest training objective, including the initialization. Do not
 select by an evaluation score. Preserve raw current and best coordinates,
 loss, `gradient_norm_trace`, radius quantiles and stop reason. Each trace
 entry is the max per-point Riemannian gradient norm at the checkpoint
-before that update.
+before that update. The objective NPZ stores that selected state as
+`coordinates` and the final evaluated state as `current_coordinates`.
+Graph scores use the selected state.
 
 Seeds are 0, 1, 2, 3 and 4. The five-seed range is a sensitivity description,
 not a confidence interval and not a biological replicate.
@@ -88,7 +90,9 @@ objectives.
 The label inventory is attached in
 [planaria-label-inventory.md](planaria-label-inventory.md). Rare populations
 are those with at most 50 cells. They were counted from the CSV before any
-new coordinates existed. A future run reports every one of them. Graph scores
+new coordinates existed. The public driver writes `label_counts` and, after
+fitting, `label_neighbor_purity` for every label at the first
+`--evaluation-k`. Those scores do not select the checkpoint. Graph scores
 do not replace that report. The dense-memory gate above still has to pass
 before the run starts.
 
