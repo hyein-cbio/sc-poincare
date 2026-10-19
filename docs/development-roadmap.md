@@ -186,8 +186,12 @@ These are not default changes and require their own controlled experiments:
   Predeclared marker Spearman values against PS-root pseudotime and the stage
   means are in [moignard-dimension-probe.json](moignard-dimension-probe.json).
   The predeclared order PS, 4SFG, 4SG, NP does not match the mean pseudotimes.
-- [ ] Intrinsic adaptive updates, Lorentz geometry, and curvature remain
-  separate from that dimension comparison.
+- [x] On exact Moignard, compare Poincaré curvatures 1 and 0.25 for 20 updates
+  from the same classical jitter. Update-20 losses are 0.6952 and 0.6985.
+  Macro purity is 0.546 and 0.545. Curvature 1 remains the default. Record:
+  [moignard-curvature-probe.json](moignard-curvature-probe.json).
+- [ ] Intrinsic adaptive updates and Lorentz geometry remain separate from that
+  curvature comparison.
 - [x] Keep the failed source row-temperature alternative unpromoted. One
   improved score is not a reason to enable it. See
   [astra-adoption-status.md](astra-adoption-status.md).

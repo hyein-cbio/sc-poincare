@@ -101,8 +101,74 @@ def promotion_allowed(*, development_input, joint_improvements):
     return bool(joint_improvements) and all(joint_improvements)
 
 
+def _validate_curvature(curvature):
+    if isinstance(curvature, (bool, np.bool_)) or not isinstance(curvature, (int, float, np.floating)):
+        raise ValueError("curvature must be finite and positive.")
+    curvature = float(curvature)
+    if not np.isfinite(curvature) or curvature <= 0:
+        raise ValueError("curvature must be finite and positive.")
+    return curvature
+
+
+def _tangent_from_disk_curvature(points, curvature):
+    radius = np.linalg.norm(points, axis=1, keepdims=True)
+    if np.any(curvature * radius ** 2 >= 1):
+        raise ValueError("Initialization must lie inside the curvature ball.")
+    scale = np.ones_like(radius)
+    positive = radius > 0
+    scale[positive] = 2 * np.arctanh(np.sqrt(curvature) * radius[positive]) / (np.sqrt(curvature) * radius[positive])
+    return points * scale
+
+
+def _objective_curvature(u, target, teacher, config, chunk_size, curvature, *, backward):
+    """MU objective with Poincaré curvature ``-curvature``. Curvature 1 matches the default disk."""
+    torch = experimental._torch()
+    curvature_t = torch.tensor(curvature, dtype=torch.float64)
+    n = len(u)
+    u.grad = None
+    global_total, local_total = 0., 0.
+    with torch.set_grad_enabled(backward):
+        for start in range(0, n, chunk_size):
+            stop = min(n, start + chunk_size)
+            rows = torch.arange(start, stop)
+            radius = torch.linalg.vector_norm(u, dim=1, keepdim=True)
+            factor = torch.where(
+                radius > 1e-7,
+                torch.tanh(torch.sqrt(curvature_t) * radius / 2) / (torch.sqrt(curvature_t) * radius.clamp_min(1e-15)),
+                0.5 - curvature_t * radius.square() / 24,
+            )
+            x = u * factor
+            sq = (x * x).sum(dim=1)
+            if not torch.isfinite(x).all() or torch.any(curvature_t * sq >= 1):
+                raise FloatingPointError("Curvature ball was left during the probe.")
+            separation = torch.cdist(x[start:stop], x, p=2, compute_mode="donot_use_mm_for_euclid_dist")
+            denom = (1 - curvature_t * sq[start:stop])[:, None] * (1 - curvature_t * sq)[None, :]
+            distance = 2 / torch.sqrt(curvature_t) * torch.asinh(
+                torch.sqrt(curvature_t) * separation / torch.sqrt(denom)
+            )
+            distance = distance.clone()
+            distance[torch.arange(stop - start), rows] = 0
+            t = target[start:stop]
+            error = ((distance - t) / config.distance_scale).square() / (
+                t / config.distance_scale).clamp_min(config.relative_floor).square()
+            global_loss = error.sum() / (n * (n - 1))
+            mask = torch.zeros_like(distance, dtype=torch.bool)
+            mask[torch.arange(stop - start), rows] = True
+            logits = (-distance / config.gamma).masked_fill(mask, -torch.inf)
+            logq = (logits - torch.logsumexp(logits, dim=1, keepdim=True)).masked_fill(mask, 0)
+            local_loss = -(teacher[start:stop] * logq).sum() / n
+            loss = global_loss + config.local_weight * local_loss
+            if not torch.isfinite(loss):
+                raise FloatingPointError("Nonfinite curvature-probe objective.")
+            global_total += float(global_loss.detach())
+            local_total += float(local_loss.detach())
+            if backward:
+                loss.backward()
+    return global_total + config.local_weight * local_total, global_total, local_total
+
+
 def fit_from_initial(setup, initial, *, epochs, chunk_size=256, geometry="poincare",
-                     max_dense_bytes, teacher=None, optimizer_name="adam"):
+                     max_dense_bytes, teacher=None, optimizer_name="adam", curvature=1.):
     """Adam or plain SGD on an exact setup from a caller-supplied start.
 
     ``optimizer_name='adam'`` is the existing tangent Adam update. ``'sgd'``
@@ -118,10 +184,15 @@ def fit_from_initial(setup, initial, *, epochs, chunk_size=256, geometry="poinca
         raise ValueError("geometry must be 'poincare' or 'euclidean'.")
     if optimizer_name not in ("adam", "sgd"):
         raise ValueError("optimizer_name must be 'adam' or 'sgd'.")
+    curvature = _validate_curvature(curvature)
+    if geometry != "poincare" and curvature != 1.:
+        raise ValueError("Curvature probes use the Poincaré ball.")
     torch = experimental._torch()
     config = setup.config
     if geometry == "poincare":
-        tangent = experimental._tangent_from_disk(np.asarray(initial, dtype=np.float64))
+        points = np.asarray(initial, dtype=np.float64)
+        tangent = (experimental._tangent_from_disk(points) if curvature == 1.
+                   else _tangent_from_disk_curvature(points, curvature))
     else:
         tangent = np.asarray(initial, dtype=np.float64)
         if tangent.shape != setup.base_initial.shape or not np.isfinite(tangent).all():
@@ -144,17 +215,30 @@ def fit_from_initial(setup, initial, *, epochs, chunk_size=256, geometry="poinca
     best_loss, best_epoch, trace = np.inf, 0, []
     current = None
     for epoch in range(epochs + 1):
-        loss, _, _ = experimental._objective(
-            u, target, teacher_t, config, geometry, chunk_size, backward=epoch < epochs,
-        )
-        current = (experimental._disk_from_tangent(u) if geometry == "poincare" else u).detach().numpy().copy()
+        if curvature == 1.:
+            loss, _, _ = experimental._objective(
+                u, target, teacher_t, config, geometry, chunk_size, backward=epoch < epochs,
+            )
+            current = (experimental._disk_from_tangent(u) if geometry == "poincare" else u).detach().numpy().copy()
+        else:
+            loss, _, _ = _objective_curvature(
+                u, target, teacher_t, config, chunk_size, curvature, backward=epoch < epochs,
+            )
+            radius = torch.linalg.vector_norm(u, dim=1, keepdim=True)
+            factor = torch.where(
+                radius > 1e-7,
+                torch.tanh(torch.sqrt(torch.tensor(curvature)) * radius / 2) / (
+                    torch.sqrt(torch.tensor(curvature)) * radius.clamp_min(1e-15)),
+                0.5 - curvature * radius.square() / 24,
+            )
+            current = (u * factor).detach().numpy().copy()
         trace.append(float(loss))
         if loss < best_loss:
             best_loss, best_epoch = float(loss), epoch
         if epoch < epochs:
             optimizer.step()
     return dict(loss_trace=trace, current=current, best_loss=best_loss, best_epoch=best_epoch,
-                epochs=epochs, optimizer_name=optimizer_name)
+                epochs=epochs, optimizer_name=optimizer_name, curvature=curvature)
 
 
 def fixed_multiscale_accessibility(affinity, *, max_dense_bytes):
