@@ -113,10 +113,14 @@ before a new long run.
   HVGs, full-SVD PCA20, MU defaults, 20 updates, seed 0. Labels were not read.
   The feature hash is `076856d9…`. Update-20 loss is 0.7431. The local
   `data/pbmc3k_raw.h5ad`, processed with the same recipe under Scanpy 1.12.4,
-  hashes to `fef3efcc…`, so that file was not used to extend the recorded run.
-  Predeclared marker
+  hashes to `fef3efcc…`. A separate 40-update fit on that local matrix has
+  losses 1.0686, 0.7431, and 0.5660 at updates 0, 20, and 40. The update-20
+  loss is within 4e-8 of the recorded probe, and the loss is still decreasing
+  at 40. The local hash does not replace `076856d9…`. Predeclared marker
   Spearman values against origin pseudotime are in
-  [pbmc3k-independent-probe.json](pbmc3k-independent-probe.json). This is not a
+  [pbmc3k-independent-probe.json](pbmc3k-independent-probe.json). The separate
+  budget is in [pbmc3k-local-budget-probe.json](pbmc3k-local-budget-probe.json).
+  This is not a
   certified blind holdout or biological validation. Paul, Moignard, Pancreas,
   and Nestorowa remain development data. LARRY was not fit.
 - [x] After the frozen Moignard fits, retain purity and input recall for every
