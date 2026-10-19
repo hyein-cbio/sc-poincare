@@ -1,0 +1,52 @@
+{
+  "input_id": "moignard2015-development-reference",
+  "feature_sha256": "674f8b380ba701d56afdeae8b35edf8b1269dfaa8e8483bc7e9c7e9c12999aa0",
+  "labels_entered_fitting": false,
+  "optimizer": "riemannian_rmsprop",
+  "beta": 0.9,
+  "epochs": 20,
+  "learning_rate": 0.013333333333333334,
+  "loss_at_0": 1.0369251291534154,
+  "loss_at_20": 0.49361720160909195,
+  "macro_purity": 0.5648708116402108,
+  "input_neighbor_recall": 0.21277749533977297,
+  "populations": [
+    {
+      "label": "NP",
+      "n_cells": 552,
+      "purity": 0.31256038647342993,
+      "input_neighbor_recall": 0.19130434782608693,
+      "purity_ceiling": 1.0
+    },
+    {
+      "label": "PS",
+      "n_cells": 624,
+      "purity": 0.4448717948717949,
+      "input_neighbor_recall": 0.21538461538461534,
+      "purity_ceiling": 1.0
+    },
+    {
+      "label": "4SG",
+      "n_cells": 770,
+      "purity": 0.6118614718614719,
+      "input_neighbor_recall": 0.18207792207792206,
+      "purity_ceiling": 1.0
+    },
+    {
+      "label": "4SFG",
+      "n_cells": 983,
+      "purity": 0.9485927433028145,
+      "input_neighbor_recall": 0.28870803662258393,
+      "purity_ceiling": 1.0
+    },
+    {
+      "label": "HF",
+      "n_cells": 1005,
+      "purity": 0.5064676616915423,
+      "input_neighbor_recall": 0.17220563847429518,
+      "purity_ceiling": 1.0
+    }
+  ],
+  "promoted": false,
+  "biological_validation": false
+}
