@@ -77,6 +77,44 @@ def test_sgd_matches_adam_at_the_same_start_and_is_not_the_default(setup, torch)
         method.fit_graph_stress(setup, epochs=6, chunk_size=4, resume=adam.state, optimizer_name="sgd")
 
 
+def test_lorentz_self_and_coincident_distances_have_finite_gradients(torch):
+    points = torch.tensor([[0., 0.], [0., 0.], [.2, -.1], [.2, -.1]],
+                          dtype=torch.float64, requires_grad=True)
+    columns = torch.tensor([1, 3])
+    distance = method._lorentz_distance(points[columns], points, columns)
+    torch.testing.assert_close(distance[:, [0, 2]], distance[:, [1, 3]])
+    assert distance[0, 0] == distance[0, 1] == distance[1, 2] == distance[1, 3] == 0
+    expected = np.arccosh(np.sqrt(1 + .2**2 + .1**2))
+    assert distance[0, 2].item() == pytest.approx(expected, rel=1e-12)
+    zero_gradient, = torch.autograd.grad(distance[0, 0] + distance[1, 2], points, retain_graph=True)
+    torch.testing.assert_close(zero_gradient, torch.zeros_like(points))
+    distance.sum().backward()
+    assert torch.isfinite(points.grad).all()
+
+
+def test_lorentz_distance_retains_small_nonzero_separations(torch):
+    points = torch.tensor([[0., 0.], [1e-10, 0.]], dtype=torch.float64, requires_grad=True)
+    distance = method._lorentz_distance(points, points, torch.arange(2))
+    assert distance[0, 1].item() == pytest.approx(np.arcsinh(1e-10), rel=1e-12, abs=0)
+    distance[0, 1].backward()
+    assert torch.isfinite(points.grad).all()
+    assert points.grad[1, 0].item() == pytest.approx(1.)
+
+
+def test_lorentz_objective_with_coincidences_is_chunk_invariant(setup, torch):
+    points = method._lorentz_spatial_from_disk(setup.base_initial)
+    points[:2] = 0
+    points[3] = points[2]
+    u = torch.tensor(points, requires_grad=True)
+    target, teacher = torch.tensor(setup.target), torch.tensor(setup.teacher)
+    chunked = method._objective(u, target, teacher, setup.config, "lorentz", 3, backward=True)
+    gradient = u.grad.clone()
+    full = method._objective(u, target, teacher, setup.config, "lorentz", len(u), backward=True)
+    assert torch.isfinite(u.grad).all()
+    np.testing.assert_allclose(chunked, full, rtol=1e-12)
+    torch.testing.assert_close(gradient, u.grad, rtol=1e-12, atol=1e-12)
+
+
 def test_lorentz_starts_at_the_same_disk_distances_and_stays_opt_in(setup, torch):
     disk = method.fit_graph_stress(setup, epochs=5, chunk_size=4, random_state=1)
     lorentz = method.fit_graph_stress(setup, epochs=5, chunk_size=4, random_state=1, geometry="lorentz")

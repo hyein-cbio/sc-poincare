@@ -22,6 +22,7 @@ import numpy as np
 import pandas as pd
 from scipy.sparse.csgraph import dijkstra
 from scipy.stats import spearmanr
+from scipy.spatial.distance import cdist
 from sklearn.decomposition import PCA
 from sklearn.neighbors import NearestNeighbors
 from threadpoolctl import threadpool_limits
@@ -76,7 +77,8 @@ def _run_provenance():
 def _neighbor_purity(coordinates, labels, k):
     """Post-fit chart neighbor agreement. Labels do not enter the fit."""
     nn = NearestNeighbors(n_neighbors=k + 1).fit(coordinates)
-    indices = nn.kneighbors(coordinates, return_distance=False)[:, 1:]
+    neighbors = nn.kneighbors(coordinates, return_distance=False)
+    indices = np.asarray([row[row != i][:k] for i, row in enumerate(neighbors)])
     purity = np.array([np.mean(labels[row] == labels[i]) for i, row in enumerate(indices)])
     scores = {str(label): float(purity[labels == label].mean())
               for label in sorted(set(labels), key=str)}
@@ -182,7 +184,7 @@ def main():
             nn=np.argsort(ranked,axis=1)[:,:min(15,len(features)-1)]
             evaluations[k]=(distances,nn)
         # Same anchors as the graph scores. This is not a graph geodesic.
-        feature_d=np.linalg.norm(features[anchors,None,:]-features[None,:,:],axis=-1)
+        feature_d=cdist(features[anchors],features)
         provenance=_run_provenance()
         for seed in args.seeds:
             init_status={};initial=_seed_from_connectivities(proximity.weights,2,np.random.default_rng(seed),status=init_status)

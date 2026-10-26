@@ -19,11 +19,13 @@ from sklearn.neighbors import NearestNeighbors
 from sc_poincare._fitting import _seed_from_connectivities, fit_disk_embedding
 from sc_poincare._objectives import CONDITIONAL_OBJECTIVE, DEFAULT_OBJECTIVE
 from sc_poincare._proximity import estimate_proximity
+from sc_poincare._research_policy import ensure_active_paths
 
 
 def neighbor_purity(coordinates: np.ndarray, labels: np.ndarray, k: int = 15) -> dict[str, float]:
     nn = NearestNeighbors(n_neighbors=k + 1).fit(coordinates)
-    indices = nn.kneighbors(coordinates, return_distance=False)[:, 1:]
+    neighbors = nn.kneighbors(coordinates, return_distance=False)
+    indices = np.asarray([row[row != i][:k] for i, row in enumerate(neighbors)])
     purity = np.array([np.mean(labels[row] == labels[i]) for i, row in enumerate(indices)])
     scores = {}
     for label in sorted(set(labels), key=str):
@@ -41,6 +43,7 @@ def main() -> None:
     parser.add_argument("--rare-max-count", type=int, default=31)
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    ensure_active_paths(args.csv, args.output)
     raw = args.csv.read_bytes()
     frame = pd.read_csv(args.csv)
     label_name = frame.columns[-1]

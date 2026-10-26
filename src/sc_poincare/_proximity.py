@@ -297,6 +297,27 @@ def degree_aware_affinity(lengths: sparse.spmatrix, sigma: float) -> sparse.csr_
     return sparse.csr_matrix((data, (coo.row, coo.col)), shape=lengths.shape)
 
 
+def _forest_laplacian(affinity, block_size, max_dense_bytes):
+    if affinity.shape[0] != affinity.shape[1] or affinity.shape[0] == 0:
+        raise ValueError("affinity must be a nonempty square matrix.")
+    check_dense_budget(affinity.shape[0], max_dense_bytes)
+    if isinstance(block_size, bool) or not isinstance(block_size, (int, np.integer)) or block_size < 1:
+        raise ValueError("block_size must be a positive integer.")
+    affinity = affinity.tocsr().astype(np.float64)
+    if not np.all(np.isfinite(affinity.data)) or np.any(affinity.data < 0):
+        raise ValueError("affinity must be finite and nonnegative.")
+    degree = np.asarray(affinity.sum(axis=1)).reshape(-1)
+    return sparse.diags(degree) - affinity
+
+
+def _scaled_laplacian(laplacian, tau):
+    if tau != 1.0:
+        laplacian = laplacian * tau
+        if not np.isfinite(laplacian.data).all():
+            raise FloatingPointError('forest_tau overflowed the Laplacian.')
+    return laplacian
+
+
 def forest_accessibility(
     affinity: sparse.spmatrix,
     *,
@@ -311,21 +332,8 @@ def forest_accessibility(
     Output and normalization remain dense despite blocked RHS solves.
     """
     forest_tau = _validate_forest_tau(forest_tau)
-    if affinity.shape[0] != affinity.shape[1] or affinity.shape[0] == 0:
-        raise ValueError("affinity must be a nonempty square matrix.")
-    check_dense_budget(affinity.shape[0], max_dense_bytes)
-    if isinstance(block_size, bool) or not isinstance(block_size, (int, np.integer)) or block_size < 1:
-        raise ValueError("block_size must be a positive integer.")
-    affinity = affinity.tocsr().astype(np.float64)
-    if not np.all(np.isfinite(affinity.data)) or np.any(affinity.data < 0):
-        raise ValueError("affinity must be finite and nonnegative.")
-    degree = np.asarray(affinity.sum(axis=1)).reshape(-1)
-    laplacian = sparse.diags(degree) - affinity
-    if forest_tau != 1.0:
-        laplacian = laplacian * forest_tau
-        if not np.isfinite(laplacian.data).all():
-            raise FloatingPointError('forest_tau overflowed the Laplacian.')
-    return _row_stochastic_forest(laplacian, block_size)
+    laplacian = _forest_laplacian(affinity, block_size, max_dense_bytes)
+    return _row_stochastic_forest(_scaled_laplacian(laplacian, forest_tau), block_size)
 
 
 def _row_stochastic_forest(laplacian: sparse.spmatrix, block_size: int) -> np.ndarray:
@@ -356,24 +364,35 @@ def multiscale_forest_accessibility(
     """Equal mixture of ``(I + tau L)^{-1}`` on one fixed affinity.
 
     Tau changes propagation range. It does not change edge weights, which remain
-    the caller's sigma choice. ``estimate_proximity`` still uses unit tau.
+    the caller's sigma choice. ``estimate_proximity`` defaults to unit tau.
+    Accumulation retains one mean and one solve result regardless of scale count.
     """
-    if isinstance(taus, (str, bytes)) or len(tuple(taus)) < 2:
+    if isinstance(taus, (str, bytes)):
         raise ValueError("taus must contain at least two finite positive scales.")
-    # Reuse the unit solver's validation and budget check, then discard that target.
-    forest_accessibility(affinity, block_size=block_size, max_dense_bytes=max_dense_bytes)
-    affinity = affinity.tocsr().astype(np.float64)
-    degree = np.asarray(affinity.sum(axis=1)).reshape(-1)
-    laplacian = sparse.diags(degree) - affinity
-    parts = []
+    try:
+        taus = tuple(taus)
+    except TypeError:
+        raise ValueError("taus must contain at least two finite positive scales.") from None
+    if len(taus) < 2:
+        raise ValueError("taus must contain at least two finite positive scales.")
+    scales = []
     for tau in taus:
         if isinstance(tau, (bool, np.bool_)) or not np.isscalar(tau):
             raise ValueError("each forest tau must be a finite positive number.")
         scale = float(tau)
         if not np.isfinite(scale) or scale <= 0:
             raise ValueError("each forest tau must be a finite positive number.")
-        parts.append(_row_stochastic_forest(laplacian * scale, block_size))
-    mixed = np.mean(np.stack(parts, axis=0), axis=0)
+        scales.append(scale)
+    laplacian = _forest_laplacian(affinity, block_size, max_dense_bytes)
+    mixed = None
+    for scale in scales:
+        part = _row_stochastic_forest(_scaled_laplacian(laplacian, scale), block_size)
+        if mixed is None:
+            mixed = part
+        else:
+            mixed += part
+        del part
+    mixed /= len(scales)
     np.maximum(mixed, 0.0, out=mixed)
     mixed /= np.clip(mixed.sum(axis=1, keepdims=True), a_min=1e-12, a_max=None)
     return mixed

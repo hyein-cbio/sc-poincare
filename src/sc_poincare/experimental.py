@@ -348,15 +348,11 @@ def _disk_from_lorentz(u):
 
 
 def _lorentz_distance(rows, points, self_columns):
-    """Hyperboloid distance acosh(-<x,y>). Diagonal entries are exactly zero."""
-    torch = _torch()
-    time_rows = torch.sqrt(1 + rows.square().sum(dim=1))
-    time_points = torch.sqrt(1 + points.square().sum(dim=1))
-    minkowski = -time_rows[:, None] * time_points[None, :] + rows @ points.T
-    distance = torch.acosh(torch.clamp(-minkowski, min=1))
-    distance = distance.clone()
-    distance[torch.arange(distance.shape[0], device=distance.device), self_columns] = 0
-    return distance
+    """Isometric disk distance, with a finite zero subgradient at coincidences."""
+    from sc_poincare._fitting import _torch_disk_length
+    return _torch_disk_length(
+        _disk_from_lorentz(rows), _disk_from_lorentz(points), self_columns=self_columns,
+    )
 
 
 def _objective(u, target, teacher, config, geometry, chunk_size, *, backward):

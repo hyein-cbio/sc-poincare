@@ -104,6 +104,62 @@ def test_multiscale_mixture_is_separate_from_sigma_and_from_the_default():
         multiscale_forest_accessibility(weights, taus=(0.1, -1.0))
 
 
+def test_multiscale_solves_once_per_scale_and_releases_intermediates(monkeypatch):
+    import weakref
+    from sc_poincare import _proximity as proximity
+    weights = sparse.csr_matrix([[0., 1., 0.], [1., 0., 2.], [0., 2., 0.]])
+    taus = (.1, .5, 1., 3., 10.)
+    laplacian = np.diag(np.asarray(weights.sum(axis=1)).ravel()) - weights.toarray()
+    expected = sum(np.linalg.inv(np.eye(3) + tau * laplacian) for tau in taus) / len(taus)
+    solver = proximity._row_stochastic_forest
+    references = []
+    calls = []
+
+    def tracked_solver(matrix, block_size):
+        assert sum(ref() is not None for ref in references) <= 1
+        calls.append(matrix.toarray())
+        result = solver(matrix, block_size)
+        references.append(weakref.ref(result))
+        return result
+
+    monkeypatch.setattr(proximity, '_row_stochastic_forest', tracked_solver)
+    actual = proximity.multiscale_forest_accessibility(
+        weights, taus=taus, block_size=2, max_dense_bytes=4 * 8 * 3**2,
+    )
+    assert len(calls) == len(taus)
+    for actual_laplacian, tau in zip(calls, taus):
+        np.testing.assert_allclose(actual_laplacian, tau * laplacian)
+    np.testing.assert_allclose(actual, expected, atol=1e-12)
+    np.testing.assert_allclose(actual.sum(axis=1), 1.)
+
+
+@pytest.mark.parametrize('kwargs,exception', [
+    ({'max_dense_bytes': 4 * 8 * 3**2 - 1}, MemoryError),
+    ({'block_size': 0}, ValueError),
+    ({'block_size': True}, ValueError),
+    ({'taus': (.1, float('nan'))}, ValueError),
+    ({'taus': (.1, True)}, ValueError),
+])
+def test_multiscale_validation_happens_before_any_solve(monkeypatch, kwargs, exception):
+    from sc_poincare import _proximity as proximity
+    monkeypatch.setattr(proximity, '_row_stochastic_forest',
+                        lambda *a: pytest.fail('Validation must not solve'))
+    with pytest.raises(exception):
+        proximity.multiscale_forest_accessibility(sparse.eye(3), **kwargs)
+
+
+@pytest.mark.parametrize('weights', [
+    sparse.csr_matrix((0, 0)), sparse.csr_matrix((2, 3)),
+    sparse.csr_matrix([[0., -1.], [1., 0.]]),
+    sparse.csr_matrix([[0., np.inf], [1., 0.]]),
+])
+def test_forest_paths_share_affinity_validation(weights):
+    from sc_poincare._proximity import multiscale_forest_accessibility
+    for solver in (forest_accessibility, multiscale_forest_accessibility):
+        with pytest.raises(ValueError):
+            solver(weights)
+
+
 def test_degree_aware_widths_match_sigma_only_when_degrees_match():
     from sc_poincare._proximity import degree_aware_affinity
     n = 6

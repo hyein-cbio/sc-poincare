@@ -20,10 +20,13 @@ from sc_poincare._disk import pairwise_disk_length
 from sc_poincare._fitting import _seed_from_connectivities, fit_disk_embedding
 from sc_poincare._proximity import estimate_proximity
 from scipy.stats import spearmanr
+from scipy.spatial.distance import cdist
+from sc_poincare._research_policy import ensure_active_paths
 
 
-def feature_rank(coordinates: np.ndarray, features: np.ndarray) -> float:
-    feature_distance = np.linalg.norm(features[:, None, :] - features[None, :, :], axis=-1)
+def feature_rank(coordinates: np.ndarray, features: np.ndarray, *, feature_distance=None) -> float:
+    if feature_distance is None:
+        feature_distance = cdist(features, features)
     embedding_distance = pairwise_disk_length(coordinates)
     mask = ~np.eye(len(coordinates), dtype=bool)
     return float(spearmanr(feature_distance[mask], embedding_distance[mask]).statistic)
@@ -31,7 +34,8 @@ def feature_rank(coordinates: np.ndarray, features: np.ndarray) -> float:
 
 def purity(coordinates: np.ndarray, labels: np.ndarray, k: int = 15) -> dict[str, float]:
     nn = NearestNeighbors(n_neighbors=k + 1).fit(coordinates)
-    indices = nn.kneighbors(coordinates, return_distance=False)[:, 1:]
+    neighbors = nn.kneighbors(coordinates, return_distance=False)
+    indices = np.asarray([row[row != i][:k] for i, row in enumerate(neighbors)])
     same = np.array([np.mean(labels[row] == labels[i]) for i, row in enumerate(indices)])
     scores = {"overall": float(same.mean())}
     for label in sorted(set(labels), key=str):
@@ -40,6 +44,8 @@ def purity(coordinates: np.ndarray, labels: np.ndarray, k: int = 15) -> dict[str
 
 
 def prepare():
+    datasetdir = Path(sc.settings.datasetdir)
+    ensure_active_paths(datasetdir, datasetdir / "pbmc3k_raw.h5ad", datasetdir / "pbmc3k_processed.h5ad")
     raw = sc.datasets.pbmc3k()
     labels = sc.datasets.pbmc3k_processed().obs["louvain"].astype(str)
     sc.pp.normalize_total(raw, target_sum=1e4)
@@ -59,8 +65,10 @@ def main() -> None:
     parser.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    ensure_active_paths(args.output)
     names, features, label_table = prepare()
     proximity = estimate_proximity(features, 15, "median")
+    feature_distance = cdist(features, features)
     runs = []
     for seed in args.seeds:
         status: dict[str, str] = {}
@@ -85,7 +93,7 @@ def main() -> None:
             "stop_reason": report.stop_reason,
             "epochs_run": int(report.n_epochs),
             "fitting_seconds": time.perf_counter() - started,
-            "feature_distance_rank": feature_rank(report.coordinates, features),
+            "feature_distance_rank": feature_rank(report.coordinates, features, feature_distance=feature_distance),
             "labeled_cells": int(kept.sum()),
             "purity_k15": scores,
         })

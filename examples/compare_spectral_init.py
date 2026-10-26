@@ -14,15 +14,18 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
+from scipy.spatial.distance import cdist
 
 from sc_poincare._disk import pairwise_disk_length
 from sc_poincare._fitting import _seed_coordinates, _seed_from_connectivities, fit_disk_embedding
 from sc_poincare._proximity import estimate_proximity
+from sc_poincare._research_policy import ensure_active_paths
 
 
-def distance_rank(coordinates: np.ndarray, features: np.ndarray) -> float:
+def distance_rank(coordinates: np.ndarray, features: np.ndarray, *, feature_distance=None) -> float:
     """Spearman correlation of feature distances and hyperbolic distances."""
-    feature_distance = np.linalg.norm(features[:, None, :] - features[None, :, :], axis=-1)
+    if feature_distance is None:
+        feature_distance = cdist(features, features)
     embedding_distance = pairwise_disk_length(coordinates)
     mask = ~np.eye(len(coordinates), dtype=bool)
     return float(spearmanr(feature_distance[mask], embedding_distance[mask]).statistic)
@@ -30,6 +33,7 @@ def distance_rank(coordinates: np.ndarray, features: np.ndarray) -> float:
 
 def compare(features: np.ndarray, *, n_neighbors: int, sigma: float, epochs: int, seeds: list[int]) -> dict:
     proximity = estimate_proximity(features, n_neighbors, sigma)
+    feature_distance = cdist(features, features)
     rows = []
     for kind in ("spectral", "random"):
         for seed in seeds:
@@ -59,8 +63,8 @@ def compare(features: np.ndarray, *, n_neighbors: int, sigma: float, epochs: int
                 "seed": int(seed),
                 "initialization_seconds": initialization_seconds,
                 "fitting_seconds": fitting_seconds,
-                "initial_feature_distance_rank": distance_rank(initial, features),
-                "final_feature_distance_rank": distance_rank(report.coordinates, features),
+                "initial_feature_distance_rank": distance_rank(initial, features, feature_distance=feature_distance),
+                "final_feature_distance_rank": distance_rank(report.coordinates, features, feature_distance=feature_distance),
                 "best_loss": float(report.best_loss),
                 "stop_reason": report.stop_reason,
                 "epochs_run": int(report.n_epochs),
@@ -78,6 +82,7 @@ def main() -> None:
     parser.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    ensure_active_paths(args.csv, args.output)
     raw = args.csv.read_bytes()
     frame = pd.read_csv(args.csv)
     label = args.label_column or frame.columns[-1]

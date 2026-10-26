@@ -21,6 +21,7 @@ from sc_poincare._disk import pairwise_disk_length
 from sc_poincare._fitting import _seed_from_connectivities, fit_disk_embedding
 from sc_poincare._objectives import CONDITIONAL_OBJECTIVE, DEFAULT_OBJECTIVE
 from sc_poincare._proximity import estimate_proximity
+from sc_poincare._research_policy import ensure_active_paths
 
 
 def ery_stage(label: str) -> int | None:
@@ -64,6 +65,7 @@ def main() -> None:
     parser.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2, 3, 4])
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    ensure_active_paths(args.csv, args.output)
     raw = args.csv.read_bytes()
     frame = pd.read_csv(args.csv)
     label_name = frame.columns[-1]

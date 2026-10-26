@@ -115,6 +115,9 @@ def test_closed_paths_and_symlinks_are_denied_but_sibling_inputs_work(tmp_path):
     ('examples/benchmark_graph_modes.py', ['{input}', '--output', '{output}']),
     ('examples/benchmark_small.py', ['{input}', '--output', '{output}']),
     ('examples/benchmark_objectives.py', ['{input}', '--output', '{output}']),
+    ('examples/compare_spectral_init.py', ['{input}', '--output', '{output}']),
+    ('examples/inspect_rare_populations.py', ['{input}', '--output', '{output}']),
+    ('examples/inspect_root_pseudotime.py', ['{input}', '--output', '{output}']),
 ])
 def test_training_clis_reject_closed_input_before_output(relative, options, tmp_path, monkeypatch):
     pytest.importorskip('threadpoolctl')
@@ -122,9 +125,59 @@ def test_training_clis_reject_closed_input_before_output(relative, options, tmp_
     module = load(relative)
     args = [x.format(input=source, output=output) for x in options]
     with pytest.raises(ValueError, match='Closed research tree'):
-        if relative.endswith(('benchmark_small.py', 'benchmark_objectives.py')):
+        if relative.endswith(('benchmark_small.py', 'benchmark_objectives.py',
+                              'compare_spectral_init.py', 'inspect_rare_populations.py',
+                              'inspect_root_pseudotime.py')):
             monkeypatch.setattr(sys, 'argv', ['runner', *args]);module.main()
         else: module.main(args)
+    assert not output.exists()
+
+
+@pytest.mark.parametrize('script', [
+    'compare_spectral_init', 'inspect_rare_populations', 'inspect_root_pseudotime',
+    'inspect_pbmc3k_frozen', 'inspect_pbmc3k_graph_stress',
+])
+@pytest.mark.parametrize('symlink', [False, True])
+def test_research_fitting_clis_reject_closed_output_before_loading(script, symlink, tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    archive = closed(tmp_path)
+    output = archive / 'result.json'
+    if symlink:
+        link = tmp_path / 'result.json'
+        link.symlink_to(output)
+        output = link
+    monkeypatch.setitem(sys.modules, 'scanpy', SimpleNamespace())
+    module = load(f'examples/{script}.py')
+    options = [] if 'pbmc3k' in script else [str(tmp_path / 'missing.csv')]
+    monkeypatch.setattr(sys, 'argv', [script, *options, '--output', str(output)])
+    with pytest.raises(ValueError, match='Closed research tree'):
+        module.main()
+    assert not (archive / 'result.json').exists()
+
+
+@pytest.mark.parametrize('script', ['inspect_pbmc3k_frozen', 'inspect_pbmc3k_graph_stress'])
+@pytest.mark.parametrize('closed_cache', ['directory', 'pbmc3k_raw.h5ad', 'pbmc3k_processed.h5ad'])
+def test_pbmc_fits_reject_closed_dataset_cache(script, closed_cache, tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    archive = closed(tmp_path)
+    datasetdir = archive
+    if closed_cache != 'directory':
+        datasetdir = tmp_path / 'active'
+        datasetdir.mkdir()
+        (datasetdir / closed_cache).symlink_to(archive / closed_cache)
+
+    def deny_read():
+        pytest.fail('Must check dataset paths before reading or downloading')
+
+    monkeypatch.setitem(sys.modules, 'scanpy', SimpleNamespace(
+        settings=SimpleNamespace(datasetdir=datasetdir),
+        datasets=SimpleNamespace(pbmc3k=deny_read, pbmc3k_processed=deny_read),
+    ))
+    module = load(f'examples/{script}.py')
+    output = tmp_path / 'out.json'
+    monkeypatch.setattr(sys, 'argv', [script, '--output', str(output)])
+    with pytest.raises(ValueError, match='Closed research tree'):
+        module.main()
     assert not output.exists()
 
 

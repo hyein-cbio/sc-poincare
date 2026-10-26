@@ -13,6 +13,8 @@ import time
 from pathlib import Path
 
 from sc_poincare.experimental import GraphStressConfig, fit_graph_stress, prepare_graph_stress
+from sc_poincare._research_policy import ensure_active_paths
+from scipy.spatial.distance import cdist
 
 
 def _frozen():
@@ -31,9 +33,11 @@ def main() -> None:
     parser.add_argument("--seeds", type=int, nargs="+", default=[0, 1, 2])
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
+    ensure_active_paths(args.output)
     frozen = _frozen()
     names, features, label_table = frozen.prepare()
     setup = prepare_graph_stress(features, config=GraphStressConfig(local_bandwidth="local_radius"))
+    feature_distance = cdist(features, features)
     runs = []
     for seed in args.seeds:
         started = time.perf_counter()
@@ -51,7 +55,7 @@ def main() -> None:
             "epochs_run": int(result.n_epochs),
             "stop_reason": "epoch_limit",
             "fitting_seconds": time.perf_counter() - started,
-            "feature_distance_rank": frozen.feature_rank(result.coordinates, features),
+            "feature_distance_rank": frozen.feature_rank(result.coordinates, features, feature_distance=feature_distance),
             "labeled_cells": int(kept.sum()),
             "purity_k15": scores,
         })

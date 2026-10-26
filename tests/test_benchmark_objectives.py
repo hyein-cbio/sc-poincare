@@ -17,6 +17,112 @@ def _module():
     return module
 
 
+def _research_module(name, monkeypatch):
+    from types import SimpleNamespace
+    monkeypatch.setitem(sys.modules, 'scanpy', SimpleNamespace())
+    file = Path(__file__).resolve().parents[1] / 'examples' / f'{name}.py'
+    spec = importlib.util.spec_from_file_location(name, file)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.mark.parametrize('script,helper', [
+    ('benchmark_objectives', '_neighbor_purity'),
+    ('inspect_pbmc3k_frozen', 'purity'),
+    ('inspect_rare_populations', 'neighbor_purity'),
+])
+def test_purity_excludes_self_with_coincident_coordinates(script, helper, monkeypatch):
+    module = _research_module(script, monkeypatch)
+    scores = getattr(module, helper)(np.zeros((6, 2)), np.arange(6), k=2)
+    assert scores['overall'] == 0.
+    assert all(value == 0. for value in scores.values())
+
+
+@pytest.mark.parametrize('script,helper', [
+    ('compare_spectral_init', 'distance_rank'),
+    ('inspect_pbmc3k_frozen', 'feature_rank'),
+])
+def test_feature_rank_uses_cdist_and_accepts_reusable_distances(script, helper, monkeypatch):
+    from scipy.spatial.distance import cdist
+    from scipy.stats import spearmanr
+    from sc_poincare._disk import pairwise_disk_length
+    module = _research_module(script, monkeypatch)
+    rng = np.random.default_rng(8)
+    features = rng.normal(size=(6, 4))
+    coordinates = rng.normal(scale=.1, size=(6, 2))
+    reference = np.linalg.norm(features[:, None] - features[None, :], axis=-1)
+    mask = ~np.eye(len(features), dtype=bool)
+    expected = spearmanr(reference[mask], pairwise_disk_length(coordinates)[mask]).statistic
+    calls = []
+
+    def tracked_cdist(left, right):
+        calls.append((left.shape, right.shape))
+        return cdist(left, right)
+
+    monkeypatch.setattr(module, 'cdist', tracked_cdist)
+    rank = getattr(module, helper)
+    assert rank(coordinates, features) == pytest.approx(expected)
+    assert rank(coordinates, features, feature_distance=reference) == pytest.approx(expected)
+    assert calls == [((6, 4), (6, 4))]
+
+
+def test_spectral_comparison_reuses_feature_distances_across_seeds(monkeypatch):
+    from types import SimpleNamespace
+    from scipy.spatial.distance import cdist
+    module = _research_module('compare_spectral_init', monkeypatch)
+    calls = []
+
+    def tracked_cdist(left, right):
+        calls.append(left.shape)
+        return cdist(left, right)
+
+    def fit(target, *, initial_coordinates, **kwargs):
+        return SimpleNamespace(coordinates=initial_coordinates, best_loss=1.,
+                               stop_reason='epoch_limit', n_epochs=1)
+
+    monkeypatch.setattr(module, 'cdist', tracked_cdist)
+    monkeypatch.setattr(module, 'fit_disk_embedding', fit)
+    result = module.compare(np.random.default_rng(8).normal(size=(8, 3)),
+                            n_neighbors=3, sigma=1., epochs=1, seeds=[0, 1])
+    assert len(result['runs']) == 4
+    assert calls == [(8, 3)]
+
+
+@pytest.mark.parametrize('script', ['inspect_pbmc3k_frozen', 'inspect_pbmc3k_graph_stress'])
+def test_pbmc_drivers_reuse_feature_distances_without_downloading(script, tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    from scipy.spatial.distance import cdist
+    frozen = _research_module('inspect_pbmc3k_frozen', monkeypatch)
+    module = frozen if script.endswith('_frozen') else _research_module(script, monkeypatch)
+    features = np.random.default_rng(8).normal(size=(20, 3))
+    coordinates = np.random.default_rng(9).normal(scale=.05, size=(20, 2))
+    names = np.array([str(i) for i in range(20)])
+    labels = pd.Series(['a'] * 10 + ['b'] * 10, index=names)
+    monkeypatch.setattr(frozen, 'prepare', lambda: (names, features, labels))
+    report = SimpleNamespace(coordinates=coordinates, best_loss=1., best_epoch=1,
+                             current_loss=1., stop_reason='epoch_limit', n_epochs=1)
+    if module is frozen:
+        monkeypatch.setattr(frozen, 'fit_disk_embedding', lambda *a, **kw: report)
+    else:
+        monkeypatch.setattr(module, '_frozen', lambda: frozen)
+        monkeypatch.setattr(module, 'prepare_graph_stress', lambda *a, **kw: object())
+        monkeypatch.setattr(module, 'fit_graph_stress', lambda *a, **kw: report)
+    calls = []
+
+    def tracked_cdist(left, right):
+        calls.append(left.shape)
+        return cdist(left, right)
+
+    monkeypatch.setattr(frozen, 'cdist', tracked_cdist)
+    monkeypatch.setattr(module, 'cdist', tracked_cdist)
+    output = tmp_path / 'result.json'
+    monkeypatch.setattr(sys, 'argv', [script, '--seeds', '0', '1', '--output', str(output)])
+    module.main()
+    assert len(json.loads(output.read_text())['runs']) == 2
+    assert calls == [(20, 3)]
+
+
 def test_benchmark_uses_common_initialization_and_never_fits_labels(tmp_path,monkeypatch):
     pytest.importorskip('torch')
     data=pd.DataFrame(np.random.default_rng(4).normal(size=(12,3)),columns=['a','b','c'])
