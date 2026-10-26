@@ -1,20 +1,17 @@
 # Experimental graph stress embeddings
 
-The optional `sc_poincare.experimental` API combines a graph-distance target
-with a local neighborhood distribution. It is a different method from the
-package's default RFA symmetric KL. The default `tl.poincare_map` and its
-parameters remain unchanged.
+The `sc_poincare.experimental` API combines a graph-distance target with a local
+neighborhood distribution. It is a different method from RFA symmetric KL. The
+operator has selected its fixed MU recipe as the provisional public
+`tl.poincare_map` default; `method="rfa"` preserves the previous fitter/defaults.
+See the [migration guide](mu-default-migration.md) for method-specific arguments.
+The low-level numerical/checkpoint implementation described here is unchanged.
 
-The [development study](embedding-study.md) found limited improvements in
+The [source-branch development study](https://github.com/hyein-cbio/sc-poincare/blob/3489e586caaa5b0408a0751220d6349426457bfe/docs/embedding-study.md) found limited improvements in
 Moignard neighborhood diagnostics and terminal visibility. Paul retains
 population-level losses, and the Euclidean controls also improve. This API
 does not establish a general biological advantage or a hyperbolic-specific
 benefit.
-
-The [controlled mechanism follow-up](embedding-followup.md) completed 30
-local-teacher fits and seven global-target screening fits before user-requested
-closure. No candidate is promoted. Its separate aggregate record distinguishes
-failed criteria from cancelled selection, confirmations and transfer.
 
 ## Explicit feature input
 
@@ -81,12 +78,15 @@ These are preprocessing choices for those comparisons, not core branches.
    scaled to maximum initial disk radius 0.2. The study adds normal jitter
    with standard deviation 0.0002. Optimize tangent coordinates u with Adam
    (`learning_rate=0.02*2/3`), mapping them to
-   `x=tanh(norm(u)/2)*u/norm(u)` in the disk. `optimizer_name="sgd"` uses that
-   same objective, learning rate and initial tangent array. It is not the
-   default, and an Adam checkpoint does not resume as SGD.
-   `geometry="lorentz"` optimizes the spatial coordinates of the hyperboloid
-   point that starts on the same disk initialization. Its epoch-0 distances
-   match the disk. It is not the default.
+   `x=tanh(norm(u)/2)*u/norm(u)` in the disk.
+
+The low-level fitter also accepts `optimizer_name="sgd"` with the same
+objective, learning rate and initial tangent array; Adam checkpoints cannot
+resume as SGD. `geometry="lorentz"` optimizes the spatial coordinates of the
+hyperboloid point initialized from the same disk points, so epoch-zero
+distances match. Neither option is a default. The original details remain in
+the [historical graph-stress snapshot](history/graph-stress-remaining-tasks/graph-stress.md)
+and [embedding follow-up](embedding-followup.md).
 
 Local radii are bounded below by the median positive radius times 1e-6. The
 diagnostics record zero radii and Gaussian underflow. A row with no positive
@@ -107,24 +107,19 @@ quadratic target storage. No negative sampling is used.
 
 ## Teacher diagnostics
 
-Prepared `setup.metadata` describes the input-only teacher without changing
-its weights, the target, initializer or optimization:
+Preparation includes `teacher_entropy_mean` (nats), entropy and incoming-mass
+quantiles at `teacher_diagnostic_quantiles=[0,.1,.5,.9,1]`, maximum asymmetry and
+maximum row-normalization error. The keys are `teacher_entropy_quantiles`,
+`teacher_incoming_mass_quantiles`, `teacher_max_asymmetry` and
+`teacher_max_row_sum_error`. These describe the prepared teacher, not biological
+balance; the weights, initializer, targets and fit are not changed.
 
-| Metadata key | Meaning |
-|---|---|
-| `teacher_diagnostic_quantiles` | Quantile levels `[0, .1, .5, .9, 1]` |
-| `teacher_entropy_mean` | Mean row entropy in nats, with zero probabilities contributing zero |
-| `teacher_entropy_quantiles` | Distribution of row entropy |
-| `teacher_incoming_mass_quantiles` | Distribution of column sums |
-| `teacher_max_asymmetry` | Maximum elementwise absolute difference between P and its transpose |
-| `teacher_max_row_sum_error` | Maximum absolute deviation of a row sum from one |
-
-Mean teacher entropy lower-bounds local cross entropy over probability
-distributions; the geometric model need not attain that bound. Subtracting it
-gives teacher-specific KL, not a common biological score across teachers.
-Row-normalizing symmetric affinities generally produces an asymmetric,
-reversible teacher. Unequal incoming mass is valid normalization; neither
-symmetry nor equal incoming mass establishes equal population weighting.
+Row-normalized symmetric affinities generally produce a reversible but
+asymmetric teacher. Mean entropy lower-bounds local cross entropy; subtracting
+it yields teacher-specific KL, not a common biological score across teachers.
+The [latest upstream adoption report](astra-mechanism-adoption.md) records the
+analytic checks and the 37-execution research evidence, including failed
+promotion criteria and cancelled work. No candidate target rule was promoted.
 
 ## Results, progress and state recovery
 
@@ -155,12 +150,11 @@ configuration and source hashes with the checkpoint. A disk-recentered display
 is not an optimizer checkpoint.
 
 This Adam-state resume contract is separate from the existing RFA fitter's
-coordinate-only warm start. Caller checkpoint I/O and external storage remain
+coordinate-only warm start. The later [display API extraction](display-layout-deprecation.md)
+changes the `_disk.py` source fingerprint; pre-extraction states are not silently
+migrated, even though retained fitting/geometry calculations pass parity checks.
+Caller checkpoint I/O and external storage remain
 the caller's responsibility; a progress callback is not durable storage.
-
-Adding these diagnostics changes source and metadata hashes. Historical
-checkpoints require their archived original implementation; numerical
-equivalence does not bypass the strict source/provenance checks on resume.
 
 ## Resource limits and reproducibility
 
@@ -179,24 +173,28 @@ numerical port checks establish computation agreement, not new biological
 validation. Review input hashes, package versions, graph construction, update
 counts and stopping state when reproducing results.
 
-Port verification used the full Paul CSV, explicit label exclusion and PCA20.
+Adding teacher metadata at upstream `9f369a9` changes `experimental.py` source,
+metadata and checkpoint digests. Historical states still need their original
+sources; numerical equality does not bypass strict resume checks. Separate
+main before/after processes matched 262 array/tensor/scalar checks on full Paul
+PCA20 over 20 updates in both geometries/bandwidths. These are software regression
+checks, not new independent biological fits.
+
+The earlier source branch reported that its port verification used the full Paul CSV,
+explicit label exclusion and PCA20.
 For both bandwidth rules, the first 20 updates matched the frozen research
 implementation exactly in coordinates, initialization and loss trace (maximum
 absolute difference 0.0); input, target and teacher hashes also matched. The
-46 experimental tests cover an independent objective, both geometries, chunk
+43 experimental tests cover an independent objective, both geometries, chunk
 gradients, persisted Adam resume, input validation and CLI checkpoint recovery.
-The complete suite passed 210 tests; one optional Scanpy test was skipped
-because Scanpy was unavailable. These checks do not repeat the 1,500-update
-biological comparison with the maintained port.
-
-After adding teacher metadata, separate processes compared pinned commit
-`3489e58` with the maintained source on the same full Paul PCA20 input. Both
-bandwidths and geometries matched exactly through 20 updates: 50 prepared-array,
-coordinate, loss, best-state and Adam-state comparisons had maximum difference
-0.0. The new metadata/source/checkpoint digests intentionally differ. Three
-analytic metadata tests cover a uniform triangle in both bandwidths and an
-asymmetric three-point line. These regression checks are separate from the
-37 completed quality-comparison executions in the follow-up.
+The source branch's complete suite passed 207 tests; one optional Scanpy test
+was skipped because Scanpy was unavailable. These are historical source-branch
+claims, not the current main suite count. In this integration, both bandwidth
+rules also match the frozen branch exactly over 20 updates on the fixed Paul
+subset (coordinates, initial arrays, current/best and loss trace). The
+[bounded MU scale-up study](mu-scaleup-study.md) defines the frozen protocol and
+records its completed results, including exact control continuations. Neither
+set of numerical checks by itself proves biological superiority.
 
 For long jobs, follow the [recovery protocol](benchmarking.md#long-run-preparation-and-recovery).
 Archive externally accessible copies of inputs or their pinned download
