@@ -10,6 +10,12 @@ introducing an approximate large-N method. **Superiority over the authors'
 PoincaréMaps implementation has not yet been established.** Improvements over
 our own previous code are not evidence of superiority over that reference.
 
+The source branch's benchmark documentation is retained in the
+[historical snapshot](history/graph-stress-remaining-tasks/benchmarking.md);
+its [embedding study](embedding-study.md) and
+[follow-up](embedding-followup.md) are historical evidence, not a revision of
+the protocols or results below.
+
 ## Scope and provenance
 
 - Begin with ToggleSwitch (200 cells) and MyeloidProgenitors (640 cells).

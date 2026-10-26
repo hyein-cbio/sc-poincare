@@ -1,0 +1,440 @@
+{
+  "input_sha256": "25769c7044c1411a043ce00c41177aaf1e2091a950106caaa5976d7649e94fc1",
+  "n_cells": 200,
+  "n_neighbors": 15,
+  "sigma": 1.0,
+  "gamma": 2.0,
+  "epochs": 200,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4
+  ],
+  "primary_anchor_seed": 714,
+  "sensitivity_anchor_seed": 716,
+  "selection": "lowest training loss of each objective; evaluation scores were not used to choose a fit",
+  "runs": [
+    {
+      "anchor_seed": 714,
+      "objective": "symmetric_kl",
+      "seed": 0,
+      "best_loss": 354.6479828309889,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.33573144180782183,
+        0.3982334037576159,
+        0.8876145506637693,
+        0.9404078139193609,
+        0.9423528196713409
+      ],
+      "k15_global": 0.8122850054885353,
+      "k15_local": 0.7098958333333333,
+      "k20_global": 0.8100070228687969,
+      "k30_global": 0.8086026325428279,
+      "feature_global": 0.7149471960039946
+    },
+    {
+      "anchor_seed": 714,
+      "objective": "conditional_symmetric_kl",
+      "seed": 0,
+      "best_loss": 332.79230620098036,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.3285141843513478,
+        0.3814974017798726,
+        0.8871050799943987,
+        0.9381329962314832,
+        0.9395754595159505
+      ],
+      "k15_global": 0.808636251939391,
+      "k15_local": 0.7062499999999999,
+      "k20_global": 0.8063535028233172,
+      "k30_global": 0.8049502433174125,
+      "feature_global": 0.7112658227647493
+    },
+    {
+      "anchor_seed": 714,
+      "objective": "symmetric_kl",
+      "seed": 1,
+      "best_loss": 354.6497464145597,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.3356855456335875,
+        0.39841396262495427,
+        0.8875894564216987,
+        0.94042531651316,
+        0.9423763788533042
+      ],
+      "k15_global": 0.812270752930871,
+      "k15_local": 0.7124999999999999,
+      "k20_global": 0.8099926515651952,
+      "k30_global": 0.8085878891696873,
+      "feature_global": 0.7149340792213177
+    },
+    {
+      "anchor_seed": 714,
+      "objective": "conditional_symmetric_kl",
+      "seed": 1,
+      "best_loss": 332.7902780070558,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.32861947828005533,
+        0.3816797033703794,
+        0.8870619391693274,
+        0.9381300353166174,
+        0.9395628613457832
+      ],
+      "k15_global": 0.8086047628957433,
+      "k15_local": 0.7,
+      "k20_global": 0.8063224303136746,
+      "k30_global": 0.8049181607967556,
+      "feature_global": 0.7112450351790413
+    },
+    {
+      "anchor_seed": 714,
+      "objective": "symmetric_kl",
+      "seed": 2,
+      "best_loss": 354.6242303168349,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.3357972667461777,
+        0.3984547620206288,
+        0.8875803812883549,
+        0.940420161900974,
+        0.942384705524652
+      ],
+      "k15_global": 0.812256281573139,
+      "k15_local": 0.7109375,
+      "k20_global": 0.8099782853151993,
+      "k30_global": 0.808574208930682,
+      "feature_global": 0.7148918170125765
+    },
+    {
+      "anchor_seed": 714,
+      "objective": "conditional_symmetric_kl",
+      "seed": 2,
+      "best_loss": 332.7978075769978,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.3286755687329481,
+        0.3817885337334427,
+        0.8870854546158238,
+        0.9381234436802703,
+        0.9395789502619211
+      ],
+      "k15_global": 0.8086021969445396,
+      "k15_local": 0.7062499999999999,
+      "k20_global": 0.8063191452961053,
+      "k30_global": 0.8049151648512375,
+      "feature_global": 0.7111901346493557
+    },
+    {
+      "anchor_seed": 714,
+      "objective": "symmetric_kl",
+      "seed": 3,
+      "best_loss": 354.6329965908807,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.33569701733874174,
+        0.398230574730074,
+        0.8875920706962686,
+        0.9404412744772123,
+        0.9423868264536301
+      ],
+      "k15_global": 0.8122640096990099,
+      "k15_local": 0.7119791666666666,
+      "k20_global": 0.8099861983921456,
+      "k30_global": 0.808582523117247,
+      "feature_global": 0.7149109051531161
+    },
+    {
+      "anchor_seed": 714,
+      "objective": "conditional_symmetric_kl",
+      "seed": 3,
+      "best_loss": 332.8147180506229,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.32868049049164755,
+        0.3816310781700801,
+        0.8870841950439383,
+        0.9381201474546683,
+        0.9395814579898277
+      ],
+      "k15_global": 0.8085245927451825,
+      "k15_local": 0.7015624999999999,
+      "k20_global": 0.8062418708975191,
+      "k30_global": 0.8048378645173346,
+      "feature_global": 0.7111174027781816
+    },
+    {
+      "anchor_seed": 714,
+      "objective": "symmetric_kl",
+      "seed": 4,
+      "best_loss": 354.61494440439554,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.33579447509073773,
+        0.39832505073735475,
+        0.8875834896627625,
+        0.9404439920467618,
+        0.9423895436177174
+      ],
+      "k15_global": 0.8122731748172831,
+      "k15_local": 0.7026041666666666,
+      "k20_global": 0.8099954074259619,
+      "k30_global": 0.808590976731412,
+      "feature_global": 0.7149520976790901
+    },
+    {
+      "anchor_seed": 714,
+      "objective": "conditional_symmetric_kl",
+      "seed": 4,
+      "best_loss": 332.8318142033979,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.3286619950852719,
+        0.38154413260047165,
+        0.8870975392945464,
+        0.9380546467493383,
+        0.9395281097237954
+      ],
+      "k15_global": 0.8086225082406063,
+      "k15_local": 0.7046874999999999,
+      "k20_global": 0.8063399179645854,
+      "k30_global": 0.804936113379388,
+      "feature_global": 0.7112457722038598
+    },
+    {
+      "anchor_seed": 716,
+      "objective": "symmetric_kl",
+      "seed": 0,
+      "best_loss": 354.6479828309889,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.33573144180782183,
+        0.3982334037576159,
+        0.8876145506637693,
+        0.9404078139193609,
+        0.9423528196713409
+      ],
+      "k15_global": 0.818861408178897,
+      "k15_local": 0.7239583333333333,
+      "k20_global": 0.8166798715550185,
+      "k30_global": 0.8153176290271332,
+      "feature_global": 0.7282017209827909
+    },
+    {
+      "anchor_seed": 716,
+      "objective": "conditional_symmetric_kl",
+      "seed": 0,
+      "best_loss": 332.79230620098036,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.3285141843513478,
+        0.3814974017798726,
+        0.8871050799943987,
+        0.9381329962314832,
+        0.9395754595159505
+      ],
+      "k15_global": 0.815320374543066,
+      "k15_local": 0.7166666666666667,
+      "k20_global": 0.8131332304695457,
+      "k30_global": 0.8117723204694646,
+      "feature_global": 0.7249001311056484
+    },
+    {
+      "anchor_seed": 716,
+      "objective": "symmetric_kl",
+      "seed": 1,
+      "best_loss": 354.6497464145597,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.3356855456335875,
+        0.39841396262495427,
+        0.8875894564216987,
+        0.94042531651316,
+        0.9423763788533042
+      ],
+      "k15_global": 0.8188889699428875,
+      "k15_local": 0.7249999999999999,
+      "k20_global": 0.816708564896101,
+      "k30_global": 0.8153463151327058,
+      "feature_global": 0.7282625311611668
+    },
+    {
+      "anchor_seed": 716,
+      "objective": "conditional_symmetric_kl",
+      "seed": 1,
+      "best_loss": 332.7902780070558,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.32861947828005533,
+        0.3816797033703794,
+        0.8870619391693274,
+        0.9381300353166174,
+        0.9395628613457832
+      ],
+      "k15_global": 0.8152618629311891,
+      "k15_local": 0.7197916666666666,
+      "k20_global": 0.8130749397060436,
+      "k30_global": 0.8117134093460905,
+      "feature_global": 0.7248382831232453
+    },
+    {
+      "anchor_seed": 716,
+      "objective": "symmetric_kl",
+      "seed": 2,
+      "best_loss": 354.6242303168349,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.3357972667461777,
+        0.3984547620206288,
+        0.8875803812883549,
+        0.940420161900974,
+        0.942384705524652
+      ],
+      "k15_global": 0.8188908871443643,
+      "k15_local": 0.7218749999999998,
+      "k20_global": 0.8167107590620327,
+      "k30_global": 0.8153490396171891,
+      "feature_global": 0.72823557115779
+    },
+    {
+      "anchor_seed": 716,
+      "objective": "conditional_symmetric_kl",
+      "seed": 2,
+      "best_loss": 332.7978075769978,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.3286755687329481,
+        0.3817885337334427,
+        0.8870854546158238,
+        0.9381234436802703,
+        0.9395789502619211
+      ],
+      "k15_global": 0.8153250277375961,
+      "k15_local": 0.7260416666666666,
+      "k20_global": 0.8131382174227806,
+      "k30_global": 0.8117770520188439,
+      "feature_global": 0.7248830041246065
+    },
+    {
+      "anchor_seed": 716,
+      "objective": "symmetric_kl",
+      "seed": 3,
+      "best_loss": 354.6329965908807,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.33569701733874174,
+        0.398230574730074,
+        0.8875920706962686,
+        0.9404412744772123,
+        0.9423868264536301
+      ],
+      "k15_global": 0.8189308753122185,
+      "k15_local": 0.7213541666666666,
+      "k20_global": 0.8167507802373383,
+      "k30_global": 0.8153891406677877,
+      "feature_global": 0.7283037088592376
+    },
+    {
+      "anchor_seed": 716,
+      "objective": "conditional_symmetric_kl",
+      "seed": 3,
+      "best_loss": 332.8147180506229,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.32868049049164755,
+        0.3816310781700801,
+        0.8870841950439383,
+        0.9381201474546683,
+        0.9395814579898277
+      ],
+      "k15_global": 0.8152417715515576,
+      "k15_local": 0.7124999999999999,
+      "k20_global": 0.8130543937313489,
+      "k30_global": 0.8116931148979137,
+      "feature_global": 0.7247906298989917
+    },
+    {
+      "anchor_seed": 716,
+      "objective": "symmetric_kl",
+      "seed": 4,
+      "best_loss": 354.61494440439554,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.33579447509073773,
+        0.39832505073735475,
+        0.8875834896627625,
+        0.9404439920467618,
+        0.9423895436177174
+      ],
+      "k15_global": 0.8189048129769844,
+      "k15_local": 0.7187499999999999,
+      "k20_global": 0.8167243927809986,
+      "k30_global": 0.8153624426477724,
+      "feature_global": 0.7282714838080036
+    },
+    {
+      "anchor_seed": 716,
+      "objective": "conditional_symmetric_kl",
+      "seed": 4,
+      "best_loss": 332.8318142033979,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "gradient_norm_count": 200,
+      "radius_quantiles": [
+        0.3286619950852719,
+        0.38154413260047165,
+        0.8870975392945464,
+        0.9380546467493383,
+        0.9395281097237954
+      ],
+      "k15_global": 0.8152197869140843,
+      "k15_local": 0.7140624999999999,
+      "k20_global": 0.8130325772337248,
+      "k30_global": 0.8116708179490599,
+      "feature_global": 0.7247637102137306
+    }
+  ]
+}

@@ -20,6 +20,12 @@ performance, biological equivalence, or hyperbolic-specific superiority.
 - [Astra adoption status](astra-adoption-status.md): completed, deferred and rejected work.
 - [Benchmark/recovery protocol](benchmarking.md): resource, provenance and evaluation contracts.
 
+Historical graph-stress branch documentation is preserved in the
+[roadmap snapshot](history/graph-stress-remaining-tasks/development-roadmap.md);
+its [embedding study](embedding-study.md) and
+[follow-up](embedding-followup.md) remain historical evidence, not changes to
+the current baseline or research gates.
+
 ## Completed software integration
 
 - [x] Preserve the corrected RFA numerical path behind an explicit selector.

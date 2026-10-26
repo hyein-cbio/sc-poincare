@@ -80,6 +80,14 @@ These are preprocessing choices for those comparisons, not core branches.
    (`learning_rate=0.02*2/3`), mapping them to
    `x=tanh(norm(u)/2)*u/norm(u)` in the disk.
 
+The low-level fitter also accepts `optimizer_name="sgd"` with the same
+objective, learning rate and initial tangent array; Adam checkpoints cannot
+resume as SGD. `geometry="lorentz"` optimizes the spatial coordinates of the
+hyperboloid point initialized from the same disk points, so epoch-zero
+distances match. Neither option is a default. The original details remain in
+the [historical graph-stress snapshot](history/graph-stress-remaining-tasks/graph-stress.md)
+and [embedding follow-up](embedding-followup.md).
+
 Local radii are bounded below by the median positive radius times 1e-6. The
 diagnostics record zero radii and Gaussian underflow. A row with no positive
 teacher mass is rejected; the implementation does not insert artificial edge

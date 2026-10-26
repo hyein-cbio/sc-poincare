@@ -1,6 +1,8 @@
 """Observational progress snapshots and explicit warm starts for long runs."""
 from __future__ import annotations
 
+from pathlib import Path
+
 import numpy as np
 import pytest
 
@@ -34,6 +36,13 @@ def test_callbacks_are_observational_and_report_evaluated_checkpoints(monkeypatc
     np.testing.assert_array_equal(actual.coordinates, expected.coordinates)
     np.testing.assert_array_equal(actual.loss_trace, expected.loss_trace)
     assert actual.best_loss == expected.best_loss
+    assert len(actual.gradient_norm_trace) == len(actual.loss_trace) == 4
+    assert all(np.isfinite(actual.gradient_norm_trace)) and min(actual.gradient_norm_trace) > 0
+    assert actual.coordinates is not actual.loss_trace
+    best_epoch = int(np.argmin(actual.loss_trace))
+    assert _fitting.evaluate_alignment(actual.coordinates, target, 2.) == pytest.approx(actual.loss_trace[best_epoch], rel=1e-8)
+    assert actual.current_coordinates.shape == actual.coordinates.shape
+    assert _fitting.evaluate_alignment(actual.current_coordinates, target, 2.) == pytest.approx(actual.loss_trace[-1], rel=1e-8)
 
 
 @pytest.mark.parametrize('backend', ['torch', 'numpy'])
@@ -78,3 +87,40 @@ def test_training_projection_roundoff_is_accepted_for_warm_start():
     report = _fitting.fit_disk_embedding(_target(), initial_coordinates=initial, n_epochs=1)
     assert report.initialization == 'provided'
     assert np.isfinite(report.best_loss)
+
+
+def test_distance_rank_prefers_a_feature_aligned_layout():
+    import importlib.util
+    file = Path(__file__).resolve().parents[1] / 'examples' / 'compare_spectral_init.py'
+    spec = importlib.util.spec_from_file_location('compare_spectral_init', file)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    features = np.random.default_rng(0).normal(size=(12, 2))
+    aligned = features / (np.linalg.norm(features, axis=1).max() * 4)
+    random = np.random.default_rng(1).normal(scale=0.05, size=(12, 2))
+    assert module.distance_rank(aligned, features) > module.distance_rank(random, features)
+
+
+def test_neighbor_purity_is_one_for_a_single_label():
+    import importlib.util
+    file = Path(__file__).resolve().parents[1] / 'examples' / 'inspect_rare_populations.py'
+    spec = importlib.util.spec_from_file_location('inspect_rare_populations', file)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    coordinates = np.random.default_rng(2).normal(size=(8, 2))
+    labels = np.array(['a'] * 8)
+    scores = module.neighbor_purity(coordinates, labels, k=3)
+    assert scores['a'] == 1
+    assert scores['overall'] == 1
+
+
+def test_ery_stage_uses_only_the_ery_prefix():
+    import importlib.util
+    file = Path(__file__).resolve().parents[1] / 'examples' / 'inspect_root_pseudotime.py'
+    spec = importlib.util.spec_from_file_location('inspect_root_pseudotime', file)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module.ery_stage('1Ery') == 1
+    assert module.ery_stage('6Ery') == 6
+    assert module.ery_stage('14Mo') is None
+    assert module.ery_stage('root') is None

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
+from scipy import sparse
 from scipy.sparse.csgraph import connected_components
 
 from sc_poincare._proximity import estimate_proximity, forest_accessibility, local_affinity
@@ -79,3 +80,112 @@ def test_forest_accessibility_is_row_stochastic():
     # Not a strict theorem for every seed, but the diagonal must dominate.
     assert np.all(np.diag(p) > 1.0 / 18)
     assert close >= 0 and far >= 0
+
+
+def test_multiscale_mixture_is_separate_from_sigma_and_from_the_default():
+    from sc_poincare._proximity import multiscale_forest_accessibility
+    rng = np.random.default_rng(4)
+    features = rng.normal(size=(18, 6))
+    weights, _ = local_affinity(features, n_neighbors=5, kernel_width=1.5)
+    unit = forest_accessibility(weights)
+    prox = estimate_proximity(features, n_neighbors=5, kernel_width=1.5)
+    np.testing.assert_allclose(prox.accessibility, unit, atol=1e-12)
+    mixed = multiscale_forest_accessibility(weights)
+    repeated = multiscale_forest_accessibility(weights, taus=(1.0, 1.0))
+    np.testing.assert_allclose(repeated, unit, atol=1e-10)
+    assert not np.allclose(mixed, unit, atol=1e-6)
+    assert np.all(mixed >= -1e-12)
+    np.testing.assert_allclose(mixed.sum(axis=1), 1.0, atol=1e-8)
+    wider, _ = local_affinity(features, n_neighbors=5, kernel_width=3.0)
+    assert not np.allclose(forest_accessibility(wider), unit, atol=1e-6)
+    with pytest.raises(ValueError):
+        multiscale_forest_accessibility(weights, taus=(1.0,))
+    with pytest.raises(ValueError):
+        multiscale_forest_accessibility(weights, taus=(0.1, -1.0))
+
+
+def test_multiscale_solves_once_per_scale_and_releases_intermediates(monkeypatch):
+    import weakref
+    from sc_poincare import _proximity as proximity
+    weights = sparse.csr_matrix([[0., 1., 0.], [1., 0., 2.], [0., 2., 0.]])
+    taus = (.1, .5, 1., 3., 10.)
+    laplacian = np.diag(np.asarray(weights.sum(axis=1)).ravel()) - weights.toarray()
+    expected = sum(np.linalg.inv(np.eye(3) + tau * laplacian) for tau in taus) / len(taus)
+    solver = proximity._row_stochastic_forest
+    references = []
+    calls = []
+
+    def tracked_solver(matrix, block_size):
+        assert sum(ref() is not None for ref in references) <= 1
+        calls.append(matrix.toarray())
+        result = solver(matrix, block_size)
+        references.append(weakref.ref(result))
+        return result
+
+    monkeypatch.setattr(proximity, '_row_stochastic_forest', tracked_solver)
+    actual = proximity.multiscale_forest_accessibility(
+        weights, taus=taus, block_size=2, max_dense_bytes=4 * 8 * 3**2,
+    )
+    assert len(calls) == len(taus)
+    for actual_laplacian, tau in zip(calls, taus):
+        np.testing.assert_allclose(actual_laplacian, tau * laplacian)
+    np.testing.assert_allclose(actual, expected, atol=1e-12)
+    np.testing.assert_allclose(actual.sum(axis=1), 1.)
+
+
+@pytest.mark.parametrize('kwargs,exception', [
+    ({'max_dense_bytes': 4 * 8 * 3**2 - 1}, MemoryError),
+    ({'block_size': 0}, ValueError),
+    ({'block_size': True}, ValueError),
+    ({'taus': (.1, float('nan'))}, ValueError),
+    ({'taus': (.1, True)}, ValueError),
+])
+def test_multiscale_validation_happens_before_any_solve(monkeypatch, kwargs, exception):
+    from sc_poincare import _proximity as proximity
+    monkeypatch.setattr(proximity, '_row_stochastic_forest',
+                        lambda *a: pytest.fail('Validation must not solve'))
+    with pytest.raises(exception):
+        proximity.multiscale_forest_accessibility(sparse.eye(3), **kwargs)
+
+
+@pytest.mark.parametrize('weights', [
+    sparse.csr_matrix((0, 0)), sparse.csr_matrix((2, 3)),
+    sparse.csr_matrix([[0., -1.], [1., 0.]]),
+    sparse.csr_matrix([[0., np.inf], [1., 0.]]),
+])
+def test_forest_paths_share_affinity_validation(weights):
+    from sc_poincare._proximity import multiscale_forest_accessibility
+    for solver in (forest_accessibility, multiscale_forest_accessibility):
+        with pytest.raises(ValueError):
+            solver(weights)
+
+
+def test_degree_aware_widths_match_sigma_only_when_degrees_match():
+    from sc_poincare._proximity import degree_aware_affinity
+    n = 6
+    rows, cols, data = [], [], []
+    for i in range(n):
+        j = (i + 1) % n
+        rows.extend((i, j))
+        cols.extend((j, i))
+        data.extend((1.0, 1.0))
+    cycle = sparse.csr_matrix((data, (rows, cols)), shape=(n, n))
+    uniform = float(np.exp(-0.5 * (1.0 / 2.0) ** 2))
+    aware = degree_aware_affinity(cycle, sigma=2.0)
+    assert np.allclose(aware.toarray(), aware.toarray().T)
+    assert np.allclose(aware.data, uniform)
+    # Star: center degree 3, leaves degree 1. mean degree is 1.5.
+    star_rows = [0, 0, 0, 1, 2, 3]
+    star_cols = [1, 2, 3, 0, 0, 0]
+    star = sparse.csr_matrix((np.ones(len(star_rows)), (star_rows, star_cols)), shape=(4, 4))
+    star_aware = degree_aware_affinity(star, sigma=2.0).toarray()
+    leaf_sigma = 2.0 * np.sqrt(3.0 * 1.0) / 1.5
+    leaf_weight = float(np.exp(-0.5 * (1.0 / leaf_sigma) ** 2))
+    assert leaf_sigma != 2.0
+    np.testing.assert_allclose(star_aware[0, 1], leaf_weight)
+    features = np.random.default_rng(4).normal(size=(18, 6))
+    weights, _ = local_affinity(features, n_neighbors=5, kernel_width=1.5)
+    prox = estimate_proximity(features, n_neighbors=5, kernel_width=1.5)
+    np.testing.assert_allclose(prox.weights.toarray(), weights.toarray())
+    with pytest.raises(ValueError):
+        degree_aware_affinity(cycle, sigma=0.0)

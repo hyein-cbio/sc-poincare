@@ -195,6 +195,14 @@ fixed-canvas marker-center crowding/width from intrinsic separation.
   [reference-condition search](docs/reference-parity.md): separate numerical
   policies/recipes and their limitations, not default-MU validation.
 
+The original graph-stress branch's documentation is preserved in the
+[historical snapshot](docs/history/graph-stress-remaining-tasks/README.md), with
+its [embedding study](docs/embedding-study.md),
+[follow-up](docs/embedding-followup.md), [main comparison](docs/main-comparison.md)
+and [frozen conditional-KL protocol](docs/frozen-conditional-kl-protocol.md).
+These are historical records, not changes to the current default or validation
+claims.
+
 Display usability is a separate endpoint, not proof of biological correctness.
 Known development data, small init jitter and fixed budgets do not establish
 independent-data performance, arbitrary-initialization robustness, branch order,

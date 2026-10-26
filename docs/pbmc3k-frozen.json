@@ -1,0 +1,73 @@
+{
+  "dataset": "scanpy pbmc3k raw counts",
+  "rule": "normalize_total 1e4, log1p, 1000 seurat HVGs, PCA 20 full SVD, k=15, sigma=median, symmetric_kl, gamma=2, 200 updates",
+  "labels": "pbmc3k_processed louvain, evaluation only, aligned by barcode after fitting",
+  "n_cells": 2700,
+  "n_features": 20,
+  "sigma_effective": 3.6673589702375233,
+  "runs": [
+    {
+      "seed": 0,
+      "initialization": "spectral",
+      "best_loss": 13189.867719847152,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "fitting_seconds": 33.26558811599989,
+      "feature_distance_rank": 0.820839556441565,
+      "labeled_cells": 2638,
+      "purity_k15": {
+        "overall": 0.8819812989638616,
+        "B cells": 0.9701754385964912,
+        "CD14+ Monocytes": 0.9297222222222223,
+        "CD4 T cells": 0.9247086247086248,
+        "CD8 T cells": 0.6915611814345992,
+        "Dendritic cells": 0.4756756756756757,
+        "FCGR3A+ Monocytes": 0.7804444444444443,
+        "Megakaryocytes": 0.7022222222222224,
+        "NK cells": 0.8246753246753248
+      }
+    },
+    {
+      "seed": 1,
+      "initialization": "spectral",
+      "best_loss": 13188.730037994059,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "fitting_seconds": 33.28096064700003,
+      "feature_distance_rank": 0.82081681999254,
+      "labeled_cells": 2638,
+      "purity_k15": {
+        "overall": 0.8820318423047764,
+        "B cells": 0.9736842105263158,
+        "CD14+ Monocytes": 0.9309722222222222,
+        "CD4 T cells": 0.9241841491841494,
+        "CD8 T cells": 0.689662447257384,
+        "Dendritic cells": 0.4774774774774775,
+        "FCGR3A+ Monocytes": 0.7826666666666667,
+        "Megakaryocytes": 0.7022222222222224,
+        "NK cells": 0.819047619047619
+      }
+    },
+    {
+      "seed": 2,
+      "initialization": "spectral",
+      "best_loss": 13187.74396215588,
+      "stop_reason": "epoch_limit",
+      "epochs_run": 200,
+      "fitting_seconds": 31.832647293000264,
+      "feature_distance_rank": 0.8207884227410002,
+      "labeled_cells": 2638,
+      "purity_k15": {
+        "overall": 0.882132928986606,
+        "B cells": 0.9715399610136451,
+        "CD14+ Monocytes": 0.9309722222222222,
+        "CD4 T cells": 0.9245920745920744,
+        "CD8 T cells": 0.6921940928270042,
+        "Dendritic cells": 0.4774774774774775,
+        "FCGR3A+ Monocytes": 0.7773333333333333,
+        "Megakaryocytes": 0.7022222222222224,
+        "NK cells": 0.8225108225108225
+      }
+    }
+  ]
+}

@@ -270,6 +270,54 @@ def _validate_forest_tau(value):
     return tau
 
 
+def degree_aware_affinity(lengths: sparse.spmatrix, sigma: float) -> sparse.csr_matrix:
+    """Gaussian weights with ``sigma_ij = sigma * sqrt(deg_i deg_j) / mean(deg)``.
+
+    Degrees are the row degrees of ``lengths``. This does not change
+    ``local_affinity`` or ``estimate_proximity``.
+    """
+    if isinstance(sigma, (bool, np.bool_)) or not np.isscalar(sigma):
+        raise ValueError("sigma must be a finite positive number.")
+    sigma = float(sigma)
+    if not np.isfinite(sigma) or sigma <= 0:
+        raise ValueError("sigma must be a finite positive number.")
+    lengths = lengths.tocsr().astype(np.float64)
+    if lengths.shape[0] != lengths.shape[1] or lengths.shape[0] == 0:
+        raise ValueError("lengths must be a nonempty square matrix.")
+    if not np.all(np.isfinite(lengths.data)) or np.any(lengths.data < 0):
+        raise ValueError("lengths must be finite and nonnegative.")
+    degree = np.diff(lengths.indptr).astype(np.float64)
+    if np.any(degree <= 0):
+        raise ValueError("degree-aware widths need a positive degree on every row.")
+    mean_degree = float(np.mean(degree))
+    coo = lengths.tocoo()
+    edge_sigma = sigma * np.sqrt(degree[coo.row] * degree[coo.col]) / mean_degree
+    with np.errstate(over="ignore", under="ignore"):
+        data = np.exp(-0.5 * (coo.data / edge_sigma) ** 2)
+    return sparse.csr_matrix((data, (coo.row, coo.col)), shape=lengths.shape)
+
+
+def _forest_laplacian(affinity, block_size, max_dense_bytes):
+    if affinity.shape[0] != affinity.shape[1] or affinity.shape[0] == 0:
+        raise ValueError("affinity must be a nonempty square matrix.")
+    check_dense_budget(affinity.shape[0], max_dense_bytes)
+    if isinstance(block_size, bool) or not isinstance(block_size, (int, np.integer)) or block_size < 1:
+        raise ValueError("block_size must be a positive integer.")
+    affinity = affinity.tocsr().astype(np.float64)
+    if not np.all(np.isfinite(affinity.data)) or np.any(affinity.data < 0):
+        raise ValueError("affinity must be finite and nonnegative.")
+    degree = np.asarray(affinity.sum(axis=1)).reshape(-1)
+    return sparse.diags(degree) - affinity
+
+
+def _scaled_laplacian(laplacian, tau):
+    if tau != 1.0:
+        laplacian = laplacian * tau
+        if not np.isfinite(laplacian.data).all():
+            raise FloatingPointError('forest_tau overflowed the Laplacian.')
+    return laplacian
+
+
 def forest_accessibility(
     affinity: sparse.spmatrix,
     *,
@@ -284,21 +332,13 @@ def forest_accessibility(
     Output and normalization remain dense despite blocked RHS solves.
     """
     forest_tau = _validate_forest_tau(forest_tau)
-    if affinity.shape[0] != affinity.shape[1] or affinity.shape[0] == 0:
-        raise ValueError("affinity must be a nonempty square matrix.")
-    check_dense_budget(affinity.shape[0], max_dense_bytes)
-    if isinstance(block_size, bool) or not isinstance(block_size, (int, np.integer)) or block_size < 1:
-        raise ValueError("block_size must be a positive integer.")
-    affinity = affinity.tocsr().astype(np.float64)
-    if not np.all(np.isfinite(affinity.data)) or np.any(affinity.data < 0):
-        raise ValueError("affinity must be finite and nonnegative.")
-    n_obs = affinity.shape[0]
-    degree = np.asarray(affinity.sum(axis=1)).reshape(-1)
-    laplacian = sparse.diags(degree) - affinity
-    if forest_tau != 1.0:
-        laplacian = laplacian * forest_tau
-        if not np.isfinite(laplacian.data).all():
-            raise FloatingPointError('forest_tau overflowed the Laplacian.')
+    laplacian = _forest_laplacian(affinity, block_size, max_dense_bytes)
+    return _row_stochastic_forest(_scaled_laplacian(laplacian, forest_tau), block_size)
+
+
+def _row_stochastic_forest(laplacian: sparse.spmatrix, block_size: int) -> np.ndarray:
+    """Exact ``(I + L)^{-1}`` followed by the existing nonnegative row normalization."""
+    n_obs = laplacian.shape[0]
     shifted = (sparse.eye(n_obs, format="csc") + laplacian.tocsc()).tocsc()
     factorization = splu(shifted)
     accessibility = np.empty((n_obs, n_obs), dtype=np.float64)
@@ -312,6 +352,50 @@ def forest_accessibility(
     row_mass = accessibility.sum(axis=1, keepdims=True)
     accessibility /= np.clip(row_mass, a_min=1e-12, a_max=None)
     return accessibility
+
+
+def multiscale_forest_accessibility(
+    affinity: sparse.spmatrix,
+    taus: tuple[float, ...] = (0.1, 10.0),
+    *,
+    block_size: int = 128,
+    max_dense_bytes: int | None = DEFAULT_MAX_DENSE_BYTES,
+) -> np.ndarray:
+    """Equal mixture of ``(I + tau L)^{-1}`` on one fixed affinity.
+
+    Tau changes propagation range. It does not change edge weights, which remain
+    the caller's sigma choice. ``estimate_proximity`` defaults to unit tau.
+    Accumulation retains one mean and one solve result regardless of scale count.
+    """
+    if isinstance(taus, (str, bytes)):
+        raise ValueError("taus must contain at least two finite positive scales.")
+    try:
+        taus = tuple(taus)
+    except TypeError:
+        raise ValueError("taus must contain at least two finite positive scales.") from None
+    if len(taus) < 2:
+        raise ValueError("taus must contain at least two finite positive scales.")
+    scales = []
+    for tau in taus:
+        if isinstance(tau, (bool, np.bool_)) or not np.isscalar(tau):
+            raise ValueError("each forest tau must be a finite positive number.")
+        scale = float(tau)
+        if not np.isfinite(scale) or scale <= 0:
+            raise ValueError("each forest tau must be a finite positive number.")
+        scales.append(scale)
+    laplacian = _forest_laplacian(affinity, block_size, max_dense_bytes)
+    mixed = None
+    for scale in scales:
+        part = _row_stochastic_forest(_scaled_laplacian(laplacian, scale), block_size)
+        if mixed is None:
+            mixed = part
+        else:
+            mixed += part
+        del part
+    mixed /= len(scales)
+    np.maximum(mixed, 0.0, out=mixed)
+    mixed /= np.clip(mixed.sum(axis=1, keepdims=True), a_min=1e-12, a_max=None)
+    return mixed
 
 
 def estimate_proximity(
