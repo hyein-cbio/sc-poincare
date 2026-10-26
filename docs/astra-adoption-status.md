@@ -86,7 +86,7 @@ These integrations do not redesign the low-level objectives or optimizers:
 | Global/local and rare-population trade-offs | Some fidelity/purity losses remain; bigger spread is not always more information |
 | Multiscale/degree-aware RFA rules | Scalar tau is exposed and probed; no validated mixture or adaptive weighting rule exists |
 | Universal bounded spectral defaults | Explicit controls are implemented/probed; quality changes and population losses prevent automatic replacement |
-| Matrix-free / row-solve / sparse / landmark scale-up | Can change normalization/gradients and initialization; validate against the exact reference first |
+| Matrix-free / row-solve / sparse / landmark scale-up | Landmark-column fits avoid a stored N-by-N target and match exact MU when every cell is a landmark. Exact Moignard 3934 was checked; Paul PCA20 hash does not reproduce here, and the partial objective is not promoted |
 | Intrinsic adaptive optimizers, Lorentz/chart changes | Numerical range and optimization/biology are different questions |
 | Curvature, dimension, temperature/global scale | Not established universal improvements; avoid data-name-specific tuning |
 | Full Planaria cold-start result | Exact default guard still refuses it; lost warm-start observations are not validated evidence |
@@ -119,7 +119,9 @@ These integrations do not redesign the low-level objectives or optimizers:
 1. Keep the provisional MU fixed default reproducible and explicit in pipelines;
    keep local-radius and RFA selectable rather than guessing a winner by data name.
 2. Validate new biological data/markers and a convergence/initialization protocol.
-3. Design one declared approximation against the exact 2,730/3,934-cell reference.
+3. Reproduce the exact Paul 2,730×20 PCA hash, then repeat the landmark
+   reference check. Exact Moignard 3,934 is already checked; the partial
+   landmark objective is not a new default.
 4. Only then consider broader scale/default or publication claims. The current
    exact implementation is not atlas-scale merely because a few thousand cells fit.
 

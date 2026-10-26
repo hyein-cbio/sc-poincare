@@ -190,4 +190,8 @@ x = ad.AnnData(features)
 dr.tl.poincare_map(x, method='rfa', n_neighbors=4, n_epochs=1)
 assert x.uns['poincare']['method'] == 'rfa'
 '''
-    subprocess.run([sys.executable, '-I', '-c', script, str(tmp_path)], check=True, capture_output=True, text=True)
+    result = subprocess.run(
+        [sys.executable, '-c', script, str(tmp_path)],
+        capture_output=True, text=True)
+    if result.returncode:
+        raise AssertionError(result.stderr or result.stdout)

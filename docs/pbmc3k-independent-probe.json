@@ -1,0 +1,55 @@
+{
+  "input_id": "pbmc3k-10x",
+  "used_in_recorded_studies": false,
+  "labels_entered_fitting": false,
+  "biological_validation": false,
+  "promoted": false,
+  "spectral_defaults_changed": false,
+  "n_cells": 2700,
+  "n_genes": 32738,
+  "feature_shape": [
+    2700,
+    20
+  ],
+  "feature_sha256": "076856d9ccc8913d268625b693f019c5974c2f8b35510723f045d1adb24947b6",
+  "recipe": {
+    "normalize_total": 10000.0,
+    "log1p": true,
+    "hvg": 1000,
+    "flavor": "seurat",
+    "pca": 20,
+    "svd_solver": "full",
+    "epochs": 20,
+    "seed": 0,
+    "n_neighbors": 15
+  },
+  "loss_at_0": 1.0686160828984066,
+  "loss_at_20": 0.7431210206543177,
+  "root_rule": "disk origin, applied only after fitting",
+  "marker_pseudotime_spearman": {
+    "CD3D": -0.5376246291719081,
+    "CD14": 0.37067738216210494,
+    "MS4A1": 0.1975859961754297,
+    "GNLY": 0.20173981204908334,
+    "FCER1A": 0.031390991907411306,
+    "PPBP": 0.10106140424677588
+  },
+  "spectral_default": {
+    "initialization": "spectral",
+    "reason": "",
+    "solver": "arpack_eigsh",
+    "converged": true,
+    "max_eigen_residual": 6.1901639416388424e-15,
+    "spectral_tol": 0.0,
+    "spectral_maxiter": null
+  },
+  "spectral_extended": {
+    "initialization": "spectral",
+    "reason": "",
+    "solver": "arpack_eigsh",
+    "converged": true,
+    "max_eigen_residual": 1.3050210117411908e-09,
+    "spectral_tol": 1e-08,
+    "spectral_maxiter": 5000
+  }
+}

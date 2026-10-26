@@ -51,6 +51,15 @@ def test_marker_center_overlap_and_duplicate_points():
     assert duplicate['intrinsic_nearest_other_median'] == 0
 
 
+def test_fixed_disk_visibility_rejects_three_dimensional_evaluations():
+    evaluation = report([[0, 0, 0], [0, 0, .1], [0, 0, .2], [0, 0, .3]])
+    assert evaluation.coordinates.shape == (4, 3)
+    with pytest.raises(ValueError, match='two-dimensional'):
+        evaluate_visibility(evaluation)
+    with pytest.raises(ValueError, match='two-dimensional'):
+        plot_visibility_pair(evaluation, evaluation)
+
+
 def test_one_label_has_undefined_other_population_metrics():
     r = evaluate_visibility(report([[0, 0], [.1, 0], [.2, 0], [.3, 0]], ['A'] * 4))
     assert r['cross_label_overlap_fraction'] is None

@@ -1,0 +1,27 @@
+{
+  "coordinates": "stored exact classical initial coordinates, not a fitted embedding",
+  "seed": 714,
+  "labels_used_only_after_neighbor_retrieval": true,
+  "comparisons": [
+    {
+      "n_anchors": 64,
+      "n_valid": 64,
+      "n_undefined": 0,
+      "mean_spearman": 0.7696555503940832
+    },
+    {
+      "n_anchors": 128,
+      "n_valid": 128,
+      "n_undefined": 0,
+      "mean_spearman": 0.7851507556108126
+    },
+    {
+      "n_anchors": 256,
+      "n_valid": 256,
+      "n_undefined": 0,
+      "mean_spearman": 0.7639577613598582
+    }
+  ],
+  "promoted": false,
+  "biological_validation": false
+}

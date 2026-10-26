@@ -1,0 +1,37 @@
+{
+  "input_id": "moignard2015-development-reference",
+  "feature_sha256": "674f8b380ba701d56afdeae8b35edf8b1269dfaa8e8483bc7e9c7e9c12999aa0",
+  "labels_entered_fitting": false,
+  "promoted": false,
+  "biological_validation": false,
+  "optimizer": {
+    "learning_rate": 0.013333333333333334,
+    "epochs": 20,
+    "seed": 0,
+    "adam_loss_at_20": 0.6951748011324365,
+    "sgd_loss_at_20": 1.0367909624404343,
+    "adam_loss_at_0": 1.0369251291534152,
+    "sgd_loss_at_0": 1.0369251291534152
+  },
+  "multiscale": {
+    "rule": "equal mixture of forest_tau 0.1 and 10, then row-normalized",
+    "tau_one_seconds": 1.6380267499998808,
+    "mixture_seconds": 3.396879780999825,
+    "max_abs_difference_from_tau_one": 0.1738323413625481,
+    "mixture_row_sum_error": 4.440892098500626e-16,
+    "tau_one_loss_trace": [
+      53431.59792340505,
+      53406.1268322339,
+      53380.72137697716,
+      53355.387822917895,
+      53330.13353930168
+    ],
+    "mixture_loss_trace": [
+      28827.908236816398,
+      28817.693355944208,
+      28807.479074212566,
+      28797.265988405383,
+      28787.054692578036
+    ]
+  }
+}

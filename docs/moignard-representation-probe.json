@@ -1,0 +1,27 @@
+{
+  "input_id": "moignard2015-development-reference",
+  "labels_entered_fitting": false,
+  "epochs": 0,
+  "seed": 0,
+  "representations": [
+    {
+      "representation": "supplied_42",
+      "shape": [
+        3934,
+        42
+      ],
+      "loss_at_0": 1.0369251291534152
+    },
+    {
+      "representation": "pca20_of_supplied",
+      "shape": [
+        3934,
+        20
+      ],
+      "loss_at_0": 1.0250336574565528
+    }
+  ],
+  "promoted": false,
+  "biological_validation": false,
+  "spectral_defaults_changed": false
+}

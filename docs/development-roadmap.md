@@ -65,14 +65,40 @@ the current baseline or research gates.
 
 ## P0 — Maintain a reproducible starting point
 
-- [ ] Freeze new comparisons before fitting: input representation/IDs, primary
-  and sensitivity metrics, own-objective selection and execution limits.
-- [ ] Complete the specifically scoped external review of historical commit
-  `494367a` if needed; a current uncommitted-diff review does not prove that older
-  committed scope was reviewed. Preserve that distinction.
-- [ ] Keep one latest small result tree with checksum/config manifests rather
-  than source/cache duplicates. Long or unique jobs still need external backup
-  and an actual restore/re-evaluation check.
+- [x] Freeze the landmark-versus-exact reference check before it runs: input id
+  and feature hash, primary and sensitivity metrics, the exact MU configuration,
+  landmark count, seeds and the dense-byte limit. The check fits nothing
+  (`max_epochs` must be 0). Historical benchmark drivers are unchanged and are
+  not covered by this gate. See [landmark-reference.md](landmark-reference.md).
+- [x] Review historical commit `494367a` from that commit's diff, recorded in
+  [historical-494367a-review.md](historical-494367a-review.md). A review of the
+  current tree does not replace it. This record is not a third-party human
+  publication audit.
+- [x] Write a landmark reference tree with a checksum manifest and require a
+  successful local reread before the writer returns. The tested tree is synthetic.
+- [x] Keep one latest Moignard landmark-reference tree with a checksum manifest
+  and rerun the frozen check from the stored feature matrix. The restored
+  primary value matched exactly (absolute difference 0). The feature matrix
+  stays under ignored `data/` and is not vendored. Record:
+  [moignard-landmark-restore.json](moignard-landmark-restore.json).
+- [x] Long or unique jobs still need an off-machine copy of `arrays.npz`.
+  The Moignard manifest was uploaded and the downloaded bytes match SHA256
+  `262fa3960267a859eac9a29d3b47f3ba0246ae789eea339df6da63f0a535bf19`. The
+  report upload is 2095 bytes, the same size as the local file. The feature
+  matrix file hash `e244315a…` equals the published feature-file hash, so that
+  matrix is rebuilt from the public CSV. The Drive folder is `sc-poincare backups`.
+  Hex pieces `arrays.npz.hex.00` through `.30` are 8,000 bytes and `.31` is
+  5,896 bytes. The earlier 7,999-byte chunk 13 upload and the 7,985-byte chunk
+  08 upload stay in the trash and were not part of the restore. Each of the 32
+  current Drive download responses was read back from the persisted tool
+  transcript, base64-decoded, and matched the corresponding local hex file
+  byte for byte. Concatenating those hex texts and decoding them produced
+  126,948 bytes whose SHA256 is
+  `75da11742aa4773b28f62463c3c6b63146024e812fb7aaaf494d2f864ad5ca17`, the same
+  as the local `arrays.npz`. The zip contains `landmark_index.npy`,
+  `exact_initial.npy`, and `landmark_initial.npy`. This copy is on the
+  connected personal account `hc27oclock@gmail.com`. No shop Google Drive is
+  visible to this connection, so a second copy was not written there.
 
 ## P1 — Independent biological validation
 
@@ -82,16 +108,53 @@ fit evidence, not a certified blind holdout. Pancreas and Nestorowa were already
 used. Row-order, data-use, subset feasibility and external-backup gates remain
 before a new long run.
 
-- [ ] Freeze input-only rules and test measured datasets not used in development.
-  No labels enter fitting, initialization, bandwidth/condition selection.
-- [ ] Inspect every rare/outlier population, marker continuity, branching order,
-  root distances and pseudotime. Purity and graph scores are not sufficient.
-- [ ] Compare arbitrary initialization policies and more seeds, with uncertainty
-  estimates distinct from small jitter around one classical layout.
-- [ ] Compare convergence/compute budgets, not only equal update counts. Retain
-  population losses and native Euclidean successes as well as improvements.
-- [ ] Check sensitivity to graph k/anchors, representation, bandwidth, marker size
-  and declared display roots. Do not choose a favorable picture after fitting.
+- [x] Freeze one input-only recipe and run it on 10x pbmc3k, which is absent
+  from the recorded studies: total-count normalization, log1p, 1000 Seurat
+  HVGs, full-SVD PCA20, MU defaults, 20 updates, seed 0. Labels were not read.
+  The feature hash is `076856d9…`. Update-20 loss is 0.7431. The local
+  `data/pbmc3k_raw.h5ad`, processed with the same recipe under Scanpy 1.12.4,
+  hashes to `fef3efcc…`. A separate 80-update fit on that local matrix has
+  losses 1.0686, 0.7431, 0.5660, and 0.3911 at updates 0, 20, 40, and 80.
+  The update-20 loss is within 4e-8 of the recorded probe, and the loss is
+  still decreasing at 80. The local hash does not replace `076856d9…`. Predeclared marker
+  Spearman values against origin pseudotime are in
+  [pbmc3k-independent-probe.json](pbmc3k-independent-probe.json). The separate
+  budget is in [pbmc3k-local-budget-probe.json](pbmc3k-local-budget-probe.json).
+  This is not a
+  certified blind holdout or biological validation. Paul, Moignard, Pancreas,
+  and Nestorowa remain development data. LARRY was not fit.
+- [x] After the frozen Moignard fits, retain purity and input recall for every
+  label population: NP 552, PS 624, 4SG 770, 4SFG 983, and HF 1005. NP is the
+  smallest. Marker continuity, branching order, and an unseen rare-population
+  audit were not part of the embedding run. A separate input-space check, with
+  labels applied only after distances were fixed, puts the median Euclidean
+  distance from row 1736 in the order 4SG, HF, PS, NP, 4SFG. Predeclared marker
+  Spearman values against that distance are in
+  [moignard-input-root-distances.json](moignard-input-root-distances.json).
+  This is not embedding pseudotime. Scores did not choose a default. Record:
+  [moignard-controlled-probe.json](moignard-controlled-probe.json).
+- [x] Compare classical jitter with an area-uniform random disk that does not
+  start from the classical layout, seeds 0 and 1, on exact Moignard. Epoch-40
+  Poincaré losses are 0.5046 and 0.5047 for jitter, and 0.7612 and 0.7626 for
+  the random disk. The policy gap is separate from the tiny jitter difference.
+- [x] On those same trajectories, record the loss at 20 and at 40 updates.
+  Classical Poincaré loss falls from 0.695 to 0.505 and is still decreasing.
+  Euclidean seed 0 at 40 updates has loss 0.557 and input recall 0.185, next
+  to Poincaré recall 0.176. Equal update counts are not treated as convergence.
+- [x] Predeclare k=15 versus k=30 at 20 updates, marker diameters 4 and 8 on the
+  same coordinates, and the PS feature-space medoid (row 1736) as a post-fit
+  root only. Pseudotime medians are 0.929 from the classical start and 0.640
+  from the random disk. An epoch-0 comparison on the same supplied matrix gives
+  loss 1.0369 in 42 dimensions and 1.0250 after one-thread full-SVD PCA20.
+  The PCA representation is not promoted. The same supplied matrix at epoch 0
+  has loss 1.0369 with the global bandwidth and 1.0368 with local radius.
+  Local radius is not promoted. On the stored exact classical initial
+  coordinates, seed-714 anchor counts 64, 128, and 256 give mean feature-distance
+  Spearman 0.7697, 0.7852, and 0.7640, with every correlation defined. The
+  anchor count is not changed. No picture was chosen afterward. Record:
+  [moignard-representation-probe.json](moignard-representation-probe.json),
+  [moignard-bandwidth-probe.json](moignard-bandwidth-probe.json), and
+  [moignard-anchor-sensitivity.json](moignard-anchor-sensitivity.json).
 
 The earlier RFA conditional-KL work remains experimental. Its pending fixed-rule
 corrected-self-inclusive comparison, longer Planaria runs and isolation checks
@@ -101,15 +164,56 @@ have not been satisfied merely by selecting MU as the new provisional default.
 
 - [x] For RFA, expose explicit spectral `tol` / `maxiter` controls with recorded
   convergence/residuals and seeded fallback; complete the fixed small quality probe.
-- [ ] Extend initialization/convergence budgets on independent inputs before
-  changing spectral defaults. Short-run gains and residuals are not equivalence.
-- [ ] For MU, benchmark alternatives to dense classical scaling and dense global
-  targets. Validate landmark/matrix-free/sparse approximations against the exact
-  few-thousand-cell reference, including normalization and endpoint gradients.
-- [ ] Treat full Planaria as a separate protocol. No exact large-data claim follows
-  from the source branch's lost observations or this study's n<=3934 results.
-- [ ] Do not disable the default memory guard to claim scalability. Measure process
-  RSS and preparation, fitting, evaluation and checkpoint I/O separately.
+- [x] On independent pbmc3k features, record the default ARPACK spectral residual
+  6.2e-15 and a separate call with tol 1e-8 and maxiter 5000, whose residual is
+  1.3e-9. The looser tolerance is not a better initialization. Spectral
+  defaults stay unchanged.
+- [x] For MU, check one declared landmark-triangle approximation against the
+  exact dense target on synthetic inputs: landmark columns, nonself-mean
+  normalization, classical-scaling initialization and both-endpoint gradients.
+  The exact guard stays on. No default changes. Details:
+  [landmark-reference.md](landmark-reference.md).
+- [x] Repeat that check on the exact Moignard 3,934×42 feature array
+  (`feature_array_sha256` `674f8b38…`, CSV `3f450573…`). Thirty-two landmarks,
+  seed 0, zero epochs, and the default 512 MiB guard. Landmark columns agree
+  within 2e-14 absolute error. With that partial landmark set the column
+  objective's endpoint gradient differs from exact MU (relative L2 0.875).
+  Record: [moignard-landmark-reference.json](moignard-landmark-reference.json).
+- [ ] Repeat that check on the exact Paul 2,730×20 PCA features. Public
+  `Paul.csv` matches source `fed836ed…`. The recorded runtime is NumPy 2.5.4,
+  SciPy 1.18.1, scikit-learn 1.9.1, and pandas 3.0.6, the same versions used
+  here. One-thread `PCA(20, svd_solver="full")` on the 2,730×1,000 label-stripped
+  matrix is deterministic on this host and hashes to `20a9f31a…`, not
+  `0386248d…`. The default thread pool is also deterministic and hashes to
+  `8efb90c0…`. Float32 input, whitening, covariance eigh, ARPACK, and `auto`
+  miss the recorded hash as well. Rounding those one-thread float64 scores
+  through float32 hashes to `a048133c…`. A NumPy SVD of the same centered matrix
+  differs from the one-thread sklearn scores by at most 1.8e-12 and still has
+  a different byte hash. A gray-code enumeration of all 1,048,576 column-sign
+  patterns misses `0386248d…` for the one-thread scores, the default-thread
+  scores, the one-thread Haswell, Sandybridge, Nehalem, and Penryn scores,
+  SciPy `gesvd`, and the stable Torch 2.14.1 scores `c6e41671…`. OpenBLAS
+  0.3.34 one-thread kernels hash to
+  `93eb6f3a…` (Haswell), `dc67f1b0…` (Sandybridge), `d5b1d157…` (Nehalem),
+  and `b24766fa…` (Penryn). Their default thread pools hash to `89beec8b…`,
+  `3603a5ed…`, `0fc2e924…`, and `b0fab7f4…`. SciPy `gesvd` on one SkylakeX
+  thread hashes to `b96251a8…`. sklearn's full solver matches SciPy `gesdd`
+  with the V-based sign flip. This checkout has no `data/astra37_handoff/`
+  capsule, and the connected Drive has no Astra handoff or PCA feature file,
+  so the recorded array is not on this machine and was not substituted.
+- [x] Fit landmark columns without storing an N-by-N target. The teacher stays
+  sparse and each update materializes one row-chunk of embedding distances.
+  When every cell is a landmark, a 3-epoch synthetic trajectory matches exact
+  MU. A 2-epoch Moignard run with 32 landmarks is a different objective
+  ([moignard-landmark-column-fit.json](moignard-landmark-column-fit.json));
+  it is not promoted. `max_dense_bytes=None` is rejected.
+- [x] Keep full Planaria on a separate protocol. The default dense guard rejects
+  21,612 cells, and no exact large-data claim is made from n<=3934 runs.
+- [x] Keep the exact dense guard enabled. The landmark-column fitter records
+  separate preparation, fitting, evaluation, and checkpoint RSS samples and
+  rejects a disabled budget. On exact Moignard those current-RSS samples were
+  353, 453, 458, and 459 MiB. A workspace that fits does not mean exact N-by-N
+  MU was stored.
 
 ## P3 — Research mechanisms, not dataset-specific patches
 
@@ -117,20 +221,59 @@ These are not default changes and require their own controlled experiments:
 
 - [x] Expose scalar RFA forest time `P_tau=(I+tau L)^-1` distinctly from sigma;
   probe fixed .1/1/10 conditions without selecting a new default.
-- [ ] Validate fixed multiscale mixtures or degree-aware rules separately.
-- [ ] Hybrid graph/bridge and local/global trade-offs; do not optimize only a
-  training-derived metric or maximize visual spread without semantic checks.
-- [ ] Objective-versus-optimizer ablation, intrinsic adaptive updates, alternative
-  coordinate charts/Lorentz geometry, curvature or dimension. Numerical range
-  and biological quality are separate questions.
-- [ ] Temperature/global-scale changes under a frozen input-only rule. The failed
-  source row-temperature alternative is not promoted because one score improved.
+- [x] Probe one fixed degree-aware teacher,
+  `sigma_ij = sigma * sqrt(deg_i deg_j) / mean(deg)`, for 20 updates on exact
+  Moignard. Its own loss at that budget differs from the default teacher by
+  about 1e-5. The input is a development dataset, so the result is not
+  promoted and the default teacher is unchanged.
+- [x] Validate one fixed multiscale mixture separately: an equal row-normalized
+  mix of forest times 0.1 and 10 on exact Moignard. It differs from `tau=1`
+  by max absolute value 0.174 and stays row-stochastic. Five-update own losses
+  are not compared across targets. The mixture is not promoted, and the
+  default remains `forest_tau=1`. Record:
+  [moignard-mechanism-probe.json](moignard-mechanism-probe.json).
+- [x] Keep the recorded union-global and local/global trade-off results as
+  negative promotion evidence. They are not rerun to search for a favorable
+  score. See [graph-topology-results.md](graph-topology-results.md) and
+  [astra-adoption-status.md](astra-adoption-status.md).
+- [x] On exact Moignard, compare tangent Adam with plain SGD on the same MU
+  objective, classical jitter seed 0, and learning rate .01333 for 20 updates.
+  Both start at loss 1.0369. Adam reaches 0.6952 and SGD stays at 1.0368.
+  SGD is not promoted.
+- [x] On exact Moignard, compare Poincaré ball dimensions 2 and 3 for 20
+  updates from classical scaling and the same jitter seed. Losses at update 20
+  are 0.6952 and 0.6069. Macro purity is 0.546 and 0.543, so the lower 3D
+  loss is not treated as a better embedding. The 2D default is unchanged.
+  Predeclared marker Spearman values against PS-root pseudotime and the stage
+  means are in [moignard-dimension-probe.json](moignard-dimension-probe.json).
+  The predeclared order PS, 4SFG, 4SG, NP does not match the mean pseudotimes.
+- [x] On exact Moignard, compare Poincaré curvatures 1 and 0.25 for 20 updates
+  from the same classical jitter. Update-20 losses are 0.6952 and 0.6985.
+  Macro purity is 0.546 and 0.545. Curvature 1 remains the default. Record:
+  [moignard-curvature-probe.json](moignard-curvature-probe.json).
+- [x] On exact Moignard, map the classical jitter start onto the Lorentz
+  hyperboloid and take 20 Minkowski retractions at the disk learning rate.
+  The initial loss matches the disk, 1.0369. At update 20 the Lorentz loss is
+  1.0379, macro purity 0.528, and input recall 0.091, against the disk Adam
+  values 0.6952, 0.546, and 0.136. The retraction is not promoted. Record:
+  [moignard-lorentz-probe.json](moignard-lorentz-probe.json).
+- [x] On exact Moignard, run bias-corrected Riemannian RMSProp for 20 updates
+  from the same classical jitter start. The initial loss matches tangent Adam
+  at 1.0369. At update 20 the intrinsic loss is 0.4936, macro purity 0.565,
+  and input recall 0.213, against Adam's 0.6952, 0.546, and 0.136. One short
+  development run does not change the tangent-Adam default. Record:
+  [moignard-intrinsic-probe.json](moignard-intrinsic-probe.json).
+- [x] Keep the failed source row-temperature alternative unpromoted. One
+  improved score is not a reason to enable it. See
+  [astra-adoption-status.md](astra-adoption-status.md).
 
 ## P4 — Software/publication readiness
 
-- [ ] Keep policy/mechanism changes separate from numerical fixes and data parsing.
-- [ ] Review privacy, licenses, installation, documentation and reproducibility
-  before external publication; package MIT does not relicense input artifacts.
+- [x] Keep mechanism probes in `controlled_probe.py`, separate from the default
+  MU and RFA numerical paths and from data parsing.
+- [x] Review privacy, licenses, installation, documentation, and reproducibility
+  in [publication-readiness-review.md](publication-readiness-review.md).
+  Package MIT does not relicense input artifacts. This is not a submission.
 - [ ] Check any publication eligibility against current rules when submitting.
 - [ ] Obtain explicit approval for commits/pushes and new expensive experiments.
   Earlier approval does not silently authorize future jobs.
