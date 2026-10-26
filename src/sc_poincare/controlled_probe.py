@@ -203,6 +203,10 @@ def fit_from_initial(setup, initial, *, epochs, chunk_size=256, geometry="poinca
         teacher_matrix = np.array(teacher.toarray() if sparse.issparse(teacher) else teacher, dtype=np.float64, copy=True)
         if teacher_matrix.shape != setup.teacher.shape or not np.isfinite(teacher_matrix).all():
             raise ValueError("Replacement teacher must be finite and match the prepared shape.")
+        if np.any(teacher_matrix < 0):
+            raise ValueError("Replacement teacher entries must be nonnegative.")
+        if np.any(np.diag(teacher_matrix) != 0):
+            raise ValueError("Replacement teacher diagonal must be zero.")
         if not np.allclose(teacher_matrix.sum(1), 1., rtol=0., atol=1e-8):
             raise ValueError("Replacement teacher rows must sum to 1.")
     u = torch.tensor(tangent, dtype=torch.float64, requires_grad=True)
@@ -280,6 +284,45 @@ def _minkowski(left, right):
     return -left[..., 0] * right[..., 0] + (left[..., 1:] * right[..., 1:]).sum(dim=-1)
 
 
+def _lorentz_tangent_gradient(point, euclidean_gradient):
+    grad = euclidean_gradient.clone()
+    grad[:, 0] = -grad[:, 0]
+    return grad + _minkowski(point, grad)[:, None] * point
+
+
+def _probe_objective(point, target, teacher, config, chunk_size, *, lorentz=False, backward=False):
+    """Exact MU loss with one chunk's autograd intermediates live at a time."""
+    torch = experimental._torch()
+    from sc_poincare._fitting import _torch_disk_length
+    n = len(point)
+    point.grad = None
+    total = 0.
+    with torch.set_grad_enabled(backward):
+        for start in range(0, n, chunk_size):
+            stop = min(n, start + chunk_size)
+            rows = torch.arange(start, stop)
+            disk = point[:, 1:] / (point[:, :1] + 1.) if lorentz else point
+            distance = _torch_disk_length(disk[start:stop], disk, self_columns=rows)
+            t = target[start:stop]
+            error = ((distance - t) / config.distance_scale).square() / (
+                t / config.distance_scale).clamp_min(config.relative_floor).square()
+            global_loss = error.sum() / (n * (n - 1))
+            mask = torch.zeros_like(distance, dtype=torch.bool)
+            mask[torch.arange(stop - start), rows] = True
+            logits = (-distance / config.gamma).masked_fill(mask, -torch.inf)
+            logq = (logits - torch.logsumexp(logits, dim=1, keepdim=True)).masked_fill(mask, 0)
+            local_loss = -(teacher[start:stop] * logq).sum() / n
+            loss = global_loss + config.local_weight * local_loss
+            if not torch.isfinite(loss):
+                raise FloatingPointError("Nonfinite probe objective.")
+            total += float(loss.detach())
+            if backward:
+                loss.backward()
+    if backward and not torch.isfinite(point.grad).all():
+        raise FloatingPointError("Nonfinite probe gradient.")
+    return total
+
+
 def fit_lorentz(setup, initial, *, epochs, chunk_size=256, max_dense_bytes, learning_rate=None):
     """Stress on the hyperboloid chart, starting from the disk initialization.
 
@@ -296,41 +339,14 @@ def fit_lorentz(setup, initial, *, epochs, chunk_size=256, max_dense_bytes, lear
     target = torch.tensor(np.array(setup.target, dtype=np.float64, copy=True), dtype=torch.float64)
     teacher = torch.tensor(np.array(setup.teacher, dtype=np.float64, copy=True), dtype=torch.float64)
 
-    def loss_at(coordinates):
-        n = len(coordinates)
-        total = 0.
-        for start in range(0, n, chunk_size):
-            stop = min(n, start + chunk_size)
-            rows = torch.arange(start, stop)
-            left, right = coordinates[start:stop], coordinates
-            inner = -left[:, :1] * right[:, 0] + left[:, 1:] @ right[:, 1:].T
-            distance = torch.acosh(torch.clamp(-inner, min=1.))
-            distance = distance.clone()
-            distance[torch.arange(stop - start), rows] = 0
-            t = target[start:stop]
-            error = ((distance - t) / config.distance_scale).square() / (
-                t / config.distance_scale).clamp_min(config.relative_floor).square()
-            global_loss = error.sum() / (n * (n - 1))
-            mask = torch.zeros_like(distance, dtype=torch.bool)
-            mask[torch.arange(stop - start), rows] = True
-            logits = (-distance / config.gamma).masked_fill(mask, -torch.inf)
-            logq = (logits - torch.logsumexp(logits, dim=1, keepdim=True)).masked_fill(mask, 0)
-            local_loss = -(teacher[start:stop] * logq).sum() / n
-            total = total + global_loss + config.local_weight * local_loss
-        return total
-
     trace = []
     for epoch in range(epochs + 1):
-        if point.grad is not None:
-            point.grad = None
-        value = loss_at(point)
-        trace.append(float(value.detach()))
+        trace.append(_probe_objective(
+            point, target, teacher, config, chunk_size, lorentz=True, backward=epoch < epochs,
+        ))
         if epoch == epochs:
             break
-        value.backward()
-        grad = point.grad
-        inner = _minkowski(point.detach(), grad)
-        tangent = grad + inner[:, None] * point.detach()
+        tangent = _lorentz_tangent_gradient(point.detach(), point.grad)
         step = -rate * tangent
         norm = torch.sqrt(_minkowski(step, step).clamp_min(1e-24))
         updated = torch.cosh(norm)[:, None] * point.detach() + torch.sinh(norm)[:, None] * step / norm[:, None]
@@ -352,7 +368,7 @@ def fit_intrinsic_rmsprop(setup, initial, *, epochs, chunk_size=256, max_dense_b
     epochs = experimental._integer("epochs", epochs, 0)
     chunk_size = experimental._integer("chunk_size", chunk_size)
     torch = experimental._torch()
-    from sc_poincare._fitting import _shrink_torch, _torch_disk_length
+    from sc_poincare._fitting import _shrink_torch
     config = setup.config
     point = torch.tensor(np.asarray(initial, dtype=np.float64), dtype=torch.float64, requires_grad=True)
     target = torch.tensor(np.array(setup.target, dtype=np.float64, copy=True), dtype=torch.float64)
@@ -360,28 +376,9 @@ def fit_intrinsic_rmsprop(setup, initial, *, epochs, chunk_size=256, max_dense_b
     second = torch.zeros_like(point)
     trace = []
     for epoch in range(epochs + 1):
-        if point.grad is not None:
-            point.grad = None
-        n = len(point)
-        total = 0.
-        for start in range(0, n, chunk_size):
-            stop = min(n, start + chunk_size)
-            rows = torch.arange(start, stop)
-            distance = _torch_disk_length(point[start:stop], point, self_columns=rows)
-            t = target[start:stop]
-            error = ((distance - t) / config.distance_scale).square() / (
-                t / config.distance_scale).clamp_min(config.relative_floor).square()
-            global_loss = error.sum() / (n * (n - 1))
-            mask = torch.zeros_like(distance, dtype=torch.bool)
-            mask[torch.arange(stop - start), rows] = True
-            logits = (-distance / config.gamma).masked_fill(mask, -torch.inf)
-            logq = (logits - torch.logsumexp(logits, dim=1, keepdim=True)).masked_fill(mask, 0)
-            local_loss = -(teacher[start:stop] * logq).sum() / n
-            total = total + global_loss + config.local_weight * local_loss
-        trace.append(float(total.detach()))
+        trace.append(_probe_objective(point, target, teacher, config, chunk_size, backward=epoch < epochs))
         if epoch == epochs:
             break
-        total.backward()
         grad = point.grad
         if not torch.isfinite(grad).all():
             raise FloatingPointError("Non-finite intrinsic gradient.")

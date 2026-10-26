@@ -46,7 +46,9 @@ def main():
         fitted = fit_from_initial(
             setup, initial, epochs=20, chunk_size=256, max_dense_bytes=DENSE_BUDGET, curvature=curvature,
         )
-        evaluation = evaluate_neighborhoods(features, fitted["current"], labels, ks=(15,), geometry="poincare")
+        evaluation = evaluate_neighborhoods(
+            features, np.sqrt(curvature) * fitted["current"], labels, ks=(15,), geometry="poincare",
+        )
         metrics = evaluation.summary["metrics"]["15"]
         results.append(dict(
             curvature=curvature,

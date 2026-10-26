@@ -155,3 +155,131 @@ def test_full_planaria_stays_over_the_default_dense_guard():
     from sc_poincare._resources import DEFAULT_MAX_DENSE_BYTES, check_dense_budget
     with pytest.raises(MemoryError):
         check_dense_budget(21612, DEFAULT_MAX_DENSE_BYTES)
+
+
+def test_lorentz_gradient_is_the_metric_dual_and_a_descent_direction(features):
+    torch = pytest.importorskip('torch')
+    from sc_poincare.controlled_probe import _lorentz_tangent_gradient, _minkowski, lorentz_from_disk, fit_lorentz
+    point = torch.tensor(lorentz_from_disk(np.array([[.2, -.1], [.3, .2]])), dtype=torch.float64)
+    gradient = torch.tensor([[2., -1., .5], [-3., .5, 1.]], dtype=torch.float64)
+    original = gradient.clone()
+    direction = torch.tensor([[.5, 1., -.5], [.2, -.4, 1.]], dtype=torch.float64)
+    direction = direction + _minkowski(point, direction)[:, None] * point
+    projected = _lorentz_tangent_gradient(point, gradient)
+    torch.testing.assert_close(_minkowski(point, projected), torch.zeros(2, dtype=torch.float64), atol=1e-12, rtol=0.)
+    torch.testing.assert_close(_minkowski(projected, direction), (gradient * direction).sum(-1))
+    torch.testing.assert_close(gradient, original)
+
+    setup = experimental.prepare_graph_stress(features, config=experimental.GraphStressConfig(n_neighbors=4))
+    fitted = fit_lorentz(setup, classical_jitter(setup, 0), epochs=1,
+                         learning_rate=1e-4, max_dense_bytes=1 << 20)
+    assert fitted['loss_trace'][1] < fitted['loss_trace'][0]
+
+
+@pytest.mark.parametrize('coincident', [False, True])
+def test_lorentz_probe_has_finite_self_and_coincident_gradients(features, coincident):
+    torch = pytest.importorskip('torch')
+    from sc_poincare.controlled_probe import _probe_objective, lorentz_from_disk, fit_lorentz
+    setup = experimental.prepare_graph_stress(features, config=experimental.GraphStressConfig(n_neighbors=4))
+    initial = classical_jitter(setup, 0)
+    initial[0] = 0.
+    if coincident:
+        initial[1] = initial[0]
+    point = torch.tensor(lorentz_from_disk(initial), dtype=torch.float64, requires_grad=True)
+    target = torch.tensor(setup.target, dtype=torch.float64)
+    teacher = torch.tensor(setup.teacher, dtype=torch.float64)
+    value = _probe_objective(point, target, teacher, setup.config, 4, lorentz=True, backward=True)
+    assert np.isfinite(value)
+    assert torch.isfinite(point.grad).all()
+    fitted = fit_lorentz(setup, initial, epochs=2, chunk_size=4, max_dense_bytes=1 << 20)
+    assert np.isfinite(fitted['loss_trace']).all()
+    assert np.isfinite(fitted['current']).all()
+    np.testing.assert_allclose(fitted['minkowski_diag'], -1., atol=1e-8)
+
+
+@pytest.mark.parametrize('name', ['fit_lorentz', 'fit_intrinsic_rmsprop'])
+def test_probe_backpropagates_each_chunk_and_matches_full_objective(features, name, monkeypatch):
+    torch = pytest.importorskip('torch')
+    from sc_poincare import controlled_probe
+    fit = getattr(controlled_probe, name)
+    setup = experimental.prepare_graph_stress(features, config=experimental.GraphStressConfig(n_neighbors=4))
+    initial = classical_jitter(setup, 0)
+    whole = fit(setup, initial, epochs=2, chunk_size=len(features), max_dense_bytes=1 << 20)
+    backward = torch.Tensor.backward
+    calls = []
+
+    def track_backward(self, *args, **kwargs):
+        calls.append(self.numel())
+        return backward(self, *args, **kwargs)
+
+    monkeypatch.setattr(torch.Tensor, 'backward', track_backward)
+    chunked = fit(setup, initial, epochs=2, chunk_size=4, max_dense_bytes=1 << 20)
+    assert calls == [1] * (2 * ((len(features) + 3) // 4))
+    np.testing.assert_allclose(chunked['loss_trace'], whole['loss_trace'], rtol=1e-10, atol=1e-10)
+    np.testing.assert_allclose(chunked['current'], whole['current'], rtol=1e-10, atol=1e-10)
+
+
+@pytest.mark.parametrize('invalid', ['negative', 'diagonal'])
+@pytest.mark.parametrize('as_sparse', [False, True])
+def test_replacement_teacher_rejects_invalid_probabilities(features, invalid, as_sparse):
+    pytest.importorskip('torch')
+    from scipy import sparse
+    setup = experimental.prepare_graph_stress(features, config=experimental.GraphStressConfig(n_neighbors=4))
+    teacher = np.array(setup.teacher, copy=True)
+    if invalid == 'diagonal':
+        teacher = np.eye(len(features))
+        message = 'diagonal must be zero'
+    else:
+        teacher[0, 2] += teacher[0, 1] + .1
+        teacher[0, 1] = -.1
+        message = 'must be nonnegative'
+    np.testing.assert_allclose(teacher.sum(axis=1), 1.)
+    if as_sparse:
+        teacher = sparse.csr_matrix(teacher)
+    with pytest.raises(ValueError, match=message):
+        fit_from_initial(setup, classical_jitter(setup, 0), teacher=teacher, epochs=0, max_dense_bytes=1 << 20)
+
+
+def test_curvature_script_evaluates_in_the_matching_unit_ball(tmp_path, monkeypatch):
+    import hashlib
+    import importlib.util
+    from pathlib import Path
+    from types import SimpleNamespace
+    pd = pytest.importorskip('pandas')
+    path = Path(__file__).resolve().parents[1] / 'examples/run_moignard_curvature_probe.py'
+    spec = importlib.util.spec_from_file_location('curvature_probe_test', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    features = np.zeros((3934, 42))
+    frame = pd.DataFrame(features)
+    frame['label'] = 'synthetic'
+    source = tmp_path / 'synthetic.csv'
+    source.write_bytes(b'synthetic input; loading is stubbed')
+    monkeypatch.setattr(module, 'SOURCE', source)
+    monkeypatch.setattr(module, 'SOURCE_SHA', hashlib.sha256(source.read_bytes()).hexdigest())
+    monkeypatch.setattr(module, 'FEATURE_SHA', module.digest(features))
+    monkeypatch.setattr(module.pd, 'read_csv', lambda *_: frame)
+    monkeypatch.setattr(module, 'prepare_graph_stress', lambda *a, **k: object())
+    monkeypatch.setattr(module, 'classical_jitter', lambda *a: np.zeros((len(features), 2)))
+    unit_points = np.tile([.7, .2], (len(features), 1))
+    fitted_points = {}
+
+    def fake_fit(*args, curvature, **kwargs):
+        fitted_points[curvature] = unit_points / np.sqrt(curvature)
+        return dict(current=fitted_points[curvature], loss_trace=[1.] * 21)
+
+    evaluated = []
+
+    def check_evaluation(features, points, labels, **kwargs):
+        np.testing.assert_allclose(points, unit_points)
+        evaluated.append(points.copy())
+        return SimpleNamespace(summary={'metrics': {'15': dict(macro_purity=1., input_neighbor_recall=1., populations=[])}})
+
+    monkeypatch.setattr(module, 'fit_from_initial', fake_fit)
+    monkeypatch.setattr(module, 'evaluate_neighborhoods', check_evaluation)
+    monkeypatch.chdir(tmp_path)
+    (tmp_path / 'docs').mkdir()
+    module.main()
+    assert len(evaluated) == 2
+    assert np.all(np.linalg.norm(fitted_points[.25], axis=1) > 1.)
+    np.testing.assert_array_equal(fitted_points[1.], unit_points)

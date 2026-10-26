@@ -31,6 +31,8 @@ def evaluate_visibility(result, *, canvas_pixels=600, marker_diameter=4., block_
     NeighborhoodEvaluation; modified snapshots are rejected here.
     """
     _validate_snapshot(result)
+    if result.coordinates.shape[1] != 2:
+        raise ValueError('Fixed-disk visibility requires two-dimensional coordinates; no projection is applied.')
     if result.summary['embedding_metric'] != 'poincare':
         raise ValueError('Fixed-disk visibility requires a Poincare evaluation; do not project Euclidean controls.')
     canvas_pixels = _positive_integer(canvas_pixels, 'canvas_pixels')

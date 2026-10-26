@@ -5,6 +5,23 @@ stress. It does not change `prepare_graph_stress`, `fit_graph_stress`, the
 public MU default, or the checkpoint source hashes of `experimental.py`,
 `_proximity.py`, `_fitting.py` and `_disk.py`.
 
+## Interpretation of historical controlled probes
+
+The recorded Moignard and pbmc3k JSON files remain unchanged historical
+measurements; they have not been regenerated with the current implementation.
+In particular, `moignard-lorentz-probe.json` predates the corrected Minkowski
+gradient conversion and finite-gradient distance calculation, and
+`moignard-curvature-probe.json` predates evaluation in the matching curvature
+geometry. Their optimizer and curvature comparisons must not be treated as
+validation of the corrected code. New numerical results require a separately
+authorized rerun, not a retrospective edit of the archived measurements.
+
+Lorentz and intrinsic RMSProp probes now backpropagate one row chunk at a time.
+Replacement teachers must be nonnegative, zero-diagonal row distributions.
+Neighborhood evaluation still accepts higher-dimensional embeddings, but the
+fixed-disk visibility diagnostics and plots require exactly two dimensions.
+These corrections do not promote any probe to a default.
+
 ## What is frozen before the check
 
 `freeze_comparison` binds the feature hash, `GraphStressConfig`, landmark count,
