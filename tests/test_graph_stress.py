@@ -77,7 +77,7 @@ def test_sgd_matches_adam_at_the_same_start_and_is_not_the_default(setup, torch)
         method.fit_graph_stress(setup, epochs=6, chunk_size=4, resume=adam.state, optimizer_name="sgd")
 
 
-def test_lorentz_starts_at_the_same_disk_distances_and_stays_opt_in(setup):
+def test_lorentz_starts_at_the_same_disk_distances_and_stays_opt_in(setup, torch):
     disk = method.fit_graph_stress(setup, epochs=5, chunk_size=4, random_state=1)
     lorentz = method.fit_graph_stress(setup, epochs=5, chunk_size=4, random_state=1, geometry="lorentz")
     origin = method.fit_graph_stress(setup, epochs=0, chunk_size=4, random_state=1, geometry="lorentz")
