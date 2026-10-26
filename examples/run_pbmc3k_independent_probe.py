@@ -18,6 +18,7 @@ from sc_poincare._fitting import _seed_from_connectivities
 from sc_poincare._proximity import local_affinity
 from sc_poincare.controlled_probe import classical_jitter, fit_from_initial
 from sc_poincare.experimental import GraphStressConfig, prepare_graph_stress
+from sc_poincare._research_policy import ensure_active_paths
 
 MARKERS = ("CD3D", "CD14", "MS4A1", "GNLY", "FCER1A", "PPBP")
 DENSE_BUDGET = 512 * 1024**2
@@ -45,6 +46,9 @@ def spectral_status(weights, *, tol=0.0, maxiter=None):
 
 
 def main():
+    output = Path("docs/pbmc3k-independent-probe.json")
+    datasetdir = Path(sc.settings.datasetdir)
+    ensure_active_paths(output, datasetdir, datasetdir / "pbmc3k_raw.h5ad")
     adata = sc.datasets.pbmc3k()
     if adata.n_obs < 1000 or adata.n_vars < 1000:
         raise SystemExit(f"Unexpected pbmc3k shape {adata.shape}.")
@@ -92,7 +96,7 @@ def main():
         spectral_default=spectral_status(weights),
         spectral_extended=spectral_status(weights, tol=1e-8, maxiter=5000),
     )
-    Path("docs/pbmc3k-independent-probe.json").write_text(json.dumps(payload, indent=2, allow_nan=False))
+    output.write_text(json.dumps(payload, indent=2, allow_nan=False))
     print(json.dumps(dict(shape=payload["feature_shape"], loss20=payload["loss_at_20"],
                           spectral=payload["spectral_default"], extended=payload["spectral_extended"]), indent=2), flush=True)
 

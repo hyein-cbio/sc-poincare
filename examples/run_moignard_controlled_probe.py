@@ -23,6 +23,7 @@ from sc_poincare.controlled_probe import (
 )
 from sc_poincare.evaluation import evaluate_neighborhoods
 from sc_poincare.experimental import GraphStressConfig, prepare_graph_stress
+from sc_poincare._research_policy import ensure_active_paths
 from sc_poincare.visibility import evaluate_visibility
 
 SOURCE = Path("/tmp/sc-poincare-inputs/Moignard2015.csv")
@@ -97,6 +98,8 @@ def run_condition(setup, features, labels, root, initial, *, epochs, geometry, t
 
 
 def main():
+    output = Path("docs/moignard-controlled-probe.json")
+    ensure_active_paths(SOURCE, output)
     raw = SOURCE.read_bytes()
     if hashlib.sha256(raw).hexdigest() != SOURCE_SHA:
         raise SystemExit("Moignard CSV hash mismatch.")
@@ -159,7 +162,7 @@ def main():
         spectral_defaults_changed=False,
         results=results,
     )
-    Path("docs/moignard-controlled-probe.json").write_text(json.dumps(payload, indent=2, allow_nan=False))
+    output.write_text(json.dumps(payload, indent=2, allow_nan=False))
     print(json.dumps(dict(promoted=promoted, n_results=len(results), root=root), indent=2), flush=True)
 
 

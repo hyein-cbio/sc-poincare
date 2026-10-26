@@ -19,6 +19,7 @@ from sc_poincare.controlled_probe import (
     promotion_allowed,
 )
 from sc_poincare.experimental import GraphStressConfig, prepare_graph_stress
+from sc_poincare._research_policy import ensure_active_paths
 from sc_poincare._fitting import fit_disk_embedding
 from sc_poincare._proximity import forest_accessibility, local_affinity
 
@@ -33,6 +34,8 @@ def digest(array):
 
 
 def main():
+    output = Path("docs/moignard-mechanism-probe.json")
+    ensure_active_paths(SOURCE, output)
     raw = SOURCE.read_bytes()
     if hashlib.sha256(raw).hexdigest() != SOURCE_SHA:
         raise SystemExit("Moignard CSV hash mismatch.")
@@ -83,7 +86,7 @@ def main():
             mixture_loss_trace=[float(value) for value in mixed_fit.loss_trace],
         ),
     )
-    Path("docs/moignard-mechanism-probe.json").write_text(json.dumps(payload, indent=2, allow_nan=False))
+    output.write_text(json.dumps(payload, indent=2, allow_nan=False))
     print(json.dumps(dict(promoted=promoted, adam=payload["optimizer"]["adam_loss_at_20"],
                           sgd=payload["optimizer"]["sgd_loss_at_20"],
                           target_gap=payload["multiscale"]["max_abs_difference_from_tau_one"]), indent=2), flush=True)

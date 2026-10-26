@@ -20,6 +20,7 @@ from sc_poincare.controlled_probe import (
 )
 from sc_poincare.evaluation import evaluate_neighborhoods
 from sc_poincare.experimental import GraphStressConfig, prepare_graph_stress
+from sc_poincare._research_policy import ensure_active_paths
 
 SOURCE = Path("/tmp/sc-poincare-inputs/Moignard2015.csv")
 SOURCE_SHA = "3f45057370d568f87b0ab313bfa91992d76e8551824e3a545014b8d4a47c2ea1"
@@ -32,6 +33,8 @@ def digest(array):
 
 
 def main():
+    output = Path("docs/moignard-lorentz-probe.json")
+    ensure_active_paths(SOURCE, output)
     if hashlib.sha256(SOURCE.read_bytes()).hexdigest() != SOURCE_SHA:
         raise SystemExit("Moignard CSV hash mismatch.")
     frame = pd.read_csv(SOURCE)
@@ -63,7 +66,7 @@ def main():
         promoted=promotion_allowed(development_input=True, joint_improvements=[True]),
         biological_validation=False,
     )
-    Path("docs/moignard-lorentz-probe.json").write_text(json.dumps(payload, indent=2, allow_nan=False))
+    output.write_text(json.dumps(payload, indent=2, allow_nan=False))
     print(json.dumps(dict(loss0=payload["loss_at_0"], loss20=payload["loss_at_20"],
                           purity=payload["macro_purity"], promoted=payload["promoted"]), indent=2), flush=True)
 

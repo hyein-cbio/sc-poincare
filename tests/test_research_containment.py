@@ -239,6 +239,81 @@ def test_demo_checks_scanpy_secondary_figure_directory_before_fitting(tmp_path, 
     assert not output.exists()
 
 
+MOIGNARD_PROBES = ('controlled', 'curvature', 'dimension', 'intrinsic', 'lorentz', 'mechanism')
+
+
+@pytest.mark.parametrize('probe', MOIGNARD_PROBES)
+@pytest.mark.parametrize('symlink', [False, True])
+def test_landmark_probes_reject_closed_source_before_reading(probe, symlink, tmp_path, monkeypatch):
+    archive = closed(tmp_path)
+    source = archive / 'input.csv'
+    if symlink:
+        link = tmp_path / 'input.csv'
+        link.symlink_to(source)
+        source = link
+    module = load(f'examples/run_moignard_{probe}_probe.py')
+    monkeypatch.setattr(module, 'SOURCE', source)
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(ValueError, match='Closed research tree'):
+        module.main()
+    assert not (tmp_path / 'docs').exists()
+
+
+@pytest.mark.parametrize('name', [f'moignard_{probe}' for probe in MOIGNARD_PROBES] + ['pbmc3k_independent'])
+@pytest.mark.parametrize('symlink', [False, True])
+def test_landmark_probes_reject_closed_output_before_loading(name, symlink, tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    archive = closed(tmp_path)
+    docs = tmp_path / 'docs'
+    docs.mkdir()
+    filename = name.replace('_', '-') + '-probe.json'
+    output = docs / filename
+    if symlink:
+        output.symlink_to(archive / filename)
+    else:
+        (docs / CLOSED_RESEARCH_MARKER).write_text('{}')
+
+    def deny_read():
+        pytest.fail('Must check output paths before reading or downloading')
+
+    monkeypatch.setitem(sys.modules, 'scanpy', SimpleNamespace(
+        settings=SimpleNamespace(datasetdir=tmp_path / 'active-cache'),
+        datasets=SimpleNamespace(pbmc3k=deny_read),
+    ))
+    module = load(f'examples/run_{name}_probe.py')
+    if name.startswith('moignard'):
+        monkeypatch.setattr(module, 'SOURCE', tmp_path / 'missing.csv')
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(ValueError, match='Closed research tree'):
+        module.main()
+    assert not output.exists()
+    assert not (archive / filename).exists()
+
+
+@pytest.mark.parametrize('symlink', [False, True])
+def test_landmark_pbmc_probe_rejects_closed_cache_before_loading(symlink, tmp_path, monkeypatch):
+    from types import SimpleNamespace
+    archive = closed(tmp_path)
+    datasetdir = archive
+    if symlink:
+        datasetdir = tmp_path / 'active-cache'
+        datasetdir.mkdir()
+        (datasetdir / 'pbmc3k_raw.h5ad').symlink_to(archive / 'pbmc3k_raw.h5ad')
+
+    def deny_read():
+        pytest.fail('Must check dataset paths before reading or downloading')
+
+    monkeypatch.setitem(sys.modules, 'scanpy', SimpleNamespace(
+        settings=SimpleNamespace(datasetdir=datasetdir),
+        datasets=SimpleNamespace(pbmc3k=deny_read),
+    ))
+    module = load('examples/run_pbmc3k_independent_probe.py')
+    monkeypatch.chdir(tmp_path)
+    with pytest.raises(ValueError, match='Closed research tree'):
+        module.main()
+    assert not (tmp_path / 'docs').exists()
+
+
 def test_closed_source_can_still_be_read_by_postfit_evaluation(tmp_path):
     from sc_poincare.evaluation import evaluate_neighborhoods
     archive = closed(tmp_path);source = archive/'input.npz'
