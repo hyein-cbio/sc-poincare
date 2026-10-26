@@ -114,8 +114,8 @@ The ignored tree `data/moignard_landmark_reference` stores the checked feature
 matrix, report, and checksum manifest. `reevaluate_study_tree` reran the frozen
 check from those bytes and reproduced the primary value with absolute
 difference 0. See [moignard-landmark-restore.json](moignard-landmark-restore.json).
-The checksum manifest and the 2,095-byte report were copied to the Drive folder
-`sc-poincare backups` and the downloaded manifest matches
+The checksum manifest and the 2,095-byte report were copied to the maintainer's
+Google Drive backup folder and the downloaded manifest matches
 `262fa3960267a859eac9a29d3b47f3ba0246ae789eea339df6da63f0a535bf19`.
 Drive holds `arrays.npz.hex.00` through `arrays.npz.hex.30` at 8,000 bytes
 and `arrays.npz.hex.31` at 5,896 bytes. The earlier short uploads of chunks 08
@@ -125,6 +125,4 @@ base64-decoded, and matched the corresponding local hex file byte for byte.
 Concatenating those hex texts and decoding them produced 126,948 bytes whose
 SHA256 is `75da11742aa4773b28f62463c3c6b63146024e812fb7aaaf494d2f864ad5ca17`,
 the same as the local `arrays.npz`. The zip contains `landmark_index.npy`,
-`exact_initial.npy`, and `landmark_initial.npy`. This copy is on the connected
-personal account `hc27oclock@gmail.com`. No shop Google Drive is visible to
-this connection, so a second copy was not written there.
+`exact_initial.npy`, and `landmark_initial.npy`.

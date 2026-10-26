@@ -86,7 +86,8 @@ the current baseline or research gates.
   `262fa3960267a859eac9a29d3b47f3ba0246ae789eea339df6da63f0a535bf19`. The
   report upload is 2095 bytes, the same size as the local file. The feature
   matrix file hash `e244315a…` equals the published feature-file hash, so that
-  matrix is rebuilt from the public CSV. The Drive folder is `sc-poincare backups`.
+  matrix is rebuilt from the public CSV. The files were copied to the
+  maintainer's Google Drive backup folder.
   Hex pieces `arrays.npz.hex.00` through `.30` are 8,000 bytes and `.31` is
   5,896 bytes. The earlier 7,999-byte chunk 13 upload and the 7,985-byte chunk
   08 upload stay in the trash and were not part of the restore. Each of the 32
@@ -96,9 +97,7 @@ the current baseline or research gates.
   126,948 bytes whose SHA256 is
   `75da11742aa4773b28f62463c3c6b63146024e812fb7aaaf494d2f864ad5ca17`, the same
   as the local `arrays.npz`. The zip contains `landmark_index.npy`,
-  `exact_initial.npy`, and `landmark_initial.npy`. This copy is on the
-  connected personal account `hc27oclock@gmail.com`. No shop Google Drive is
-  visible to this connection, so a second copy was not written there.
+  `exact_initial.npy`, and `landmark_initial.npy`.
 
 ## P1 — Independent biological validation
 

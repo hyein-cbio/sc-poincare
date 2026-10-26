@@ -33,7 +33,7 @@ reread agree exactly. Public Paul.csv matches its source hash, and sklearn
 1.9.1 full-SVD PCA20 does not match the recorded Paul or Olsson feature hashes.
 Those PCA matrices were not substituted. The same package versions on this host
 produce a deterministic Paul PCA20 hash, `20a9f31a…`, which is not the recorded
-`0386248d…`. The Drive folder `sc-poincare backups` holds the Moignard manifest,
+`0386248d…`. The maintainer's Google Drive backup folder holds the Moignard manifest,
 report, and hex pieces 00–30 of `arrays.npz` at 8,000 bytes plus chunk 31 at
 5,896 bytes. Reading those 32 download responses back from the persisted tool
 transcript, decoding them, and concatenating the hex produced 126,948 bytes
