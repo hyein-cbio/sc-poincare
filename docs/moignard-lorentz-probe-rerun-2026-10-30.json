@@ -1,0 +1,234 @@
+{
+  "input_id": "moignard2015-development-reference",
+  "feature_sha256": "674f8b380ba701d56afdeae8b35edf8b1269dfaa8e8483bc7e9c7e9c12999aa0",
+  "labels_entered_fitting": false,
+  "chart": "lorentz_hyperboloid",
+  "epochs": 20,
+  "learning_rate": 0.013333333333333334,
+  "loss_at_0": 1.0369251291534152,
+  "loss_at_20": 1.0367910341817668,
+  "macro_purity": 0.5289341732914342,
+  "input_neighbor_recall": 0.09311981020166073,
+  "populations": [
+    {
+      "label": "NP",
+      "n_cells": 552,
+      "purity": 0.28357487922705316,
+      "input_neighbor_recall": 0.09927536231884057,
+      "purity_ceiling": 1.0
+    },
+    {
+      "label": "PS",
+      "n_cells": 624,
+      "purity": 0.41367521367521365,
+      "input_neighbor_recall": 0.10096153846153846,
+      "purity_ceiling": 1.0
+    },
+    {
+      "label": "4SG",
+      "n_cells": 770,
+      "purity": 0.5453679653679654,
+      "input_neighbor_recall": 0.06865800865800865,
+      "purity_ceiling": 1.0
+    },
+    {
+      "label": "4SFG",
+      "n_cells": 983,
+      "purity": 0.9483214649033571,
+      "input_neighbor_recall": 0.12865378094269245,
+      "purity_ceiling": 1.0
+    },
+    {
+      "label": "HF",
+      "n_cells": 1005,
+      "purity": 0.4537313432835821,
+      "input_neighbor_recall": 0.06885572139303481,
+      "purity_ceiling": 1.0
+    }
+  ],
+  "stability": {
+    "all_losses_and_final_coordinates_finite": true,
+    "max_unit_disk_radius": 0.20017394988091625,
+    "min_unit_disk_margin": 0.9599303897890724,
+    "loss_increase_steps": 0,
+    "loss_trace": [
+      1.0369251291534152,
+      1.0369184240711178,
+      1.036911719023458,
+      1.036905014010644,
+      1.036898309032811,
+      1.0368916040900498,
+      1.0368848991824253,
+      1.036878194309985,
+      1.0368714894727695,
+      1.0368647846708137,
+      1.0368580799041505,
+      1.0368513751728068,
+      1.0368446704768053,
+      1.0368379658161608,
+      1.0368312611908803,
+      1.0368245566009637,
+      1.0368178520464062,
+      1.0368111475272024,
+      1.0368044430433523,
+      1.0367977385948657,
+      1.0367910341817668
+    ],
+    "minkowski_max_abs_error": 6.661338147750939e-16,
+    "min_time_coordinate": 1.0000005385160253
+  },
+  "promoted": false,
+  "biological_validation": false,
+  "legacy_gradient_only_ablation": {
+    "interpretation": "Only gradient conversion restored; current stable distance and chunking retained. Not a historical replay.",
+    "loss_at_0": 1.0369251291534152,
+    "loss_at_20": 1.0367873503174343,
+    "macro_purity": 0.5288942253167037,
+    "input_neighbor_recall": 0.09311981020166073,
+    "populations": [
+      {
+        "label": "NP",
+        "n_cells": 552,
+        "purity": 0.283695652173913,
+        "input_neighbor_recall": 0.09927536231884057,
+        "purity_ceiling": 1.0
+      },
+      {
+        "label": "PS",
+        "n_cells": 624,
+        "purity": 0.4133547008547009,
+        "input_neighbor_recall": 0.10096153846153846,
+        "purity_ceiling": 1.0
+      },
+      {
+        "label": "4SG",
+        "n_cells": 770,
+        "purity": 0.5453679653679654,
+        "input_neighbor_recall": 0.06865800865800865,
+        "purity_ceiling": 1.0
+      },
+      {
+        "label": "4SFG",
+        "n_cells": 983,
+        "purity": 0.9483214649033571,
+        "input_neighbor_recall": 0.12865378094269245,
+        "purity_ceiling": 1.0
+      },
+      {
+        "label": "HF",
+        "n_cells": 1005,
+        "purity": 0.4537313432835821,
+        "input_neighbor_recall": 0.06885572139303481,
+        "purity_ceiling": 1.0
+      }
+    ],
+    "stability": {
+      "all_losses_and_final_coordinates_finite": true,
+      "max_unit_disk_radius": 0.2001795715499623,
+      "min_unit_disk_margin": 0.9599281391340735,
+      "loss_increase_steps": 0,
+      "loss_trace": [
+        1.0369251291534152,
+        1.036918239959838,
+        1.0369113507921652,
+        1.0369044616506415,
+        1.0368975725354281,
+        1.036890683446633,
+        1.0368837943843343,
+        1.0368769053485938,
+        1.0368700163394664,
+        1.0368631273570024,
+        1.0368562384012476,
+        1.0368493494722417,
+        1.0368424605700135,
+        1.036835571694583,
+        1.0368286828459594,
+        1.0368217940241442,
+        1.0368149052291369,
+        1.0368080164609408,
+        1.0368011277195688,
+        1.036794239005051,
+        1.0367873503174343
+      ],
+      "minkowski_max_abs_error": 6.661338147750939e-16,
+      "min_time_coordinate": 1.0000005385159518
+    }
+  },
+  "provenance": {
+    "completed_utc": "2026-10-30T23:55:22.876205+00:00",
+    "git_head": "cbb75d99f31f29b7474dbd0f812ca5bcab2df22a",
+    "source_sha256": {
+      "src/sc_poincare/controlled_probe.py": "37693bc650c5780e207d9c034ec0665a19b4630a9ddb2a0ebefe03bf07148528",
+      "src/sc_poincare/experimental.py": "0d38e0027ff70191cd4cde7d4042c367382b9986c63abebc7a90fe1fb7a48160",
+      "src/sc_poincare/_fitting.py": "1222b70e96cf55c802bbc63adab596f045d8d29aa869cebf748402928b87442a",
+      "src/sc_poincare/_disk.py": "ab82c6f6f6ed0c6b79e3b55db0c7130c590511d6d5d919017e155c4617d1b1f3",
+      "src/sc_poincare/evaluation.py": "96e03212beb5467033211bf8a28682afbc8a2f282909a3e9e58474c5076298de",
+      "src/sc_poincare/_probe_record.py": "5a549481bcf14e40a90a2f6d4ab3836783a8b251c06e6d721ea4c2d13af03048",
+      "examples/run_moignard_lorentz_probe.py": "b164a361abc50940aa31fb6205b64943020b4d350e6509896f207d96e4ff7f53",
+      "examples/run_moignard_curvature_probe.py": "814fb3f56cb86362e2771a8db7863dee074fb2309660c8a320abbf599f737cdc"
+    },
+    "csv_sha256": "3f45057370d568f87b0ab313bfa91992d76e8551824e3a545014b8d4a47c2ea1",
+    "source_url": "https://raw.githubusercontent.com/facebookresearch/PoincareMaps/7ffa518cabe6e6424a875d480c4298bda3bd9678/datasets/Moignard2015.csv",
+    "feature_shape": [
+      3934,
+      42
+    ],
+    "feature_dtype": "float64",
+    "feature_hash_encoding": "C-contiguous float64 raw bytes, without dtype/shape header",
+    "initial_sha256": "f37f2601f9492ad592c4abec2127000179bf54651e179110865c65b2dec48c61",
+    "config": {
+      "n_neighbors": 15,
+      "local_bandwidth": "global",
+      "distance_scale": 2.0,
+      "gamma": 0.06666666666666667,
+      "local_weight": 0.03,
+      "relative_floor": 0.01,
+      "initial_radius": 0.2,
+      "jitter": 0.0002,
+      "learning_rate": 0.013333333333333334
+    },
+    "seed": 0,
+    "epochs": 20,
+    "chunk_size": 256,
+    "evaluation_k": 15,
+    "max_dense_bytes": 536870912,
+    "device": "cpu",
+    "dtype": "float64",
+    "python": "3.14.10 | packaged by conda-forge | (main, Oct 26 2026, 11:32:16) [Clang 20.1.8 ]",
+    "platform": "macOS-27.2-arm64-arm-64bit-Mach-O",
+    "versions": {
+      "numpy": "2.5.4",
+      "scipy": "1.18.1",
+      "pandas": "3.1.0",
+      "scikit-learn": "1.9.1",
+      "torch": "2.14.1",
+      "threadpoolctl": "3.7.0"
+    },
+    "torch_threads": 1,
+    "threadpools": [
+      {
+        "user_api": "blas",
+        "internal_api": "openblas",
+        "num_threads": 1,
+        "prefix": "libopenblas",
+        "filepath": "/Users/choh/pixi/work0/.pixi/envs/default/lib/libopenblas.0.dylib",
+        "version": "0.3.34",
+        "threading_layer": "openmp",
+        "architecture": "VORTEX"
+      },
+      {
+        "user_api": "openmp",
+        "internal_api": "openmp",
+        "num_threads": 1,
+        "prefix": "libomp",
+        "filepath": "/Users/choh/pixi/work0/.pixi/envs/default/lib/libomp.dylib",
+        "version": null
+      }
+    ],
+    "elapsed_seconds": 45.71044345900009
+  },
+  "arrays": {
+    "file": "moignard-lorentz-probe-rerun-2026-10-30.npz",
+    "sha256": "75f044c49566a916afd0c7156c1d10908a9a12c4b5d51d0c8cce97ba855b374f"
+  }
+}
