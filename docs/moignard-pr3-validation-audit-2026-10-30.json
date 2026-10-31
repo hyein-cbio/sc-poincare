@@ -1,0 +1,99 @@
+{
+  "base_sha": "cbb75d99f31f29b7474dbd0f812ca5bcab2df22a",
+  "pr3_merge_sha": "3769326580def3648353f2606808cbd73ef1ff25",
+  "original_checkout_unchanged": true,
+  "original_branch": "main",
+  "branch": "codex/moignard-pr3-validation-20261030",
+  "historical_json_sha256": {
+    "docs/astra-development-results.json": "15a31060fef60b946a6bf7fbf756675d2c1e4ee28be856312e3770971decc70f",
+    "docs/astra-mechanism-results.json": "5b21ca5c3aa38a76819dbb48f0d5e55d335be5845d963a2012a284319ba264c3",
+    "docs/embedding-followup-results.json": "5b21ca5c3aa38a76819dbb48f0d5e55d335be5845d963a2012a284319ba264c3",
+    "docs/embedding-study-results.json": "15a31060fef60b946a6bf7fbf756675d2c1e4ee28be856312e3770971decc70f",
+    "docs/moignard-anchor-sensitivity.json": "0e4d3657fa13abe833f7fe93a79f8023e13e9315fbb2b99aaef8e64a129d2739",
+    "docs/moignard-bandwidth-probe.json": "1ddf4979f117adbdc40c692688204e8d9bb1ed1a3c8ced60f87bf33547e63ab6",
+    "docs/moignard-controlled-probe.json": "9ed153643829abe77fa2fd334ce303c0669aabc152c8c678d867b5fe4e3887b9",
+    "docs/moignard-curvature-probe.json": "cf0f5688b29ba15acba9c9299ec1bd2444a8c2d851ece981ccb4d930310617c2",
+    "docs/moignard-dimension-probe.json": "67ad553680a7be9d144426f7f4c118b996d464f11264cc6f43a03b7547a6cbd9",
+    "docs/moignard-input-root-distances.json": "bed6768b724cabea7bf967ec2726701c3b564aaeb0fe3e0910fc59ff90d4f328",
+    "docs/moignard-intrinsic-probe.json": "2cfa4c5e9056e399e683d91f5d130ceb371b03805815766d407fdad4951c02e9",
+    "docs/moignard-landmark-column-fit.json": "6bade6959bb3ab0574f11c4e191831db4f68811cfa8ca42198176640115e7275",
+    "docs/moignard-landmark-reference.json": "8a17a3369d2f3013fa75b2b69901dd6cf5c43d45effd658ad74c0d5db9c8360b",
+    "docs/moignard-landmark-restore.json": "17c279c5e50144c66c2ca0e69cfff825839e2c1172259f6b0f5468ac6a26809b",
+    "docs/moignard-lorentz-probe.json": "9dd9e65976636938223c651f3d58a3347d6089f9ed47531bdfa2755ed5a84456",
+    "docs/moignard-mechanism-probe.json": "4235101d335693158481ddcb77b7754300df340df82f97ae629e08f0005232a4",
+    "docs/moignard-representation-probe.json": "bc519642eb80cb00acccd50efd905676a904a1dbcaa227057fb07fd6b9e66bde",
+    "docs/pbmc3k-frozen.json": "f9ee20b15e36265e5cb0c395e34345e5113ed9ece9839fa8edd209d7a8f87581",
+    "docs/pbmc3k-graph-stress.json": "764b0596348707fffbae7e4e57d2eed99fc8c3b19133c5d763fb660502181e99",
+    "docs/pbmc3k-independent-probe.json": "043c0887a072c773743dc44997eea141b41c03bd09c55878148fa1acffb25a72",
+    "docs/pbmc3k-local-budget-probe.json": "c669a2432b883bf356c48ebc2e55f8b3e8d6c5f40aa0ad1c170fa79d718c8f2e",
+    "docs/planaria-label-inventory.json": "1d6bc7b297a2c76611e0e03a24b9bc61da82e44e728a1e3f7331d98aa3d436e2",
+    "docs/rare-population-diagonal.json": "695738ab71e43b12caef9b624117a7571f21be3c94018e72299851620b4ca775",
+    "docs/root-pseudotime.json": "7ed2f2fa294dae17d19ec74ba26e2c294da48de3af2b3362d0de000a0c7b1ebb",
+    "docs/spectral-init-quality.json": "c349015a8770e647848b0ca65c7a818335f394af8ebfd6caad663dac3b1c25a9",
+    "docs/toggle-evaluation.json": "0ed165ea4d4f10e5cfd4f682cb7b417fff07fa09a77e3ee5cdab0fc4e2ed12db"
+  },
+  "coordinate_verification": [
+    {
+      "record": "moignard-lorentz-probe-rerun-2026-10-30.json",
+      "checks": [
+        {
+          "condition": "current",
+          "final_loss_absolute_error": 0.0,
+          "all_population_metrics_exact": true,
+          "stability_exact": true
+        },
+        {
+          "condition": "legacy_gradient_current",
+          "final_loss_absolute_error": 0.0,
+          "all_population_metrics_exact": true,
+          "stability_exact": true
+        }
+      ]
+    },
+    {
+      "record": "moignard-curvature-probe-rerun-2026-10-30.json",
+      "checks": [
+        {
+          "condition": "current_c1_0",
+          "final_loss_absolute_error": 1.1102230246251565e-16,
+          "all_population_metrics_exact": true,
+          "stability_exact": true
+        },
+        {
+          "condition": "current_c0_25",
+          "final_loss_absolute_error": 0.0,
+          "all_population_metrics_exact": true,
+          "stability_exact": true
+        }
+      ]
+    }
+  ],
+  "repeated_execution": {
+    "all_saved_arrays_exactly_equal": true,
+    "independent_seeds": false,
+    "note": "Two executions of the same seed/configuration, not biological replicates."
+  },
+  "tests": {
+    "passed": 654,
+    "warnings": 41
+  },
+  "defaults_changed": false,
+  "biological_validation": false,
+  "code_review": {
+    "tool": "CodeRabbit 0.9.1",
+    "reviewed_files": [
+      "examples/run_moignard_curvature_probe.py",
+      "examples/run_moignard_lorentz_probe.py",
+      "tests/test_controlled_probe.py",
+      "tests/test_research_containment.py"
+    ],
+    "findings": [
+      {
+        "severity": "critical",
+        "title": "Add the shared probe-record module before importing it.",
+        "disposition": "Helper is present as an untracked new file, included in delivery; actual imports, experiment execution and tests succeed. Reviewer did not receive untracked files."
+      }
+    ],
+    "untracked_files_automatically_reviewed": false
+  }
+}

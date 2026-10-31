@@ -241,26 +241,17 @@ def test_replacement_teacher_rejects_invalid_probabilities(features, invalid, as
 
 
 def test_curvature_script_evaluates_in_the_matching_unit_ball(tmp_path, monkeypatch):
-    import hashlib
     import importlib.util
     from pathlib import Path
-    from types import SimpleNamespace
-    pd = pytest.importorskip('pandas')
     path = Path(__file__).resolve().parents[1] / 'examples/run_moignard_curvature_probe.py'
     spec = importlib.util.spec_from_file_location('curvature_probe_test', path)
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
-    features = np.zeros((3934, 42))
-    frame = pd.DataFrame(features)
-    frame['label'] = 'synthetic'
-    source = tmp_path / 'synthetic.csv'
-    source.write_bytes(b'synthetic input; loading is stubbed')
-    monkeypatch.setattr(module, 'SOURCE', source)
-    monkeypatch.setattr(module, 'SOURCE_SHA', hashlib.sha256(source.read_bytes()).hexdigest())
-    monkeypatch.setattr(module, 'FEATURE_SHA', module.digest(features))
-    monkeypatch.setattr(module.pd, 'read_csv', lambda *_: frame)
+    features = np.zeros((19, 4))
+    monkeypatch.setattr(module, 'load_moignard', lambda *_: (features, np.repeat('synthetic', len(features))))
     monkeypatch.setattr(module, 'prepare_graph_stress', lambda *a, **k: object())
     monkeypatch.setattr(module, 'classical_jitter', lambda *a: np.zeros((len(features), 2)))
+    monkeypatch.setattr(module, 'provenance', lambda *a, **k: {})
     unit_points = np.tile([.7, .2], (len(features), 1))
     fitted_points = {}
 
@@ -270,16 +261,21 @@ def test_curvature_script_evaluates_in_the_matching_unit_ball(tmp_path, monkeypa
 
     evaluated = []
 
-    def check_evaluation(features, points, labels, **kwargs):
+    def check_evaluation(features, points, labels):
         np.testing.assert_allclose(points, unit_points)
         evaluated.append(points.copy())
-        return SimpleNamespace(summary={'metrics': {'15': dict(macro_purity=1., input_neighbor_recall=1., populations=[])}})
+        return dict(macro_purity=1., input_neighbor_recall=1., populations=[])
 
     monkeypatch.setattr(module, 'fit_from_initial', fake_fit)
-    monkeypatch.setattr(module, 'evaluate_neighborhoods', check_evaluation)
+    monkeypatch.setattr(module, 'metrics_for', check_evaluation)
     monkeypatch.chdir(tmp_path)
-    (tmp_path / 'docs').mkdir()
-    module.main()
-    assert len(evaluated) == 2
+    module.main(['--output', str(tmp_path / 'result.json')])
+    # c=1 is evaluated twice, c=.25 once. The invalid legacy unit-ball
+    # diagnostic is skipped, while the matching-geometry evaluation succeeds.
+    assert len(evaluated) == 3
     assert np.all(np.linalg.norm(fitted_points[.25], axis=1) > 1.)
     np.testing.assert_array_equal(fitted_points[1.], unit_points)
+    import json
+    result = json.loads((tmp_path / 'result.json').read_text())
+    assert result['results'][1]['legacy_unit_curvature_evaluation'] is None
+    assert result['results'][1]['legacy_evaluation_defined'] is False

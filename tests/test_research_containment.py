@@ -252,7 +252,11 @@ def test_landmark_probes_reject_closed_source_before_reading(probe, symlink, tmp
         link.symlink_to(source)
         source = link
     module = load(f'examples/run_moignard_{probe}_probe.py')
-    monkeypatch.setattr(module, 'SOURCE', source)
+    if probe in ('lorentz', 'curvature'):
+        monkeypatch.setattr(sys, 'argv', ['probe', '--source', str(source)])
+    else:
+        monkeypatch.setattr(module, 'SOURCE', source)
+        monkeypatch.setattr(sys, 'argv', ['probe'])
     monkeypatch.chdir(tmp_path)
     with pytest.raises(ValueError, match='Closed research tree'):
         module.main()
@@ -267,6 +271,8 @@ def test_landmark_probes_reject_closed_output_before_loading(name, symlink, tmp_
     docs = tmp_path / 'docs'
     docs.mkdir()
     filename = name.replace('_', '-') + '-probe.json'
+    if name in ('moignard_lorentz', 'moignard_curvature'):
+        filename = filename.replace('.json', '-rerun-2026-10-30.json')
     output = docs / filename
     if symlink:
         output.symlink_to(archive / filename)
@@ -281,8 +287,11 @@ def test_landmark_probes_reject_closed_output_before_loading(name, symlink, tmp_
         datasets=SimpleNamespace(pbmc3k=deny_read),
     ))
     module = load(f'examples/run_{name}_probe.py')
-    if name.startswith('moignard'):
+    if name in ('moignard_lorentz', 'moignard_curvature'):
+        monkeypatch.setattr(sys, 'argv', ['probe', '--source', str(tmp_path / 'missing.csv')])
+    elif name.startswith('moignard'):
         monkeypatch.setattr(module, 'SOURCE', tmp_path / 'missing.csv')
+        monkeypatch.setattr(sys, 'argv', ['probe'])
     monkeypatch.chdir(tmp_path)
     with pytest.raises(ValueError, match='Closed research tree'):
         module.main()
