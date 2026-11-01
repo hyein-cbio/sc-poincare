@@ -1,0 +1,14 @@
+{
+  "primary_metric": "landmark_column_max_abs",
+  "stored_primary_value": 2.1316282072803006e-14,
+  "restored_primary_value": 2.1316282072803006e-14,
+  "primary_abs_difference": 0.0,
+  "feature_sha256": "0386248d2c02c99f82cda2eb18b8e357b8e0399b10aba7e67575599fb115d90b",
+  "n_cells": 2730,
+  "fits_executed": 0,
+  "biological_validation": false,
+  "source_sha256": "fed836ed28f148d9ee8efd8ec13ebd468f06ef9b92eeb6f9e218235d4ad2f21d",
+  "tree": "data/paul_landmark_reference",
+  "external_backup": false,
+  "off_machine_destination": null
+}

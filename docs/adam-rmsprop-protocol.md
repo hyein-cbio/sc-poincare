@@ -48,8 +48,10 @@ stops. It is not refit with a new budget or scored from a friendlier seed.
 Paul may be scored only from the
 feature matrix whose SHA256 is
 `0386248d2c02c99f82cda2eb18b8e357b8e0399b10aba7e67575599fb115d90b`.
-A nonmatching PCA is not a substitute, so this comparison cannot be scored
-until that matrix is recovered.
+A nonmatching PCA is not a substitute. The stored `data/paul/features.npy`
+bytes match this hash. That recovery does not start the comparison.
 
-Riemannian RMSProp is not implemented in this tree. Implementing it is a
-separate change and still does not start the fit.
+`controlled_probe.fit_intrinsic_rmsprop` implements the short-probe update.
+That implementation does not start this 1,500-update comparison.
+`evaluation.place_heldout_cells` can map a cell the fit did not move, and it
+is not added to the guardrails above.

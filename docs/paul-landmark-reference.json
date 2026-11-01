@@ -1,0 +1,75 @@
+{
+  "schema_version": 1,
+  "fits_executed": 0,
+  "biological_validation": false,
+  "normalization": "exact_nonself_mean",
+  "landmark_seed": 0,
+  "executed_landmark_seeds": [
+    0
+  ],
+  "declared_seeds": [
+    0
+  ],
+  "primary_metric": "landmark_column_max_abs",
+  "primary_value": 2.1316282072803006e-14,
+  "sensitivity": {
+    "triangle_excess_max": 11.481965131486827,
+    "completion_mean_relative_error": 0.4648531358898302,
+    "init_procrustes_rmse": 0.010029082471670246,
+    "completion_gradient_relative_l2": 0.3598775064747371,
+    "column_objective_gradient_relative_l2": 0.8441294346357499
+  },
+  "metrics": {
+    "landmark_column_max_abs": 2.1316282072803006e-14,
+    "triangle_excess_max": 11.481965131486827,
+    "completion_mean_relative_error": 0.4648531358898302,
+    "init_procrustes_rmse": 0.010029082471670246,
+    "completion_gradient_relative_l2": 0.3598775064747371,
+    "column_objective_gradient_relative_l2": 0.8441294346357499
+  },
+  "protocol": {
+    "input_id": "paul-development-reference",
+    "role": "reference_check",
+    "n_cells": 2730,
+    "feature_sha256": "0386248d2c02c99f82cda2eb18b8e357b8e0399b10aba7e67575599fb115d90b",
+    "parameters_json": "{\"distance_scale\":2.0,\"gamma\":0.06666666666666667,\"initial_radius\":0.2,\"jitter\":0.0002,\"learning_rate\":0.013333333333333334,\"local_bandwidth\":\"global\",\"local_weight\":0.03,\"n_neighbors\":15,\"relative_floor\":0.01}",
+    "n_landmarks": 32,
+    "max_dense_bytes": 536870912,
+    "max_epochs": 0,
+    "seeds": [
+      0
+    ],
+    "primary_metric": "landmark_column_max_abs",
+    "sensitivity_metrics": [
+      "triangle_excess_max",
+      "completion_mean_relative_error",
+      "init_procrustes_rmse",
+      "completion_gradient_relative_l2",
+      "column_objective_gradient_relative_l2"
+    ],
+    "labels_excluded": true,
+    "approximation": "landmark_triangle",
+    "objective": "exact_mu_relative_stress_plus_local_ce",
+    "schema_version": 1
+  },
+  "n_cells": 2730,
+  "n_landmarks": 32,
+  "global_mean": 8.515906694935163,
+  "completion_nonself_mean": 12.474552627020973,
+  "elapsed_seconds": 7.8359070470000916,
+  "source_sha256": "fed836ed28f148d9ee8efd8ec13ebd468f06ef9b92eeb6f9e218235d4ad2f21d",
+  "feature_array_sha256_checked": "0386248d2c02c99f82cda2eb18b8e357b8e0399b10aba7e67575599fb115d90b",
+  "transform_pin": {
+    "pca_file_sha256": "b150cf7a8bab5d4bcee43317a874cf1ff5d015715eda6d9558261af4ca798ddb",
+    "recomputed_from": "(X - mean) @ components.T using data/paul/pca.npz",
+    "recomputed_array_sha256": "8f33d0cdaabaa282c9a404fe5219554af3ebd4afa3d3d92f3a76ba4aea96ebf7",
+    "recomputed_scores_used": false,
+    "max_abs_residual_versus_recorded_features": 1.4921397450962104e-13
+  },
+  "runtime": {
+    "numpy": "2.5.4",
+    "scipy": "1.18.1",
+    "scikit-learn": "1.9.1",
+    "pandas": "3.0.6"
+  }
+}

@@ -1,36 +1,34 @@
 # Work worth doing next
 
-These items are outside the checklist in `development-roadmap.md`. They are
-not authorized runs. Each one is narrower than repeating work already on
-`main`.
-
-The checklist itself still has three open items: the external review of
-`494367a` (CodeRabbit is not authenticated), the full Planaria 1,000-update
-comparison (this host has about 4.2 GiB available and no swap), and a fresh
-approval before any further expensive run.
+These items are outside the original checklist in `development-roadmap.md`.
+Zero-epoch reference checks are recorded below. They are not fits, and they
+do not authorize a later expensive run.
 
 ## 1. Land one approximation, after the Paul matrix matches
 
-`main` has no matrix-free graph-stress path. This branch now has
-`sc_poincare.landmark`: sparse teacher, landmark-column distances, and tests
-that match exact graph stress when every cell is a landmark. A separate
-unmerged branch, `cursor/landmark-reference-check-a572` at `a9f03d1`, also
-ran the Moignard zero-epoch check. That measured run is not repeated here.
+`sc_poincare.landmark` keeps a sparse teacher and landmark-column distances.
+Tests match exact graph stress when every cell is a landmark. The recorded
+Paul matrix is ignored `data/paul/features.npy`, file SHA256 `0d1d53e5…`,
+float64 SHA256 `0386248d…`. The frozen zero-epoch check used 32 landmarks,
+seed 0, and the 512 MiB guard. Columns agree within 2.2e-14. The column
+gradient differs from exact MU by relative L2 0.844. sklearn full-SVD PCA20
+still does not reproduce the hash. `(X - mean) @ components.T` from
+`data/paul/pca.npz` is within 1.5e-13 absolute and was not substituted.
+Record: [paul-landmark-reference.json](paul-landmark-reference.json).
 
-That branch's open Paul check is still blocked. This session confirmed the
-public `Paul.csv` source hash and confirmed that scikit-learn 1.9.1 full-SVD
-PCA20 does not reproduce feature SHA256 `0386248d…`. The next step is to
-recover the original 2,730×20 float64 matrix, or to pin the exact transform
-that hashes to it, and only then rerun the frozen zero-epoch check. Do not
-insert the nonmatching PCA scores.
+The follow-up tolerance was relative L2 1e-3, declared before the Moignard
+schedule. Counts 32, 128, 512, 2048, and all 3,934 cells were scored with the
+full denominator and with an included-pair mean. The published 32-landmark
+value 0.875 is reproduced. No partial count meets 1e-3. The included-pair mean
+is worse at 32 landmarks (relative L2 5.20). Every-cell landmarks meet the
+tolerance (relative L2 8.3e-17) because that case is the exact objective. It
+is not promoted. Speed without a partial match is not a scalability result.
+Record: [landmark-gradient-tolerance.json](landmark-gradient-tolerance.json).
 
-The same branch's Moignard 32-landmark column gradient differs from exact MU
-by relative L2 0.875. A useful follow-up is an approximation that meets a
-predeclared gradient tolerance against exact MU on that matrix, with the
-512 MiB guard left on. Speed without that match is not a scalability result.
-
-The Moignard manifest upload is not an off-machine copy of `arrays.npz`.
-That file still needs a checksummed copy outside the execution host.
+The local Moignard `arrays.npz` still hashes to
+`75da11742aa4773b28f62463c3c6b63146024e812fb7aaaf494d2f864ad5ca17`, the same
+digest as the restored Drive hex pieces. This session did not upload another
+copy.
 
 ## 2. Treat the short intrinsic-optimizer probes as hypotheses
 
@@ -46,17 +44,19 @@ None of these is on `main`, and none should become a default from a
 objective and initialization, seed 0 for selection, seeds 1–4 only as
 confirmation, 1,500 updates, and the existing Paul and Moignard development
 screen. That screen does not promote the optimizer, because those scores are
-transductive. The fit is not started. Riemannian
-RMSProp is not implemented here, and Paul still needs feature SHA256
-`0386248d…` before that comparison can be scored.
+transductive. The 1,500-update comparison is not started. `fit_intrinsic_rmsprop` in
+`controlled_probe.py` is the existing short-probe implementation; it is not a
+default. Paul can now be scored only from `data/paul/features.npy`. That
+availability does not start the fit.
 
 ## 3. Separate held-out quality from transductive neighbor scores
 
 Current gene MSE and neighbor purity use the cells that were just embedded.
 They can reward a graph-construction artifact. A promotion claim needs one
-predeclared score that the fit does not see, for example held-out genes or a
-held-out cell mapped without moving the training coordinates. The present API
-is transductive and has no such mapping.
+predeclared score that the fit does not see. `place_heldout_cells` now places
+held-out cells from feature distances to a frozen training disk and does not
+write the training coordinates. It is not one of the Adam-versus-RMSProp
+guardrails, and calling it is not a promotion.
 
 ## 4. Independent data beyond pbmc3k
 
@@ -67,22 +67,28 @@ K15 purity is high, and dendritic cells stay near 0.48–0.53. Those runs are
 not a certified blind holdout.
 
 Paul, Moignard, Olsson, Pancreas, and Nestorowa remain development data.
-LARRY was identified as unused and still has no fit. Do not start it until
-row order, subset size, and an external backup are fixed.
+LARRY still has no fit. Metadata, the normalized count matrix, and the clone
+matrix all have 130,887 rows; that is not an author row-order contract. Full
+exact MU would budget about 510.6 GiB. No subset size was frozen, and no
+LARRY extract was backed up off this machine. The readiness decision is to
+leave LARRY unfitted.
 
 ## 5. Full Planaria only under the frozen gate
 
 The 1,000-update corrected-versus-conditional comparison is specified in
 `frozen-conditional-kl-protocol.md`. The public CSV hash and the 51-label
 inventory are attached. Rare labels are those with at most 50 cells. The
-default dense guard still refuses 21,612 cells on this host, so the fit has
-not started. Run it only where that guard can pass without being disabled.
+default dense guard still refuses 21,612 cells. On this host the estimate is
+13.92 GiB against the 0.50 GiB limit, with about 4.4 GiB available and no
+swap. The fit has not started. Run it only where that guard can pass without
+being disabled.
 
 ## 6. External review of `494367a`
 
 Install CodeRabbit where a reviewer can authenticate. Review only that
 commit against its parent `a4d836d`. A review of the current tree, and the
-local note on the unmerged branch, do not close this item.
+local note on the unmerged branch, do not close this item. The CodeRabbit
+CLI is not installed on this host, so this item stays open.
 
 ## 7. Publication checks at submission time
 
