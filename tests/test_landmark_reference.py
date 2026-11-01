@@ -9,6 +9,7 @@ from sc_poincare import experimental
 from sc_poincare._research_policy import CLOSED_RESEARCH_MARKER
 from sc_poincare.landmark import (
     LandmarkColumnSetup,
+    column_gradient_relative_l2,
     compare_landmark_reference,
     fit_landmark_columns,
     freeze_comparison,
@@ -236,6 +237,29 @@ def test_study_tree_restore_recomputes_the_primary_metric(features, tmp_path):
     features_path.write_bytes(features_path.read_bytes()[:-1] + b"\x00")
     with pytest.raises(ValueError, match="checksum"):
         reevaluate_study_tree(directory)
+
+
+def test_included_mean_matches_exact_gradient_only_when_every_cell_is_a_landmark(features):
+    pytest.importorskip("torch")
+    config = experimental.GraphStressConfig(n_neighbors=4)
+    setup = experimental.prepare_graph_stress(features, config=config, max_dense_bytes=1 << 20)
+    geodesic = np.array(setup.target, dtype=np.float64, copy=True)
+    geodesic *= setup.metadata["global_mean"] / config.distance_scale
+    n = len(features)
+    full = column_gradient_relative_l2(
+        setup, geodesic, np.arange(n), reduction="included_mean", chunk_size=5,
+    )
+    same = column_gradient_relative_l2(
+        setup, geodesic, np.arange(n), reduction="full_denominator", chunk_size=5,
+    )
+    partial = column_gradient_relative_l2(
+        setup, geodesic[:5], np.arange(5), reduction="included_mean", chunk_size=5,
+    )
+    assert full == pytest.approx(0., abs=1e-8)
+    assert same == pytest.approx(0., abs=1e-8)
+    assert partial > 1e-3
+    with pytest.raises(ValueError, match="reduction"):
+        column_gradient_relative_l2(setup, geodesic, np.arange(n), reduction="rescaled")
 
 
 def test_reference_tree_parent_is_created_only_as_the_new_directory(features, tmp_path):
