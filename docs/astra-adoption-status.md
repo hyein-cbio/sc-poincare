@@ -119,9 +119,15 @@ These integrations do not redesign the low-level objectives or optimizers:
 1. Keep the provisional MU fixed default reproducible and explicit in pipelines;
    keep local-radius and RFA selectable rather than guessing a winner by data name.
 2. Validate new biological data/markers and a convergence/initialization protocol.
-3. Reproduce the exact Paul 2,730×20 PCA hash, then repeat the landmark
-   reference check. Exact Moignard 3,934 is already checked; the partial
-   landmark objective is not a new default.
+3. The stored Paul 2,730×20 matrix matches `0386248d…`, and the zero-epoch
+   landmark check is recorded. sklearn PCA20 still does not reproduce that
+   hash. Exact Moignard 3,934 remains checked. A predeclared relative-L2
+   tolerance of 1e-3 is missed by all tested partial counts (32, 128, 512,
+   2048) and met by the tested all-cell case. This does not exclude other
+   counts: the exact-mean diagnostic includes every nonself pair at N−1.
+   `prepare_landmark_columns` uses its own column mean, so this does not
+   make that matrix-free fitter exact at N−1. The partial landmark
+   objective is not a new default.
 4. Only then consider broader scale/default or publication claims. The current
    exact implementation is not atlas-scale merely because a few thousand cells fit.
 

@@ -43,4 +43,6 @@ That matches the local `arrays.npz`. The short earlier uploads of chunks 08 and
 One BLAS thread and the default thread pool produce two different deterministic
 Paul PCA20 hashes, `20a9f31a…` and `8efb90c0…`. OpenBLAS 0.3.34 Haswell,
 Sandybridge, Nehalem, and Penryn kernels, with one thread or the default pool,
-also miss `0386248d…`.
+also miss `0386248d…`. The stored `data/paul/features.npy` bytes do match
+that hash and were used for the zero-epoch landmark check. Nonmatching PCA
+scores were not substituted.

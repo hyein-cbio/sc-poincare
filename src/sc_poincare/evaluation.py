@@ -499,3 +499,84 @@ def plot_neighborhood_diagnostics(result, *, k=15, before_coordinates=None, base
         caption += f" | macro delta={comparison['metrics'][str(k)]['macro_purity']:+.3f}"
     fig.suptitle(f'{title or "Post-fit neighborhood diagnostics"}\n{caption}', fontsize=13)
     return fig
+
+
+def _neighbor_pair_scale(features, coordinates):
+    """Median hyperbolic distance divided by median feature distance.
+
+    The ratio uses pairs inside the neighbor set only. It does not use labels
+    or the held-out cell. One neighbor has no pair, so the scale stays 1.
+    """
+    if len(features) < 2:
+        return 1.
+    feature_pairs = cdist(features, features)
+    hyperbolic = pairwise_disk_length(coordinates)
+    upper = np.triu_indices(len(features), 1)
+    positive = feature_pairs[upper] > 0
+    if not np.any(positive):
+        return 1.
+    return float(np.median(hyperbolic[upper][positive]) / np.median(feature_pairs[upper][positive]))
+
+
+def _fit_heldout_point(neighbor_coordinates, feature_distances, scale, max_iter):
+    """Fit one disk point to scaled feature distances. Neighbors stay fixed."""
+    from scipy.optimize import minimize
+
+    targets = np.asarray(scale * feature_distances, dtype=np.float64)
+    start = np.array(neighbor_coordinates[int(np.argmin(feature_distances))], dtype=np.float64, copy=True)
+
+    def objective(point):
+        radius_sq = float(np.dot(point, point))
+        if radius_sq >= 1. - 1e-8:
+            return 1e3 * (1. + radius_sq)
+        residual = pairwise_disk_length(point[None, :], neighbor_coordinates)[0] - targets
+        return float(np.dot(residual, residual))
+
+    fitted = minimize(objective, start, method='L-BFGS-B', options={'maxiter': max_iter, 'ftol': 1e-15})
+    point = np.asarray(fitted.x, dtype=np.float64)
+    # The optimizer's penalty region is not a valid geometric fit, even
+    # where it overlaps the open disk. Match the objective's numerical margin.
+    if not np.isfinite(point).all() or float(np.dot(point, point)) >= 1. - 1e-8:
+        raise FloatingPointError('Held-out placement left the numerical disk interior or became nonfinite.')
+    if not fitted.success or not np.isfinite(fitted.fun):
+        raise RuntimeError(f'Held-out placement optimization failed: {fitted.message}')
+    return point
+
+
+def place_heldout_cells(training_features, training_coordinates, heldout_features, *,
+                        n_neighbors=15, max_iter=80):
+    """Place held-out cells without moving the training coordinates.
+
+    Each held-out cell uses only its feature distances to ``n_neighbors``
+    training cells. Those distances are scaled by the neighbor set's own
+    median hyperbolic-to-feature ratio, then one new disk point is fit.
+    Training coordinates are only read and are never modified. This is not a
+    transductive refit, not a score the original fit saw, and not a
+    biological or promotion result. Nonconverged optimization raises
+    ``RuntimeError``; nonfinite or numerically boundary-adjacent fits raise
+    ``FloatingPointError`` instead of returning unchecked coordinates.
+    """
+    training = _matrix(training_features, 'training_features')
+    heldout = _matrix(heldout_features, 'heldout_features')
+    coordinates = _matrix(training_coordinates, 'training_coordinates')
+    if len(training) == 0:
+        raise ValueError('training_features must contain at least one cell.')
+    if training.shape[1] != heldout.shape[1]:
+        raise ValueError('heldout_features must have the same number of columns as training_features.')
+    if coordinates.shape != (len(training), 2):
+        raise ValueError('training_coordinates must have shape (n_training, 2) on the Poincaré disk.')
+    if np.any(np.sum(coordinates * coordinates, axis=1) >= 1.):
+        raise ValueError('training_coordinates must lie strictly inside the unit disk.')
+    if len(heldout) == 0:
+        raise ValueError('heldout_features must contain at least one cell.')
+    neighbors = _positive_integer(n_neighbors, 'n_neighbors')
+    iterations = _positive_integer(max_iter, 'max_iter')
+    if neighbors > len(training):
+        raise ValueError('n_neighbors cannot exceed the number of training cells.')
+    from sklearn.neighbors import NearestNeighbors
+    distances, indices = NearestNeighbors(n_neighbors=neighbors).fit(training).kneighbors(heldout)
+    placed = np.empty((len(heldout), 2), dtype=np.float64)
+    for row, (distance_row, index_row) in enumerate(zip(distances, indices)):
+        scale = _neighbor_pair_scale(training[index_row], coordinates[index_row])
+        placed[row] = _fit_heldout_point(coordinates[index_row], distance_row, scale, iterations)
+    return placed

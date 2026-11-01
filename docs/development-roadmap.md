@@ -87,7 +87,8 @@ the current baseline or research gates.
   report upload is 2095 bytes, the same size as the local file. The feature
   matrix file hash `e244315a…` equals the published feature-file hash, so that
   matrix is rebuilt from the public CSV. The files were copied to the
-  maintainer's Google Drive backup folder.
+  maintainer's Google Drive backup folder. The local `arrays.npz` still hashes
+  to `75da11742aa4773b28f62463c3c6b63146024e812fb7aaaf494d2f864ad5ca17`.
   Hex pieces `arrays.npz.hex.00` through `.30` are 8,000 bytes and `.31` is
   5,896 bytes. The earlier 7,999-byte chunk 13 upload and the 7,985-byte chunk
   08 upload stay in the trash and were not part of the restore. Each of the 32
@@ -178,7 +179,7 @@ have not been satisfied merely by selecting MU as the new provisional default.
   within 2e-14 absolute error. With that partial landmark set the column
   objective's endpoint gradient differs from exact MU (relative L2 0.875).
   Record: [moignard-landmark-reference.json](moignard-landmark-reference.json).
-- [ ] Repeat that check on the exact Paul 2,730×20 PCA features. Public
+- [x] Repeat that check on the exact Paul 2,730×20 PCA features. Public
   `Paul.csv` matches source `fed836ed…`. The recorded runtime is NumPy 2.5.4,
   SciPy 1.18.1, scikit-learn 1.9.1, and pandas 3.0.6, the same versions used
   here. One-thread `PCA(20, svd_solver="full")` on the 2,730×1,000 label-stripped
@@ -198,8 +199,18 @@ have not been satisfied merely by selecting MU as the new provisional default.
   `3603a5ed…`, `0fc2e924…`, and `b0fab7f4…`. SciPy `gesvd` on one SkylakeX
   thread hashes to `b96251a8…`. sklearn's full solver matches SciPy `gesdd`
   with the V-based sign flip. This checkout has no `data/astra37_handoff/`
-  capsule, and the connected Drive has no Astra handoff or PCA feature file,
-  so the recorded array is not on this machine and was not substituted.
+  capsule. The connected Drive search that accompanied that enumeration found
+  no Astra handoff or PCA feature file. The recorded array is on this machine
+  as ignored `data/paul/features.npy`: file SHA256 `0d1d53e5…` matches
+  `feature_file_sha256`, and the float64 bytes are `0386248d…`. The zero-epoch
+  check used those bytes, 32 landmarks, seed 0, and the default 512 MiB guard.
+  It fitted nothing. Landmark columns agree within 2.2e-14 absolute error.
+  The column-objective endpoint gradient differs from exact MU by relative L2
+  0.844. A local reread reproduced the primary value with absolute difference 0.
+  `(X - mean) @ components.T` from the stored `pca.npz` stays within 1.5e-13
+  absolute of the recorded bytes. That recomputation was not substituted.
+  Record: [paul-landmark-reference.json](paul-landmark-reference.json) and
+  [paul-landmark-restore.json](paul-landmark-restore.json).
 - [x] Fit landmark columns without storing an N-by-N target. The teacher stays
   sparse and each update materializes one row-chunk of embedding distances.
   When every cell is a landmark, a 3-epoch synthetic trajectory matches exact
@@ -213,6 +224,17 @@ have not been satisfied merely by selecting MU as the new provisional default.
   rejects a disabled budget. On exact Moignard those current-RSS samples were
   353, 453, 458, and 459 MiB. A workspace that fits does not mean exact N-by-N
   MU was stored.
+- [x] Predeclare relative L2 1e-3 before any new Moignard landmark-gradient
+  comparison. The point is the exact classical initializer, seed 0, zero
+  epochs, and the 512 MiB guard. Counts are 32, 128, 512, 2048, and all 3,934
+  cells. Reductions are the existing full denominator and an included-pair
+  mean. The published 32-landmark full-denominator value is reproduced
+  (absolute difference 1.1e-16). No tested partial count meets 1e-3. The included-pair
+  mean is farther from exact MU at 32 landmarks (relative L2 5.20). Both
+  reductions meet the tolerance when every cell is a landmark (relative L2
+  8.3e-17). That match is the exact objective, not a smaller approximation,
+  and it is not promoted. Record:
+  [landmark-gradient-tolerance.json](landmark-gradient-tolerance.json).
 
 ## P3 — Research mechanisms, not dataset-specific patches
 
@@ -277,6 +299,14 @@ These are not default changes and require their own controlled experiments:
 - [ ] Obtain explicit approval for commits/pushes and new expensive experiments.
   Earlier approval does not silently authorize future jobs.
 
-The next algorithm-scale priority is an independently validated approximation
-against the exact MU reference, not unlimited brute-force N-by-N storage.
-The next scientific priority is independent biology/initialization validation.
+On exact Moignard, none of the tested partial counts (32, 128, 512, 2048)
+meets relative L2 1e-3; the tested all-cell case does. This does not cover
+every partial count: N−1 includes all nonself pairs when exact distances and
+the exact `global_mean` are used by the diagnostic. The matrix-free
+`prepare_landmark_columns` uses a column mean that need not equal that exact
+mean, even at N−1. The measured partial sets do not establish a
+validated approximation or a performance improvement. The
+1,500-update Adam-versus-RMSProp seed-0 screen missed every guardrail; seeds
+1–4 were not run. Full Planaria remains over the dense guard, LARRY stays
+unfitted, and publication checks wait for submission. No further item on
+this list is executable in the environment that recorded these results.

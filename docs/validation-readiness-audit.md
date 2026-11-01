@@ -146,3 +146,14 @@ instead of forcing LARRY merely because it is already downloaded.
 
 No new long-running job, independent-data success claim, off-machine backup,
 commit or push was performed by this audit.
+
+## Readiness decision
+
+The decision is to leave LARRY unfitted. The three local matrices agree at
+130,887 rows, and the metadata columns are complete, but the count matrix has
+no cell key that would confirm the author row order. Four float64 N×N arrays
+would be about 510.6 GiB, so the default guard cannot pass. No subset size was
+frozen, because choosing one from the annotated cell-type counts would use
+those labels to design the sample. No LARRY extract was copied off this
+machine. A later fit needs a separate protocol that closes row order, subset
+size, and backup before loading the count matrix for training.

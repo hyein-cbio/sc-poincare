@@ -1,0 +1,98 @@
+{
+  "protocol": {
+    "input_id": "moignard2015-development-reference",
+    "feature_sha256": "674f8b380ba701d56afdeae8b35edf8b1269dfaa8e8483bc7e9c7e9c12999aa0",
+    "source_sha256": "3f45057370d568f87b0ab313bfa91992d76e8551824e3a545014b8d4a47c2ea1",
+    "n_cells": 3934,
+    "tolerance_relative_l2": 0.001,
+    "counts": [
+      32,
+      128,
+      512,
+      2048,
+      3934
+    ],
+    "reductions": [
+      "full_denominator",
+      "included_mean"
+    ],
+    "max_dense_bytes": 536870912,
+    "max_epochs": 0,
+    "landmark_seed": 0,
+    "initializer": "exact_classical_scaling",
+    "labels_excluded": true,
+    "declared_before_schedule": true
+  },
+  "published_32_full_denominator": 0.8750312252544279,
+  "published_32_abs_difference": 1.1102230246251565e-16,
+  "rows": [
+    {
+      "n_landmarks": 32,
+      "reduction": "full_denominator",
+      "column_gradient_relative_l2": 0.875031225254428,
+      "meets_tolerance": false
+    },
+    {
+      "n_landmarks": 32,
+      "reduction": "included_mean",
+      "column_gradient_relative_l2": 5.200895732460104,
+      "meets_tolerance": false
+    },
+    {
+      "n_landmarks": 128,
+      "reduction": "full_denominator",
+      "column_gradient_relative_l2": 0.8507447445022002,
+      "meets_tolerance": false
+    },
+    {
+      "n_landmarks": 128,
+      "reduction": "included_mean",
+      "column_gradient_relative_l2": 2.611270261018054,
+      "meets_tolerance": false
+    },
+    {
+      "n_landmarks": 512,
+      "reduction": "full_denominator",
+      "column_gradient_relative_l2": 0.7419656881285815,
+      "meets_tolerance": false
+    },
+    {
+      "n_landmarks": 512,
+      "reduction": "included_mean",
+      "column_gradient_relative_l2": 1.183405861313516,
+      "meets_tolerance": false
+    },
+    {
+      "n_landmarks": 2048,
+      "reduction": "full_denominator",
+      "column_gradient_relative_l2": 0.3245178556729169,
+      "meets_tolerance": false
+    },
+    {
+      "n_landmarks": 2048,
+      "reduction": "included_mean",
+      "column_gradient_relative_l2": 0.32155282320671935,
+      "meets_tolerance": false
+    },
+    {
+      "n_landmarks": 3934,
+      "reduction": "full_denominator",
+      "column_gradient_relative_l2": 8.265916822883381e-17,
+      "meets_tolerance": true
+    },
+    {
+      "n_landmarks": 3934,
+      "reduction": "included_mean",
+      "column_gradient_relative_l2": 8.265916822883381e-17,
+      "meets_tolerance": true
+    }
+  ],
+  "any_partial_landmark_meets_tolerance": false,
+  "all_cell_rows_meet_tolerance": true,
+  "n_passing_rows": 2,
+  "elapsed_seconds": 82.36188798799992,
+  "fits_executed": 0,
+  "biological_validation": false,
+  "default_changed": false,
+  "exact_guard_disabled": false
+}

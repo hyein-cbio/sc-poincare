@@ -30,6 +30,7 @@ from sklearn.neighbors import NearestNeighbors
 
 from sc_poincare import experimental
 from sc_poincare._research_policy import ensure_active_paths
+from sc_poincare._resources import DEFAULT_MAX_DENSE_BYTES
 
 OBJECTIVE = "exact_mu_relative_stress_plus_local_ce"
 APPROXIMATION = "landmark_triangle"
@@ -309,18 +310,35 @@ def _teacher_block(teacher, start, stop):
     return torch.as_tensor(np.asarray(teacher[start:stop]), dtype=torch.float64)
 
 
-def _column_objective(u, distances, landmark_index, mean, teacher, config, geometry, chunk_size, *, backward):
+def _included_pair_count(n, n_landmarks):
+    """Ordered nonself pairs that touch at least one landmark."""
+    omitted = n - n_landmarks
+    return n * (n - 1) - omitted * (omitted - 1)
+
+
+def _column_objective(u, distances, landmark_index, mean, teacher, config, geometry, chunk_size, *, backward,
+                      reduction="full_denominator"):
     """Exact local CE plus global stress on pairs that touch a landmark.
 
     Both directed endpoints are included when either cell is a landmark.
-    The denominator stays ``N*(N-1)``, so omitted pairs contribute nothing
-    rather than a rescaled mean. When every cell is a landmark this is the
-    exact graph-stress objective.
+    ``full_denominator`` keeps ``N*(N-1)``, so omitted pairs contribute nothing
+    rather than a rescaled mean. ``included_mean`` averages only the included
+    ordered pairs. With at most one nonlandmark, every nonself pair is
+    included, so both reductions recover the exact objective when distances
+    and normalization are exact. Neither reduction changes the public default.
     """
     torch = experimental._torch()
     from sc_poincare._fitting import _torch_disk_length
     n = int(u.shape[0])
     index = torch.as_tensor(np.asarray(landmark_index, dtype=np.int64))
+    if reduction == "full_denominator":
+        denominator = n * (n - 1)
+    elif reduction == "included_mean":
+        denominator = _included_pair_count(n, int(index.shape[0]))
+        if denominator <= 0:
+            raise ValueError("included_mean needs at least one ordered landmark pair.")
+    else:
+        raise ValueError("reduction must be 'full_denominator' or 'included_mean'.")
     position = torch.full((n,), -1, dtype=torch.long)
     position[index] = torch.arange(len(landmark_index))
     is_landmark = position >= 0
@@ -350,7 +368,7 @@ def _column_objective(u, distances, landmark_index, mean, teacher, config, geome
             scale = config.distance_scale
             error = ((d - t) / scale).square() / (t / scale).clamp_min(config.relative_floor).square()
             error = torch.where(included, error, torch.zeros_like(error))
-            global_loss = error.sum() / (n * (n - 1))
+            global_loss = error.sum() / denominator
             self_mask = torch.zeros_like(d, dtype=torch.bool)
             self_mask[torch.arange(stop - start), rows] = True
             logits = (-d / config.gamma).masked_fill(self_mask, -torch.inf)
@@ -410,6 +428,75 @@ def _gradient_metrics(setup, completion, distances, landmark_index, geometry="po
         "completion_gradient_relative_l2": _relative_l2(completed_grad, exact),
         "column_objective_gradient_relative_l2": _relative_l2(column, exact),
     }
+
+
+def column_gradient_relative_l2(setup, distances, landmark_index, *, reduction="full_denominator", chunk_size=7,
+                                max_dense_bytes=DEFAULT_MAX_DENSE_BYTES):
+    """Relative L2 between one landmark-column gradient and exact MU.
+
+    The point is the exact classical initializer already stored on ``setup``.
+    The exact dense target stays in that setup; this does not disable the guard
+    or take an optimizer step. ``included_mean`` is a measured alternative, not
+    a default. The positive dense budget and prepared-array integrity are
+    rechecked before allocating tensors. Chunk invariance is cross-checked
+    with a neighboring block size, not a forced full-N autograd batch.
+    """
+    experimental._validate_setup(setup, _integer("max_dense_bytes", max_dense_bytes, 1))
+    if reduction not in ("full_denominator", "included_mean"):
+        raise ValueError("reduction must be 'full_denominator' or 'included_mean'.")
+    chunk_size = _integer("chunk_size", chunk_size, 1)
+    config = setup.config
+    indices = np.asarray(landmark_index)
+    if (indices.ndim != 1 or indices.dtype.kind not in "iu" or not indices.size
+            or len(np.unique(indices)) != len(indices)):
+        raise ValueError("landmark_index must be nonempty, unique integer landmark positions.")
+    if np.any(indices < 0) or np.any(indices >= len(setup.base_initial)):
+        raise ValueError("landmark_index is outside the prepared cells.")
+    indices = indices.astype(np.int64, copy=False)
+    raw = np.asarray(distances)
+    if raw.dtype.kind not in "iuf":
+        raise ValueError("distances must contain real numeric values.")
+    stored = np.asarray(raw, dtype=np.float64)
+    if (stored.shape != (len(indices), len(setup.base_initial))
+            or not np.isfinite(stored).all() or np.any(stored < 0)):
+        raise ValueError("distances must be finite, nonnegative and shaped (landmarks, cells).")
+    if np.any(stored[np.arange(len(indices)), indices] != 0):
+        raise ValueError("distances must be zero from each landmark to itself.")
+    torch = experimental._torch()
+    tangent = experimental._tangent_from_disk(setup.base_initial)
+    chunk_size = min(chunk_size, len(tangent))
+    reference_chunk_size = chunk_size - 1 if chunk_size == len(tangent) else chunk_size + 1
+    teacher = torch.tensor(np.array(setup.teacher, dtype=np.float64, copy=True), dtype=torch.float64)
+    exact_target = torch.tensor(np.array(setup.target, dtype=np.float64, copy=True), dtype=torch.float64)
+
+    def grad_of(objective, argument):
+        u = torch.tensor(tangent, dtype=torch.float64, requires_grad=True)
+        objective(u, argument)
+        return u.grad.detach().numpy().copy()
+
+    exact = grad_of(
+        lambda u, target: experimental._objective(
+            u, target, teacher, config, "poincare", chunk_size, backward=True,
+        ),
+        exact_target,
+    )
+    column = grad_of(
+        lambda u, _ignored: _column_objective(
+            u, stored, indices, setup.metadata["global_mean"], teacher, config,
+            "poincare", chunk_size, backward=True, reduction=reduction,
+        ),
+        None,
+    )
+    column_full = grad_of(
+        lambda u, _ignored: _column_objective(
+            u, stored, indices, setup.metadata["global_mean"], teacher, config,
+            "poincare", reference_chunk_size, backward=True, reduction=reduction,
+        ),
+        None,
+    )
+    if not np.allclose(column, column_full, rtol=1e-12, atol=1e-12):
+        raise FloatingPointError("Landmark-column gradient changed with chunk size.")
+    return _relative_l2(column, exact)
 
 
 def compare_landmark_reference(features, protocol, config, *, geometry="poincare"):
@@ -938,6 +1025,7 @@ __all__ = [
     "LandmarkReference",
     "LandmarkColumnResult",
     "LandmarkColumnSetup",
+    "column_gradient_relative_l2",
     "compare_landmark_reference",
     "fit_landmark_columns",
     "freeze_comparison",

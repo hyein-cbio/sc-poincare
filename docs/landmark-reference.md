@@ -57,9 +57,13 @@ re-evaluation.
 ## What this does not establish
 
 Synthetic recovery with every cell used as a landmark shows the reference path
-agrees with exact MU. A smaller landmark set is a different target: the tests
-require a strict triangle excess and a changed column gradient. Neither result
-is the Paul (2,730) or Moignard (3,934) reference, and neither authorizes
+agrees with exact MU. The tested small landmark set has a different target:
+the tests require a strict triangle excess and a changed column gradient.
+This is not true of every smaller set: N−1 landmarks include every nonself
+pair and recover the exact gradient when exact distances and the exact
+`global_mean` are supplied, as in `column_gradient_relative_l2`. This does
+not make `prepare_landmark_columns` exact at N−1: its landmark-column mean
+need not equal the exact mean. Neither result is the Paul (2,730) or Moignard (3,934) reference, and neither authorizes
 disabling the dense guard, full Planaria, or a new default.
 
 The completion still allocates an N-by-N matrix inside a run that already built
@@ -67,7 +71,8 @@ the exact target. `prepare_landmark_columns` / `fit_landmark_columns` are the
 separate matrix-free path: they store landmark distances and a sparse teacher.
 `max_dense_bytes=None` is rejected. When every cell is a landmark, the column
 mean is the exact nonself mean and a synthetic Adam trajectory matches
-`fit_graph_stress`. Fewer landmarks are a different objective.
+`fit_graph_stress`. Fewer landmarks generally use a different normalization
+and objective.
 
 ## Exact Moignard reference
 
@@ -88,6 +93,41 @@ Its normalization is the landmark-column mean, not the exact nonself mean, so
 it is not an exact-MU continuation. Phase RSS samples are in
 [moignard-landmark-column-fit.json](moignard-landmark-column-fit.json).
 
+## Exact Paul reference
+
+Ignored `data/paul/features.npy` is the recorded 2,730×20 matrix. Its file
+SHA256 is `0d1d53e52f404a74bc8211b2441174adace7f63cbd57965d91c440552f20fba5`,
+and its float64 bytes are
+`0386248d2c02c99f82cda2eb18b8e357b8e0399b10aba7e67575599fb115d90b`.
+The zero-epoch check used 32 landmarks, seed 0, and the default 512 MiB guard.
+It took 7.8 seconds and fitted nothing. Landmark columns agree with the exact
+target to 2.2e-14 absolute error. Triangle excess max is 11.48, the
+completion-mean relative error is 0.465, and the column-objective endpoint
+gradient differs from exact MU by relative L2 0.844. A reread of
+`data/paul_landmark_reference` reproduced the primary value with absolute
+difference 0. See [paul-landmark-reference.json](paul-landmark-reference.json)
+and [paul-landmark-restore.json](paul-landmark-restore.json).
+
+`data/paul/pca.npz` stores components, mean, and explained variance.
+`(X - mean) @ components.T` on the label-stripped public CSV stays within
+1.5e-13 absolute of the recorded features. The recomputed bytes were not
+used. sklearn full-SVD PCA20 still does not reproduce `0386248d…`.
+
+The same Moignard matrix was then used for a tolerance declared before the
+schedule: relative L2 at most 1e-3. Counts 32, 128, 512, 2048, and 3,934 were
+scored with the full denominator and with an included-pair mean. None of
+the tested partial counts passes. Every-cell landmarks pass for both reductions, at relative L2
+8.3e-17, and stay unpromoted. The 32-landmark full-denominator result matches
+the earlier reference to 1.1e-16. See
+[landmark-gradient-tolerance.json](landmark-gradient-tolerance.json).
+
+`column_gradient_relative_l2` validates the prepared setup and a positive
+`max_dense_bytes` (default 512 MiB), rejects malformed indices/distances, and
+checks chunk invariance with a neighboring row-block size rather than forcing
+a full-N autograd batch. These safeguards do not make the exact setup sparse.
+See the [critical-review follow-up](paul-landmark-critical-review.md) for
+regression coverage and source-pinned Moignard replay after integration.
+
 Public `Paul.csv` matches source SHA256
 `fed836ed28f148d9ee8efd8ec13ebd468f06ef9b92eeb6f9e218235d4ad2f21d`.
 The provenance runtime names NumPy 2.5.4, SciPy 1.18.1, scikit-learn 1.9.1,
@@ -106,9 +146,9 @@ gray-code enumeration of all 1,048,576 column-sign patterns misses the recorded
 hash for the one-thread scores, the default-thread scores, the one-thread
 Haswell, Sandybridge, Nehalem, and Penryn scores, SciPy `gesvd`, and the stable
 Torch 2.14.1 scores `c6e41671…`. The same full-SVD call misses the recorded
-Olsson hash. This checkout has no `data/astra37_handoff/` capsule, and the
-connected Drive has no Astra handoff or PCA feature file. The recorded Paul
-matrix is not on this machine and was not replaced with these scores.
+Olsson hash. This checkout has no `data/astra37_handoff/` capsule. Those PCA
+reconstructions were not substituted. The matching bytes are the stored
+`data/paul/features.npy` matrix used for the Paul reference above.
 
 The ignored tree `data/moignard_landmark_reference` stores the checked feature
 matrix, report, and checksum manifest. `reevaluate_study_tree` reran the frozen
