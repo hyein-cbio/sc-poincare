@@ -239,18 +239,20 @@ def test_study_tree_restore_recomputes_the_primary_metric(features, tmp_path):
         reevaluate_study_tree(directory)
 
 
-def test_included_mean_matches_exact_gradient_only_when_every_cell_is_a_landmark(features):
+@pytest.mark.parametrize('missing', [0, 1])
+def test_both_reductions_recover_exact_gradient_with_at_most_one_omitted_cell(features, missing):
     pytest.importorskip("torch")
     config = experimental.GraphStressConfig(n_neighbors=4)
     setup = experimental.prepare_graph_stress(features, config=config, max_dense_bytes=1 << 20)
     geodesic = np.array(setup.target, dtype=np.float64, copy=True)
     geodesic *= setup.metadata["global_mean"] / config.distance_scale
     n = len(features)
+    count = n - missing
     full = column_gradient_relative_l2(
-        setup, geodesic, np.arange(n), reduction="included_mean", chunk_size=5,
+        setup, geodesic[:count], np.arange(count), reduction="included_mean", chunk_size=5,
     )
     same = column_gradient_relative_l2(
-        setup, geodesic, np.arange(n), reduction="full_denominator", chunk_size=5,
+        setup, geodesic[:count], np.arange(count), reduction="full_denominator", chunk_size=5,
     )
     partial = column_gradient_relative_l2(
         setup, geodesic[:5], np.arange(5), reduction="included_mean", chunk_size=5,
@@ -260,6 +262,67 @@ def test_included_mean_matches_exact_gradient_only_when_every_cell_is_a_landmark
     assert partial > 1e-3
     with pytest.raises(ValueError, match="reduction"):
         column_gradient_relative_l2(setup, geodesic, np.arange(n), reduction="rescaled")
+
+
+def test_n_minus_one_matrix_free_normalization_is_not_the_exact_mean(features):
+    config = experimental.GraphStressConfig(n_neighbors=4)
+    exact = experimental.prepare_graph_stress(features, config=config, max_dense_bytes=1 << 20)
+    columns = prepare_landmark_columns(
+        features, config, n_landmarks=len(features) - 1, seed=0, max_dense_bytes=1 << 20)
+    assert columns.metadata['normalization'] == 'landmark_column_mean'
+    assert columns.metadata['global_mean'] != pytest.approx(exact.metadata['global_mean'], rel=1e-8)
+
+
+@pytest.mark.parametrize('indices', [[0., 1.5], [False, True], [], [0, 0], [-1, 1], [0, 19]])
+def test_column_gradient_rejects_invalid_landmark_indices(features, indices):
+    config = experimental.GraphStressConfig(n_neighbors=4)
+    setup = experimental.prepare_graph_stress(features, config=config)
+    with pytest.raises(ValueError, match='landmark_index'):
+        column_gradient_relative_l2(setup, np.zeros((len(indices), len(features))), indices)
+
+
+@pytest.mark.parametrize('invalid', ['negative', 'nonzero_self', 'complex'])
+def test_column_gradient_rejects_invalid_distances(features, invalid):
+    setup = experimental.prepare_graph_stress(features, config=experimental.GraphStressConfig(n_neighbors=4))
+    distances = np.array(setup.target[:3])
+    if invalid == 'negative':
+        distances[0, 1] = -1.
+    elif invalid == 'nonzero_self':
+        distances[0, 0] = 1.
+    else:
+        distances = distances.astype(complex) + 1j
+    with pytest.raises(ValueError, match='distances'):
+        column_gradient_relative_l2(setup, distances, np.arange(3))
+
+
+def test_column_gradient_validates_budget_and_prepared_setup(features):
+    setup = experimental.prepare_graph_stress(features, config=experimental.GraphStressConfig(n_neighbors=4))
+    distances = np.array(setup.target[:3])
+    with pytest.raises(ValueError, match='max_dense_bytes'):
+        column_gradient_relative_l2(setup, distances, np.arange(3), max_dense_bytes=None)
+    with pytest.raises(MemoryError):
+        column_gradient_relative_l2(setup, distances, np.arange(3), max_dense_bytes=1)
+    setup.target.setflags(write=True)
+    setup.target[0, 1] += .01
+    with pytest.raises(ValueError, match='Prepared target'):
+        column_gradient_relative_l2(setup, distances, np.arange(3))
+
+
+def test_column_gradient_chunk_check_does_not_force_a_full_batch(features, monkeypatch):
+    pytest.importorskip('torch')
+    from sc_poincare import landmark
+    setup = experimental.prepare_graph_stress(features, config=experimental.GraphStressConfig(n_neighbors=4))
+    distances = np.array(setup.target[:3]) * setup.metadata['global_mean'] / setup.config.distance_scale
+    objective = landmark._column_objective
+    chunks = []
+
+    def tracked(*args, **kwargs):
+        chunks.append(args[7])
+        return objective(*args, **kwargs)
+
+    monkeypatch.setattr(landmark, '_column_objective', tracked)
+    column_gradient_relative_l2(setup, distances, np.arange(3), chunk_size=3)
+    assert chunks == [3, 4]
 
 
 def test_reference_tree_parent_is_created_only_as_the_new_directory(features, tmp_path):

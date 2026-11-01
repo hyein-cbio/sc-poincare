@@ -122,8 +122,12 @@ These integrations do not redesign the low-level objectives or optimizers:
 3. The stored Paul 2,730×20 matrix matches `0386248d…`, and the zero-epoch
    landmark check is recorded. sklearn PCA20 still does not reproduce that
    hash. Exact Moignard 3,934 remains checked. A predeclared relative-L2
-   tolerance of 1e-3 is met only when every cell is a landmark. The partial
-   landmark objective is not a new default.
+   tolerance of 1e-3 is missed by all tested partial counts (32, 128, 512,
+   2048) and met by the tested all-cell case. This does not exclude other
+   counts: the exact-mean diagnostic includes every nonself pair at N−1.
+   `prepare_landmark_columns` uses its own column mean, so this does not
+   make that matrix-free fitter exact at N−1. The partial landmark
+   objective is not a new default.
 4. Only then consider broader scale/default or publication claims. The current
    exact implementation is not atlas-scale merely because a few thousand cells fit.
 

@@ -19,13 +19,16 @@ Record: [paul-landmark-reference.json](paul-landmark-reference.json).
 The follow-up tolerance was relative L2 1e-3, declared before the Moignard
 schedule. Counts 32, 128, 512, 2048, and all 3,934 cells were scored with the
 full denominator and with an included-pair mean. The published 32-landmark
-value 0.875 is reproduced. No partial count meets 1e-3. The included-pair mean
-is worse at 32 landmarks (relative L2 5.20). Every-cell landmarks meet the
+value 0.875 is reproduced. None of the tested partial counts meets 1e-3.
+The included-pair mean is worse at 32 landmarks (relative L2 5.20). Every-cell landmarks meet the
 tolerance (relative L2 8.3e-17) because that case is the exact objective. It
 is not promoted. Speed without a partial match is not a scalability result.
-The partial-landmark objective therefore does not become a performance
-improvement: the gradient stays away from exact MU until every cell is a
-landmark, and that case stores the exact objective. Record:
+These measured partial counts do not establish a performance improvement.
+This is not a claim about every smaller landmark set: with N−1 landmarks,
+every nonself pair touches a landmark. With exact distances and the exact
+`global_mean`, the diagnostic recovers the exact gradient without omitting
+any pairwise work. The matrix-free preparation instead uses its column mean,
+which need not equal the exact mean at N−1. Record:
 [landmark-gradient-tolerance.json](landmark-gradient-tolerance.json).
 
 The local Moignard `arrays.npz` still hashes to
@@ -35,14 +38,15 @@ copy.
 
 ## 2. Treat the short intrinsic-optimizer probes as hypotheses
 
-The same unmerged branch ran 20-update Moignard comparisons of tangent Adam,
+The original development branch ran 20-update Moignard comparisons of tangent Adam,
 SGD, ball dimensions 2 and 3, curvatures 1 and 0.25, a Lorentz retraction and
 Riemannian RMSProp. RMSProp had lower loss and higher macro purity than Adam
 on that single development run. SGD did not move. Dimension 3 lowered loss
 without raising macro purity.
 
-None of these is on `main`, and none should become a default from a
-20-update development fit. The pre-registered Adam-versus-RMSProp rule is
+The opt-in helpers are now on `main`, but these historical 20-update
+measurements do not validate the later numerical corrections and do not
+justify a default. See [the corrected Moignard reruns](moignard-pr3-revalidation-2026-10-30.md). The pre-registered Adam-versus-RMSProp rule is
 [adam-rmsprop-protocol.md](adam-rmsprop-protocol.md): the same graph-stress
 objective and initialization, seed 0 for selection, seeds 1–4 only as
 confirmation, 1,500 updates, and the existing Paul and Moignard development
@@ -58,8 +62,10 @@ Current gene MSE and neighbor purity use the cells that were just embedded.
 They can reward a graph-construction artifact. A promotion claim needs one
 predeclared score that the fit does not see. `place_heldout_cells` now places
 held-out cells from feature distances to a frozen training disk and does not
-write the training coordinates. It is not one of the Adam-versus-RMSProp
-guardrails, and calling it is not a promotion.
+write the training coordinates. Failed optimization or a point in the
+numerical boundary penalty region is rejected rather than silently returned.
+It is not one of the Adam-versus-RMSProp guardrails, and calling it is not a
+promotion.
 
 ## 4. Independent data beyond pbmc3k
 
@@ -101,9 +107,10 @@ coordinates. Do not promise JOSS eligibility from the current checklist.
 
 ## Disposition of this list
 
-The partial-landmark idea does not improve performance. Its gradient matches
-exact MU only when every cell is a landmark. The other items are closed for
-this environment: the RMSProp seed-0 screen missed every guardrail, so seeds
+The tested partial-landmark counts do not establish a performance improvement;
+they miss the declared gradient tolerance. That observation is not a theorem
+about all partial counts (N−1 is an exact-pair counterexample). The other items
+were closed for the environment that recorded these results: the RMSProp seed-0 screen missed every guardrail, so seeds
 1–4 stay unrun; Planaria still exceeds the dense guard; LARRY stays unfitted;
 CodeRabbit is not installed here; publication checks wait for submission. No
 further run from this list is executable here.

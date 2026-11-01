@@ -152,6 +152,26 @@ def test_intrinsic_rmsprop_matches_the_initial_loss_and_stays_in_the_disk(featur
             np.testing.assert_allclose(fitted["best"], fitted["current"])
 
 
+@pytest.mark.parametrize('name', ['fit_from_initial', 'fit_intrinsic_rmsprop'])
+@pytest.mark.parametrize('epochs', [0, 3])
+def test_best_checkpoint_matches_its_recorded_objective(features, name, epochs):
+    torch = pytest.importorskip('torch')
+    from sc_poincare import controlled_probe
+    setup = experimental.prepare_graph_stress(features, config=experimental.GraphStressConfig(n_neighbors=4))
+    initial = classical_jitter(setup, 0)
+    fitted = getattr(controlled_probe, name)(setup, initial, epochs=epochs, chunk_size=5, max_dense_bytes=1 << 20)
+    value = controlled_probe._probe_objective(
+        torch.tensor(fitted['best'], dtype=torch.float64),
+        torch.tensor(np.array(setup.target), dtype=torch.float64),
+        torch.tensor(np.array(setup.teacher), dtype=torch.float64), setup.config, 5)
+    assert value == pytest.approx(fitted['best_loss'], rel=1e-12, abs=1e-12)
+    assert fitted['best_loss'] == fitted['loss_trace'][fitted['best_epoch']]
+    assert not np.shares_memory(fitted['best'], fitted['current'])
+    if epochs == 0:
+        assert fitted['best_epoch'] == 0
+        np.testing.assert_allclose(fitted['best'], initial, rtol=0., atol=1e-15)
+
+
 def test_development_input_blocks_promotion():
     assert promotion_allowed(development_input=True, joint_improvements=[True, True]) is False
     assert promotion_allowed(development_input=False, joint_improvements=[True, False]) is False

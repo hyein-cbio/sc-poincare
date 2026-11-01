@@ -79,8 +79,8 @@ def main():
     recomputed = np.ascontiguousarray((matrix - mean) @ components.T, dtype=np.float64)
     transform_max_abs = float(np.max(np.abs(recomputed - features)))
     recomputed_sha = _array_sha256(recomputed)
-    if recomputed_sha == FEATURE_SHA256:
-        raise SystemExit("Recomputed scores unexpectedly matched; this script still uses features.npy.")
+    # Matching reconstruction is valid too. Always retain the independently
+    # pinned features.npy bytes rather than substituting the reconstruction.
     config = GraphStressConfig()
     protocol = freeze_comparison(
         features,

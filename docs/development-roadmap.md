@@ -229,7 +229,7 @@ have not been satisfied merely by selecting MU as the new provisional default.
   epochs, and the 512 MiB guard. Counts are 32, 128, 512, 2048, and all 3,934
   cells. Reductions are the existing full denominator and an included-pair
   mean. The published 32-landmark full-denominator value is reproduced
-  (absolute difference 1.1e-16). No partial count meets 1e-3. The included-pair
+  (absolute difference 1.1e-16). No tested partial count meets 1e-3. The included-pair
   mean is farther from exact MU at 32 landmarks (relative L2 5.20). Both
   reductions meet the tolerance when every cell is a landmark (relative L2
   8.3e-17). That match is the exact objective, not a smaller approximation,
@@ -299,9 +299,13 @@ These are not default changes and require their own controlled experiments:
 - [ ] Obtain explicit approval for commits/pushes and new expensive experiments.
   Earlier approval does not silently authorize future jobs.
 
-On exact Moignard, the landmark-column gradient meets relative L2 1e-3 only
-when every cell is a landmark. A partial landmark set is not a validated
-approximation of exact MU, and it is not a performance improvement. The
+On exact Moignard, none of the tested partial counts (32, 128, 512, 2048)
+meets relative L2 1e-3; the tested all-cell case does. This does not cover
+every partial count: N−1 includes all nonself pairs when exact distances and
+the exact `global_mean` are used by the diagnostic. The matrix-free
+`prepare_landmark_columns` uses a column mean that need not equal that exact
+mean, even at N−1. The measured partial sets do not establish a
+validated approximation or a performance improvement. The
 1,500-update Adam-versus-RMSProp seed-0 screen missed every guardrail; seeds
 1–4 were not run. Full Planaria remains over the dense guard, LARRY stays
 unfitted, and publication checks wait for submission. No further item on

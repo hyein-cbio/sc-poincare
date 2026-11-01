@@ -158,9 +158,9 @@ def guardrail_passes(change, dataset):
 
 
 def compact(record):
-    kept = dict(record)
-    kept.pop("populations_k15", None)
-    return kept
+    # Keep per-population diagnostics inside scores, matching the saved screen
+    # schema. Dropping the duplicate arm-level copy must not discard them.
+    return dict(record)
 
 
 def fit_arm(setup, initial, optimizer):

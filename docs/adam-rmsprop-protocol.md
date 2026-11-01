@@ -1,7 +1,9 @@
 # Pre-registered rule: tangent Adam versus Riemannian RMSProp
 
-This rule is written before any RMSProp fit. It does not authorize that fit,
-add the optimizer, or change a default. The public graph-stress optimizer
+The selection rule below was recorded before the authorized 1,500-update
+screen, following the exploratory 20-update probe. Recording the rule did
+not itself authorize a fit or change a default. The opt-in implementation
+and later execution are described below. The public graph-stress optimizer
 remains tangent Adam, and the public geometry remains `poincare`.
 
 The 20-update Moignard probe is a hypothesis. A lower loss or a higher macro
@@ -31,8 +33,9 @@ Adam is the baseline and RMSProp is the only candidate. The numbers below
 are the development rules in
 [embedding-followup.md](embedding-followup.md). They are not refit here.
 Meeting them does not promote RMSProp: gene MSE and neighbor purity use the
-cells that were just embedded. A promotion claim still needs one score the
-fit does not see, and the present API has no such mapping.
+cells that were just embedded. A promotion claim still needs a predeclared
+score the fit does not see. The held-out mapping described below exists,
+but this screen does not perform held-out validation.
 
 - Paul: K15 macro purity gain at least 0.003, and mean gain for 17Neu,
   18Eos, and 19Lymph at least 0.005.

@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 
 from sc_poincare.evaluation import place_heldout_cells
+from types import SimpleNamespace
 
 
 def test_duplicate_cell_with_one_neighbor_stays_on_that_coordinate():
@@ -41,3 +42,44 @@ def test_heldout_placement_rejects_disk_and_shape_errors():
         place_heldout_cells(features, coordinates, features[:0])
     with pytest.raises(ValueError, match="columns"):
         place_heldout_cells(features, coordinates, np.ones((1, 3)))
+
+
+def test_heldout_placement_rejects_unfinished_optimization(monkeypatch):
+    def unfinished(*args, **kwargs):
+        return SimpleNamespace(x=np.array([.1, .2]), fun=1., success=False,
+                               message='Iteration limit reached')
+
+    monkeypatch.setattr('scipy.optimize.minimize', unfinished)
+    with pytest.raises(RuntimeError, match='optimization failed.*Iteration limit'):
+        place_heldout_cells(np.array([[0.]]), np.zeros((1, 2)), np.array([[1.]]), n_neighbors=1)
+
+
+@pytest.mark.parametrize('point', [[np.sqrt(1. - 5e-9), 0.], [1., 0.], [np.nan, 0.]])
+def test_heldout_placement_rejects_penalty_region_even_if_optimizer_reports_success(point, monkeypatch):
+    monkeypatch.setattr('scipy.optimize.minimize', lambda *a, **k: SimpleNamespace(
+        x=np.array(point), fun=1., success=True, message='converged'))
+    with pytest.raises(FloatingPointError, match='disk'):
+        place_heldout_cells(np.array([[0.]]), np.zeros((1, 2)), np.array([[1.]]), n_neighbors=1)
+
+
+def test_heldout_placement_fits_nonduplicate_cells_without_moving_training():
+    features = np.array([[0., 0.], [1., 0.], [0., 1.]])
+    coordinates = np.array([[0., 0.], [.2, 0.], [0., .2]])
+    frozen = coordinates.copy()
+    placed = place_heldout_cells(features, coordinates, np.array([[.2, .3]]), n_neighbors=3)
+    assert np.isfinite(placed).all()
+    assert np.sum(placed * placed) < 1. - 1e-8
+    np.testing.assert_array_equal(coordinates, frozen)
+
+
+def test_iteration_limit_is_not_a_successful_heldout_result():
+    rng = np.random.default_rng(37)
+    features = rng.normal(size=(15, 4))
+    coordinates = rng.normal(scale=.2, size=(15, 2))
+    with pytest.raises(RuntimeError, match='optimization failed'):
+        place_heldout_cells(features, coordinates, rng.normal(size=(2, 4)), n_neighbors=5, max_iter=1)
+
+
+def test_heldout_placement_requires_training_cells():
+    with pytest.raises(ValueError, match='training_features must contain'):
+        place_heldout_cells(np.empty((0, 2)), np.empty((0, 2)), np.ones((1, 2)), n_neighbors=1)

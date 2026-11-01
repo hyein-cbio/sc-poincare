@@ -73,6 +73,7 @@ def main():
                 distances[:count],
                 indices[:count],
                 reduction=reduction,
+                max_dense_bytes=GUARD,
             )
             rows.append({
                 "n_landmarks": int(count),

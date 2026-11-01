@@ -57,9 +57,13 @@ re-evaluation.
 ## What this does not establish
 
 Synthetic recovery with every cell used as a landmark shows the reference path
-agrees with exact MU. A smaller landmark set is a different target: the tests
-require a strict triangle excess and a changed column gradient. Neither result
-is the Paul (2,730) or Moignard (3,934) reference, and neither authorizes
+agrees with exact MU. The tested small landmark set has a different target:
+the tests require a strict triangle excess and a changed column gradient.
+This is not true of every smaller set: N−1 landmarks include every nonself
+pair and recover the exact gradient when exact distances and the exact
+`global_mean` are supplied, as in `column_gradient_relative_l2`. This does
+not make `prepare_landmark_columns` exact at N−1: its landmark-column mean
+need not equal the exact mean. Neither result is the Paul (2,730) or Moignard (3,934) reference, and neither authorizes
 disabling the dense guard, full Planaria, or a new default.
 
 The completion still allocates an N-by-N matrix inside a run that already built
@@ -67,7 +71,8 @@ the exact target. `prepare_landmark_columns` / `fit_landmark_columns` are the
 separate matrix-free path: they store landmark distances and a sparse teacher.
 `max_dense_bytes=None` is rejected. When every cell is a landmark, the column
 mean is the exact nonself mean and a synthetic Adam trajectory matches
-`fit_graph_stress`. Fewer landmarks are a different objective.
+`fit_graph_stress`. Fewer landmarks generally use a different normalization
+and objective.
 
 ## Exact Moignard reference
 
@@ -110,11 +115,18 @@ used. sklearn full-SVD PCA20 still does not reproduce `0386248d…`.
 
 The same Moignard matrix was then used for a tolerance declared before the
 schedule: relative L2 at most 1e-3. Counts 32, 128, 512, 2048, and 3,934 were
-scored with the full denominator and with an included-pair mean. No partial
-count passes. Every-cell landmarks pass for both reductions, at relative L2
+scored with the full denominator and with an included-pair mean. None of
+the tested partial counts passes. Every-cell landmarks pass for both reductions, at relative L2
 8.3e-17, and stay unpromoted. The 32-landmark full-denominator result matches
 the earlier reference to 1.1e-16. See
 [landmark-gradient-tolerance.json](landmark-gradient-tolerance.json).
+
+`column_gradient_relative_l2` validates the prepared setup and a positive
+`max_dense_bytes` (default 512 MiB), rejects malformed indices/distances, and
+checks chunk invariance with a neighboring row-block size rather than forcing
+a full-N autograd batch. These safeguards do not make the exact setup sparse.
+See the [critical-review follow-up](paul-landmark-critical-review.md) for
+regression coverage and source-pinned Moignard replay after integration.
 
 Public `Paul.csv` matches source SHA256
 `fed836ed28f148d9ee8efd8ec13ebd468f06ef9b92eeb6f9e218235d4ad2f21d`.
