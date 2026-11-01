@@ -44,10 +44,10 @@ None of these is on `main`, and none should become a default from a
 objective and initialization, seed 0 for selection, seeds 1–4 only as
 confirmation, 1,500 updates, and the existing Paul and Moignard development
 screen. That screen does not promote the optimizer, because those scores are
-transductive. The 1,500-update comparison is not started. `fit_intrinsic_rmsprop` in
-`controlled_probe.py` is the existing short-probe implementation; it is not a
-default. Paul can now be scored only from `data/paul/features.npy`. That
-availability does not start the fit.
+transductive. The authorized seed-0 screen is recorded in
+[adam-rmsprop-screen.json](adam-rmsprop-screen.json). RMSProp misses every
+guardrail on Paul and Moignard, so seeds 1–4 were not run and the tangent-Adam
+default is unchanged.
 
 ## 3. Separate held-out quality from transductive neighbor scores
 

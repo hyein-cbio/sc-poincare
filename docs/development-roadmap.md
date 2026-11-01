@@ -302,5 +302,6 @@ These are not default changes and require their own controlled experiments:
 On exact Moignard, the landmark-column gradient meets relative L2 1e-3 only
 when every cell is a landmark. A partial landmark set is not a validated
 approximation of exact MU. The next scientific priority is independent
-biology and initialization validation. Full Planaria and the 1,500-update
-Adam-versus-RMSProp comparison remain unstarted.
+biology and initialization validation. Full Planaria remains unstarted.
+The 1,500-update Adam-versus-RMSProp seed-0 screen missed every guardrail;
+seeds 1–4 were not run.

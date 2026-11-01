@@ -52,6 +52,22 @@ A nonmatching PCA is not a substitute. The stored `data/paul/features.npy`
 bytes match this hash. That recovery does not start the comparison.
 
 `controlled_probe.fit_intrinsic_rmsprop` implements the short-probe update.
-That implementation does not start this 1,500-update comparison.
 `evaluation.place_heldout_cells` can map a cell the fit did not move, and it
-is not added to the guardrails above.
+is not one of the guardrails above.
+
+## Authorized seed-0 execution
+
+The 1,500-update screen was run after a separate request. Both arms used
+`GraphStressConfig()`, Poincaré geometry, classical jitter seed 0, and the
+512 MiB guard. Labels did not enter preparation or fitting. The scored point
+is the lowest training loss, including initialization. Paul used the stored
+matrix `0386248d…`. Moignard used `674f8b38…`. The PS feature medoid is row
+1736. Initial losses match across arms.
+
+RMSProp misses every seed-0 guardrail on both datasets. Its best losses are
+higher (Paul 0.2130 at epoch 500 versus Adam 0.2083 at epoch 1500; Moignard
+0.2426 at epoch 313 versus Adam 0.2375 at epoch 1499). Paul K15 macro purity
+changes by −0.0097 and the 17Neu/18Eos/19Lymph mean by −0.0056. Moignard K30
+MSE rises by 0.0072 and the stage Spearman falls by 0.0253. Seeds 1–4 were
+not run. The tangent-Adam default is unchanged. Record:
+[adam-rmsprop-screen.json](adam-rmsprop-screen.json).
