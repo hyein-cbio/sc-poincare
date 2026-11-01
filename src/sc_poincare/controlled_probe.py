@@ -168,7 +168,8 @@ def _objective_curvature(u, target, teacher, config, chunk_size, curvature, *, b
 
 
 def fit_from_initial(setup, initial, *, epochs, chunk_size=256, geometry="poincare",
-                     max_dense_bytes, teacher=None, optimizer_name="adam", curvature=1.):
+                     max_dense_bytes, teacher=None, optimizer_name="adam", curvature=1.,
+                     progress_every=0):
     """Adam or plain SGD on an exact setup from a caller-supplied start.
 
     ``optimizer_name='adam'`` is the existing tangent Adam update. ``'sgd'``
@@ -180,6 +181,7 @@ def fit_from_initial(setup, initial, *, epochs, chunk_size=256, geometry="poinca
     experimental._validate_setup(setup, max_dense_bytes)
     epochs = experimental._integer("epochs", epochs, 0)
     chunk_size = experimental._integer("chunk_size", chunk_size)
+    progress_every = experimental._integer("progress_every", progress_every, 0)
     if geometry not in ("poincare", "euclidean"):
         raise ValueError("geometry must be 'poincare' or 'euclidean'.")
     if optimizer_name not in ("adam", "sgd"):
@@ -216,7 +218,7 @@ def fit_from_initial(setup, initial, *, epochs, chunk_size=256, geometry="poinca
         optimizer = torch.optim.SGD([u], lr=config.learning_rate)
     target = torch.tensor(np.array(setup.target, dtype=np.float64, copy=True), dtype=torch.float64)
     teacher_t = torch.tensor(teacher_matrix, dtype=torch.float64)
-    best_loss, best_epoch, trace = np.inf, 0, []
+    best_loss, best_epoch, best, trace = np.inf, 0, None, []
     current = None
     for epoch in range(epochs + 1):
         if curvature == 1.:
@@ -238,10 +240,12 @@ def fit_from_initial(setup, initial, *, epochs, chunk_size=256, geometry="poinca
             current = (u * factor).detach().numpy().copy()
         trace.append(float(loss))
         if loss < best_loss:
-            best_loss, best_epoch = float(loss), epoch
+            best_loss, best_epoch, best = float(loss), epoch, current.copy()
+        if progress_every and (epoch % progress_every == 0 or epoch == epochs):
+            print(f"{optimizer_name} epoch {epoch} loss {float(loss):.6f}", flush=True)
         if epoch < epochs:
             optimizer.step()
-    return dict(loss_trace=trace, current=current, best_loss=best_loss, best_epoch=best_epoch,
+    return dict(loss_trace=trace, current=current, best=best, best_loss=best_loss, best_epoch=best_epoch,
                 epochs=epochs, optimizer_name=optimizer_name, curvature=curvature)
 
 
@@ -358,15 +362,18 @@ def fit_lorentz(setup, initial, *, epochs, chunk_size=256, max_dense_bytes, lear
     return dict(loss_trace=trace, current=current.numpy(), minkowski_diag=_minkowski(current, current).numpy(), epochs=epochs)
 
 
-def fit_intrinsic_rmsprop(setup, initial, *, epochs, chunk_size=256, max_dense_bytes, beta=0.9, eps=1e-8):
+def fit_intrinsic_rmsprop(setup, initial, *, epochs, chunk_size=256, max_dense_bytes, beta=0.9, eps=1e-8,
+                          progress_every=0):
     """RMSProp on the Riemannian gradient, retracted in the Poincaré metric.
 
     The loss is the exact MU objective at the current disk point. The second
-    moment is bias-corrected. This is not tangent Adam and not a default.
+    moment is bias-corrected. ``best`` is the lowest-loss disk point, including
+    initialization. This is not tangent Adam and not a default.
     """
     experimental._validate_setup(setup, max_dense_bytes)
     epochs = experimental._integer("epochs", epochs, 0)
     chunk_size = experimental._integer("chunk_size", chunk_size)
+    progress_every = experimental._integer("progress_every", progress_every, 0)
     torch = experimental._torch()
     from sc_poincare._fitting import _shrink_torch
     config = setup.config
@@ -375,8 +382,16 @@ def fit_intrinsic_rmsprop(setup, initial, *, epochs, chunk_size=256, max_dense_b
     teacher = torch.tensor(np.array(setup.teacher, dtype=np.float64, copy=True), dtype=torch.float64)
     second = torch.zeros_like(point)
     trace = []
+    best_loss, best_epoch, best = np.inf, 0, None
+    current = None
     for epoch in range(epochs + 1):
-        trace.append(_probe_objective(point, target, teacher, config, chunk_size, backward=epoch < epochs))
+        loss = _probe_objective(point, target, teacher, config, chunk_size, backward=epoch < epochs)
+        trace.append(loss)
+        current = point.detach().numpy().copy()
+        if loss < best_loss:
+            best_loss, best_epoch, best = float(loss), epoch, current.copy()
+        if progress_every and (epoch % progress_every == 0 or epoch == epochs):
+            print(f"rmsprop epoch {epoch} loss {float(loss):.6f}", flush=True)
         if epoch == epochs:
             break
         grad = point.grad
@@ -390,10 +405,12 @@ def fit_intrinsic_rmsprop(setup, initial, *, epochs, chunk_size=256, max_dense_b
         delta = config.learning_rate * riemannian / (torch.sqrt(corrected) + eps)
         updated = _shrink_torch(point.detach() - delta.detach())
         point = updated.detach().requires_grad_(True)
-    current = point.detach().numpy()
-    if np.any(np.sum(current * current, axis=1) >= 1):
+    if np.any(np.sum(current * current, axis=1) >= 1) or np.any(np.sum(best * best, axis=1) >= 1):
         raise FloatingPointError("Intrinsic update left the open disk.")
-    return dict(loss_trace=trace, current=current, epochs=epochs, beta=beta)
+    return dict(
+        loss_trace=trace, current=current, best=best, best_loss=best_loss, best_epoch=best_epoch,
+        epochs=epochs, beta=beta,
+    )
 
 
 __all__ = [

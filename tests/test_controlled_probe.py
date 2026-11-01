@@ -143,6 +143,13 @@ def test_intrinsic_rmsprop_matches_the_initial_loss_and_stays_in_the_disk(featur
     assert intrinsic["loss_trace"][0] == pytest.approx(adam["loss_trace"][0], rel=1e-6, abs=1e-6)
     assert intrinsic["loss_trace"][-1] != pytest.approx(adam["loss_trace"][-1])
     assert np.max(np.sum(intrinsic["current"] ** 2, axis=1)) < 1
+    for fitted in (adam, intrinsic):
+        assert fitted["best_epoch"] == int(np.argmin(fitted["loss_trace"]))
+        assert fitted["best_loss"] == pytest.approx(min(fitted["loss_trace"]))
+        assert fitted["best"].shape == fitted["current"].shape
+        assert np.max(np.sum(fitted["best"] ** 2, axis=1)) < 1
+        if fitted["best_epoch"] == fitted["epochs"]:
+            np.testing.assert_allclose(fitted["best"], fitted["current"])
 
 
 def test_development_input_blocks_promotion():
