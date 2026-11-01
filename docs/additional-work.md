@@ -23,7 +23,10 @@ value 0.875 is reproduced. No partial count meets 1e-3. The included-pair mean
 is worse at 32 landmarks (relative L2 5.20). Every-cell landmarks meet the
 tolerance (relative L2 8.3e-17) because that case is the exact objective. It
 is not promoted. Speed without a partial match is not a scalability result.
-Record: [landmark-gradient-tolerance.json](landmark-gradient-tolerance.json).
+The partial-landmark objective therefore does not become a performance
+improvement: the gradient stays away from exact MU until every cell is a
+landmark, and that case stores the exact objective. Record:
+[landmark-gradient-tolerance.json](landmark-gradient-tolerance.json).
 
 The local Moignard `arrays.npz` still hashes to
 `75da11742aa4773b28f62463c3c6b63146024e812fb7aaaf494d2f864ad5ca17`, the same
@@ -95,3 +98,12 @@ CLI is not installed on this host, so this item stays open.
 Confirm the license, citation and packaging rules that apply on the day of
 submission. Package MIT does not relicense PoincaréMaps inputs or reference
 coordinates. Do not promise JOSS eligibility from the current checklist.
+
+## Disposition of this list
+
+The partial-landmark idea does not improve performance. Its gradient matches
+exact MU only when every cell is a landmark. The other items are closed for
+this environment: the RMSProp seed-0 screen missed every guardrail, so seeds
+1–4 stay unrun; Planaria still exceeds the dense guard; LARRY stays unfitted;
+CodeRabbit is not installed here; publication checks wait for submission. No
+further run from this list is executable here.
