@@ -300,7 +300,7 @@
         "internal_api": "openblas",
         "num_threads": 1,
         "prefix": "libopenblas",
-        "filepath": "/Users/choh/pixi/work0/.pixi/envs/default/lib/libopenblas.0.dylib",
+        "filepath": "libopenblas.0.dylib",
         "version": "0.3.34",
         "threading_layer": "openmp",
         "architecture": "VORTEX"
@@ -310,7 +310,7 @@
         "internal_api": "openmp",
         "num_threads": 1,
         "prefix": "libomp",
-        "filepath": "/Users/choh/pixi/work0/.pixi/envs/default/lib/libomp.dylib",
+        "filepath": "libomp.dylib",
         "version": null
       }
     ],

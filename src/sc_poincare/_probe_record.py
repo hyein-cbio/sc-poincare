@@ -106,7 +106,9 @@ def provenance(config, initial, *, elapsed_seconds):
         evaluation_k=15, max_dense_bytes=512 * 1024**2, device="cpu", dtype="float64",
         python=sys.version, platform=platform.platform(),
         versions={name: version(name) for name in ("numpy", "scipy", "pandas", "scikit-learn", "torch", "threadpoolctl")},
-        torch_threads=torch.get_num_threads(), threadpools=threadpool_info(), elapsed_seconds=elapsed_seconds,
+        torch_threads=torch.get_num_threads(),
+        threadpools=[dict(pool, filepath=Path(pool["filepath"]).name) for pool in threadpool_info()],
+        elapsed_seconds=elapsed_seconds,
     )
 
 

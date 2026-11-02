@@ -5,7 +5,7 @@ import json
 import numpy as np
 import pytest
 
-from sc_poincare._probe_record import load_moignard, parse_probe_args, write_record
+from sc_poincare._probe_record import load_moignard, parse_probe_args, provenance, write_record
 
 
 @pytest.mark.parametrize("kind", ["lorentz", "curvature"])
@@ -40,6 +40,28 @@ def test_write_record_is_exclusive_and_array_hash_is_verifiable(tmp_path):
     with pytest.raises(FileExistsError):
         write_record(output, {}, {"current": values + 1})
     assert before == (output.read_bytes(), sidecar.read_bytes())
+
+
+@pytest.mark.parametrize("filepath,basename", [
+    ("/private/local/lib/libopenblas.0.dylib", "libopenblas.0.dylib"),
+    ("/opt/local/lib/libopenblas.so", "libopenblas.so"),
+    ("libopenblas.dll", "libopenblas.dll"),
+])
+def test_provenance_records_threadpool_basenames(monkeypatch, filepath, basename):
+    pytest.importorskip("torch")
+    threadpoolctl = pytest.importorskip("threadpoolctl")
+    from sc_poincare.experimental import GraphStressConfig
+
+    pool = dict(filepath=filepath, user_api="blas", internal_api="openblas",
+                num_threads=1, prefix="libopenblas", version=None)
+    monkeypatch.setattr(threadpoolctl, "threadpool_info", lambda: [pool])
+    monkeypatch.setattr("sc_poincare._probe_record.version", lambda name: "test-version")
+
+    record = provenance(GraphStressConfig(), np.zeros((3, 2)), elapsed_seconds=1.25)
+
+    assert record["threadpools"] == [dict(pool, filepath=basename)]
+    assert pool["filepath"] == filepath
+    assert record["elapsed_seconds"] == 1.25
 
 
 def test_hash_mismatch_precedes_csv_parsing(tmp_path):
