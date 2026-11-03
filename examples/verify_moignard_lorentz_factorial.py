@@ -46,6 +46,8 @@ def verify(record, features, labels, setup):
             raise ValueError("Initialization mismatch")
         for row in report["results"]:
             key = row["condition"]
+            if row["biological_validation"] or row["promoted"]:
+                raise ValueError(f"Invalid development-data claims: {key}")
             if key != row["distance_mode"] + "__" + row["gradient_mode"] or row["shared_sha256"] != hashes:
                 raise ValueError("Condition or shared input mismatch")
             trace, current = saved[key + "__loss_trace"], saved[key + "__current"]
@@ -69,8 +71,11 @@ def verify(record, features, labels, setup):
                 raise ValueError("Initial objective mismatch")
             errors = {}
             for mode in ab.DISTANCES:
+                saved_loss = row["final_objectives"][mode]
+                if not np.isfinite(saved_loss):
+                    raise ValueError(f"Nonfinite saved objective: {key}/{mode}")
                 loss = ab.objective(torch.tensor(current), target, teacher, setup.config, 256, distance_mode=mode)
-                errors[mode] = abs(loss - row["final_objectives"][mode])
+                errors[mode] = abs(loss - saved_loss)
                 if errors[mode] > 1e-12:
                     raise ValueError("Cross-objective mismatch")
                 if mode == row["distance_mode"] and not np.isclose(loss, trace[-1], rtol=0, atol=1e-12):

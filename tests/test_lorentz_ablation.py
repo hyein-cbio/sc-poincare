@@ -205,6 +205,44 @@ def test_factorial_saved_record_rereads_without_fitting(saved_factorial, monkeyp
     assert all(check["population_metrics_exact"] for check in result["checks"])
 
 
+@pytest.fixture
+def factorial_record_copy(saved_factorial, tmp_path):
+    import json
+    import shutil
+
+    original, *case = saved_factorial
+    record = tmp_path / original.name
+    report = json.loads(original.read_text())
+    shutil.copyfile(original.with_suffix(".npz"), tmp_path / report["arrays"]["file"])
+    return record, report, case
+
+
+@pytest.mark.parametrize("mode", ab.DISTANCES)
+@pytest.mark.parametrize("invalid", [float("nan"), float("inf"), float("-inf")],
+                         ids=["nan", "positive_inf", "negative_inf"])
+def test_factorial_verifier_rejects_nonfinite_saved_objectives(factorial_record_copy, mode, invalid):
+    import json
+
+    record, report, case = factorial_record_copy
+    report["results"][-1]["final_objectives"][mode] = invalid
+    # Python's JSON reader accepts these nonstandard constants in damaged input.
+    record.write_text(json.dumps(report, allow_nan=True))
+    with pytest.raises(ValueError, match="Nonfinite saved objective"):
+        verifier().verify(record, *case)
+
+
+@pytest.mark.parametrize("field", ["biological_validation", "promoted"])
+@pytest.mark.parametrize("row_index", range(len(ab.DISTANCES) * len(ab.GRADIENTS)))
+def test_factorial_verifier_rejects_unsupported_result_claims(factorial_record_copy, field, row_index):
+    import json
+
+    record, report, case = factorial_record_copy
+    report["results"][row_index][field] = True
+    record.write_text(json.dumps(report, allow_nan=False))
+    with pytest.raises(ValueError, match="Invalid development-data claims"):
+        verifier().verify(record, *case)
+
+
 @pytest.mark.parametrize("fault", ("objective", "target", "trace", "status", "population",
                                    "source_hash", "condition", "npz_hash", "initial", "historical"))
 def test_factorial_verifier_rejects_corrupted_records(saved_factorial, tmp_path, fault):
