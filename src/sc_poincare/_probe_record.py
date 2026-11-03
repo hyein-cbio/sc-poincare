@@ -30,12 +30,21 @@ def digest(array):
 def parse_probe_args(kind, argv=None):
     parser = argparse.ArgumentParser(description=f"Write-once Moignard {kind} rerun, 20 epochs, seed 0.")
     parser.add_argument("--source", type=Path, default=Path("data/inputs/Moignard2015.csv"))
-    parser.add_argument("--output", type=Path,
-                        default=Path(f"docs/moignard-{kind}-probe-rerun-2026-10-30.json"))
+    parser.add_argument("--output", type=Path)
     if kind == "lorentz":
         parser.add_argument("--gradient-ablation", action="store_true",
                             help="Also fit with only the pre-PR3 gradient conversion restored.")
+        parser.add_argument("--distance-ablation", action="store_true",
+                            help="Run distance x gradient factorial, including exact and stabilized acosh controls.")
+        parser.add_argument("--historical-replay", action="store_true",
+                            help="With --distance-ablation, preflight the verbatim historical fitter, then run 20 updates if finite.")
     args = parser.parse_args(argv)
+    if getattr(args, "historical_replay", False) and not args.distance_ablation:
+        parser.error("--historical-replay requires --distance-ablation")
+    if args.output is None:
+        args.output = (Path("docs/moignard-lorentz-factorial-2026-11-03.json")
+                       if getattr(args, "distance_ablation", False)
+                       else Path(f"docs/moignard-{kind}-probe-rerun-2026-10-30.json"))
     ensure_active_paths(args.source, args.output, args.output.with_suffix(".npz"))
     if args.output.suffix != ".json":
         raise ValueError("Output must end in .json.")
