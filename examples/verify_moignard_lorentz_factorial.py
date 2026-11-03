@@ -1,4 +1,9 @@
-"""Reread factorial checkpoints and objectives without refitting any condition."""
+"""Reread factorial checkpoints and objectives without refitting any condition.
+
+Checker hashes are provenance, not fitting dependencies. Preserved records can
+use a corrected checker; its recorded/current hashes are reported separately.
+Every other recorded source hash must still match the current checkout.
+"""
 from __future__ import annotations
 
 import argparse
@@ -14,6 +19,27 @@ from sc_poincare import _lorentz_ablation as ab, controlled_probe as cp, experim
 from sc_poincare._probe_record import ROOT, digest, load_moignard, metrics_for, stability
 
 
+CHECKER_PATH = "examples/verify_moignard_lorentz_factorial.py"
+
+
+def check_source_hashes(source_sha256):
+    """Enforce fitting-source identity while exposing checker version changes.
+
+    Schema v1 stored the checker alongside fitting sources. Classify only this
+    exact path as checker provenance; drivers, helpers and historical fixtures
+    keep their strict checks. No preserved record needs a rewritten hash.
+    """
+    for relative, expected in source_sha256.items():
+        if relative == CHECKER_PATH:
+            continue
+        if hashlib.sha256((ROOT / relative).read_bytes()).hexdigest() != expected:
+            raise ValueError(f"Source SHA256 mismatch: {relative}")
+    current = hashlib.sha256((ROOT / CHECKER_PATH).read_bytes()).hexdigest()
+    recorded = source_sha256.get(CHECKER_PATH)
+    return dict(path=CHECKER_PATH, recorded_sha256=recorded, current_sha256=current,
+                matches_recorded=recorded == current)
+
+
 def verify(record, features, labels, setup):
     report = json.loads(record.read_text())
     if report["schema"] != "lorentz-distance-gradient-factorial-v1":
@@ -23,9 +49,7 @@ def verify(record, features, labels, setup):
     sidecar = record.with_name(report["arrays"]["file"])
     if hashlib.sha256(sidecar.read_bytes()).hexdigest() != report["arrays"]["sha256"]:
         raise ValueError("NPZ SHA256 mismatch")
-    for relative, expected in report["provenance"]["source_sha256"].items():
-        if hashlib.sha256((ROOT / relative).read_bytes()).hexdigest() != expected:
-            raise ValueError(f"Source SHA256 mismatch: {relative}")
+    checker_provenance = check_source_hashes(report["provenance"]["source_sha256"])
     if report["provenance"]["config"] != asdict(setup.config):
         raise ValueError("Configuration mismatch")
     if (report["historical_source_commit"] != ab.HISTORICAL_COMMIT
@@ -124,7 +148,8 @@ def verify(record, features, labels, setup):
                     if not np.isclose(loss, trace[-1], rtol=0, atol=1e-12):
                         raise ValueError("Historical replay objective mismatch")
 
-    return dict(record=record.name, checks=checks, historical_preflight_checked=historical is not None)
+    return dict(record=record.name, checks=checks, historical_preflight_checked=historical is not None,
+                checker_provenance=checker_provenance)
 
 
 def main():

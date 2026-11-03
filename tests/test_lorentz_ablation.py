@@ -203,6 +203,7 @@ def test_factorial_saved_record_rereads_without_fitting(saved_factorial, monkeyp
     result = verifier().verify(*saved_factorial)
     assert len(result["checks"]) == 6
     assert all(check["population_metrics_exact"] for check in result["checks"])
+    assert result["checker_provenance"]["matches_recorded"] is True
 
 
 @pytest.fixture
@@ -215,6 +216,62 @@ def factorial_record_copy(saved_factorial, tmp_path):
     report = json.loads(original.read_text())
     shutil.copyfile(original.with_suffix(".npz"), tmp_path / report["arrays"]["file"])
     return record, report, case
+
+
+def test_bundled_factorial_keeps_fitting_hashes_and_reports_changed_checker():
+    import json
+
+    report = json.loads((ROOT / "docs/moignard-lorentz-factorial-2026-11-03.json").read_text())
+    module = verifier()
+    checker = module.check_source_hashes(report["provenance"]["source_sha256"])
+    assert checker["path"] == module.CHECKER_PATH
+    assert checker["recorded_sha256"] == report["provenance"]["source_sha256"][module.CHECKER_PATH]
+    assert checker["current_sha256"] == hashlib.sha256((ROOT / module.CHECKER_PATH).read_bytes()).hexdigest()
+    assert checker["matches_recorded"] is False
+
+
+@pytest.mark.parametrize("relative", ["src/sc_poincare/controlled_probe.py",
+                                      "examples/run_moignard_lorentz_probe.py",
+                                      "examples/fixtures/pre_pr3_lorentz.py"])
+def test_bundled_factorial_still_requires_other_source_hashes(relative):
+    import json
+
+    report = json.loads((ROOT / "docs/moignard-lorentz-factorial-2026-11-03.json").read_text())
+    report["provenance"]["source_sha256"][relative] = "0" * 64
+    with pytest.raises(ValueError, match="Source SHA256 mismatch"):
+        verifier().check_source_hashes(report["provenance"]["source_sha256"])
+
+
+@pytest.mark.parametrize("fault", [None, "nonfinite_objective", "biological_validation", "promoted",
+                                  "fitting_source"])
+def test_factorial_record_from_older_checker_still_checks_measurements(factorial_record_copy, fault):
+    import json
+
+    record, report, case = factorial_record_copy
+    module = verifier()
+    bundled = json.loads((ROOT / "docs/moignard-lorentz-factorial-2026-11-03.json").read_text())
+    checker_path = "examples/verify_moignard_lorentz_factorial.py"
+    old_hash = bundled["provenance"]["source_sha256"][checker_path]
+    report["provenance"]["source_sha256"][checker_path] = old_hash
+    if fault == "nonfinite_objective":
+        report["results"][-1]["final_objectives"]["acosh_exact"] = float("nan")
+        message = "Nonfinite saved objective"
+    elif fault in ("biological_validation", "promoted"):
+        report["results"][-1][fault] = True
+        message = "Invalid development-data claims"
+    elif fault == "fitting_source":
+        report["provenance"]["source_sha256"]["src/sc_poincare/controlled_probe.py"] = "0" * 64
+        message = "Source SHA256 mismatch"
+    record.write_text(json.dumps(report, allow_nan=True))
+    if fault is not None:
+        with pytest.raises(ValueError, match=message):
+            module.verify(record, *case)
+    else:
+        result = module.verify(record, *case)
+        assert len(result["checks"]) == 6
+        assert all(check["population_metrics_exact"] for check in result["checks"])
+        assert result["checker_provenance"]["recorded_sha256"] == old_hash
+        assert result["checker_provenance"]["matches_recorded"] is False
 
 
 @pytest.mark.parametrize("mode", ab.DISTANCES)
