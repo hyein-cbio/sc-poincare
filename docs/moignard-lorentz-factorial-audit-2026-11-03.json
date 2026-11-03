@@ -1,0 +1,204 @@
+{
+  "base_commit": "d1ffcd8f7e188627ed8c623499789732f1827769",
+  "execution_source_commit": "d827270d5eceb207076c702c22c049a9bdb0fb92",
+  "preexisting_tracked_docs_count": 80,
+  "preexisting_tracked_docs_unchanged": true,
+  "preexisting_tracked_docs_sha256": {
+    "docs/adam-rmsprop-protocol.md": "8db4e86c8a36f4b0c55686c545ec653ec5f48c09c627763fd0c78a81e71d995a",
+    "docs/adam-rmsprop-screen.json": "bcc153e429ebfa4359d31715aeb60fb1b0971ba55d0528892f4ba310063083b9",
+    "docs/additional-work.md": "2c7851b21f0402678888e531df670ed87eab51394f31c415de08d99a5997fd64",
+    "docs/algorithm-continuation-results.md": "e85dfad35386e291f3eb2bba312859202834d5f617b4dfcc034164e752040206",
+    "docs/algorithm-experiment-01.md": "100cf91ce1a0a20dd69acf7621d55ed5d9af64e51cd13217fd92dce75b59b91f",
+    "docs/astra-adoption-status.md": "81e94bbce8af1263b6ff40bd8d7390a2f88d8b93b1a2e2316ed7dad10ffb287e",
+    "docs/astra-capsule-receiver-audit.md": "c0b8e38096a8c867c6827b67afb570e738414dfbd7d03b099cecb45d79d816ee",
+    "docs/astra-development-results.json": "15a31060fef60b946a6bf7fbf756675d2c1e4ee28be856312e3770971decc70f",
+    "docs/astra-followup.md": "14336e8214bfaf510cd7aad5018b853aa4e47d7b124fe59fc2ca63f924c7e41b",
+    "docs/astra-mechanism-adoption.md": "b1a74ae7f973bf662eef10189414bf9ed506fe6117cc76a031e9e5735096cf27",
+    "docs/astra-mechanism-results.json": "5b21ca5c3aa38a76819dbb48f0d5e55d335be5845d963a2012a284319ba264c3",
+    "docs/benchmarking.md": "526358c9c63bddca9f166b617bdea30992bea83d36f19ef577323916d0ed18b9",
+    "docs/development-roadmap.md": "d400355b76523262184c463cf719ba7e2e806c590ee9bae49e15964a8f28b0ee",
+    "docs/display-layout-deprecation.md": "2aafd4f8b8159189d2e9950af778bf69ca8341beeed5b51a47bbb27b5b20f5ce",
+    "docs/embedding-followup-results.json": "5b21ca5c3aa38a76819dbb48f0d5e55d335be5845d963a2012a284319ba264c3",
+    "docs/embedding-followup.md": "982236f2f26abab0454c7b55658f0eb8c6618357747be85f82f903ded808df9f",
+    "docs/embedding-study-results.json": "15a31060fef60b946a6bf7fbf756675d2c1e4ee28be856312e3770971decc70f",
+    "docs/embedding-study.md": "ab44ff682b73399b4e1ed2b7548ac5a06ffc3c9767ffef4246705de022501eb0",
+    "docs/frozen-conditional-kl-protocol.md": "83d6d13065e2911bd4af4b2f08e728f6384fd9cf74840cc1faef004c897617c8",
+    "docs/graph-stress.md": "c1b013bda09708b9863210377d7ef5327d7923872d38185fa54ddd1de154c60d",
+    "docs/graph-topology-results.md": "d94d83b836977c541838ba9aa0ff3c242ed06070a26423dffb6e08697ffd41af",
+    "docs/graph-visibility-study.md": "92f73d14a3df93ca15ac4fd31bb9f935248d9deb733cbc4680c01102612869ea",
+    "docs/historical-494367a-review.md": "6e1f152b8afaa7a06a4046ac31970020fee0e2b34b86bb53b00cc62af3cbf0f2",
+    "docs/history/graph-stress-remaining-tasks/README.md": "4641d3a5a141e5bca15c6fd5e5ac3e7bacc547ff54c189e5f80d2e86393e95b6",
+    "docs/history/graph-stress-remaining-tasks/benchmarking.md": "dcc46be07bc5369d0886659a0e47397c25c8996e8392287088fa4e5e3b5ba863",
+    "docs/history/graph-stress-remaining-tasks/development-roadmap.md": "38d081a9cd6266e4f27a1f557cb94072032490d305494a6f637cc3eb46bb50f9",
+    "docs/history/graph-stress-remaining-tasks/graph-stress.md": "bfc46954fbf10a149956bb41adb0b0af8975088e397ec12216cc5e787fded89a",
+    "docs/history/session-retention-audit.md": "a233e27f4a517b99d813ab6a20e77c370745041f6b0f3395e7109b8b0f1126e4",
+    "docs/landmark-gradient-tolerance.json": "2b16c1a1c01f394077fadde0f767d5001fdf0be57fc7b8ab0a735e05fcbdf487",
+    "docs/landmark-reference.md": "7e56d28bdbf0e4613815c03a649b79d4a39249136652fe858c0434cf405a1ff9",
+    "docs/main-comparison.md": "c064026251eca0809c36b57a21b724b91655a4dae7eefdeb117e6dc63af64edc",
+    "docs/moignard-anchor-sensitivity.json": "0e4d3657fa13abe833f7fe93a79f8023e13e9315fbb2b99aaef8e64a129d2739",
+    "docs/moignard-bandwidth-probe.json": "1ddf4979f117adbdc40c692688204e8d9bb1ed1a3c8ced60f87bf33547e63ab6",
+    "docs/moignard-controlled-probe.json": "9ed153643829abe77fa2fd334ce303c0669aabc152c8c678d867b5fe4e3887b9",
+    "docs/moignard-curvature-probe-rerun-2026-10-30.json": "b2d35e40a9a9d0466a2d8e992c3a90df4c73bd1fecce88ff2d587c3e7a7bc586",
+    "docs/moignard-curvature-probe-rerun-2026-10-30.npz": "d7ff83fc02dc84baf30385914a71575908e49f4fd8e58cb1cda09403e065f7d5",
+    "docs/moignard-curvature-probe.json": "cf0f5688b29ba15acba9c9299ec1bd2444a8c2d851ece981ccb4d930310617c2",
+    "docs/moignard-dimension-probe.json": "67ad553680a7be9d144426f7f4c118b996d464f11264cc6f43a03b7547a6cbd9",
+    "docs/moignard-input-root-distances.json": "bed6768b724cabea7bf967ec2726701c3b564aaeb0fe3e0910fc59ff90d4f328",
+    "docs/moignard-intrinsic-probe.json": "2cfa4c5e9056e399e683d91f5d130ceb371b03805815766d407fdad4951c02e9",
+    "docs/moignard-landmark-column-fit.json": "6bade6959bb3ab0574f11c4e191831db4f68811cfa8ca42198176640115e7275",
+    "docs/moignard-landmark-reference.json": "8a17a3369d2f3013fa75b2b69901dd6cf5c43d45effd658ad74c0d5db9c8360b",
+    "docs/moignard-landmark-restore.json": "17c279c5e50144c66c2ca0e69cfff825839e2c1172259f6b0f5468ac6a26809b",
+    "docs/moignard-lorentz-probe-rerun-2026-10-30.json": "b8692befcd7b24c7d8a8f67a5f46268e6074cc23d518304492be327d09ffcd40",
+    "docs/moignard-lorentz-probe-rerun-2026-10-30.npz": "75f044c49566a916afd0c7156c1d10908a9a12c4b5d51d0c8cce97ba855b374f",
+    "docs/moignard-lorentz-probe.json": "9dd9e65976636938223c651f3d58a3347d6089f9ed47531bdfa2755ed5a84456",
+    "docs/moignard-mechanism-probe.json": "4235101d335693158481ddcb77b7754300df340df82f97ae629e08f0005232a4",
+    "docs/moignard-pr3-revalidation-2026-10-30.md": "92e3f05b753f84c0eefbc124e01d759a4d2a06f89baaad0fe47455358ed4a239",
+    "docs/moignard-pr3-validation-audit-2026-10-30.json": "88cf928e17c5ea19acb5f7c448195e4613adfb394724ab0de92c8dde2155bad8",
+    "docs/moignard-representation-probe.json": "bc519642eb80cb00acccd50efd905676a904a1dbcaa227057fb07fd6b9e66bde",
+    "docs/moignard-verifier-followup-2026-11-01.md": "7fe67f10130475ada71f80b5fbd73d04029dd411b9414ee447f140be7dfec272",
+    "docs/mu-default-migration.md": "101c0d80d3daa9990f339410907133d6cca7160c20c3bcc3f00de39f4601508c",
+    "docs/mu-scaleup-study.md": "06f6133e3008f0dc9af9b68f7ee3cd4b32990bd54a45f19f95c1db9a1073936e",
+    "docs/objective-validation.md": "7f15cab2971c08b3e8364bbb1b0b5b652717b49ec50913f543e33c261ffd7678",
+    "docs/objectives.md": "456c179317decec4038aea7c0964c2ffc5dcda3f3eac28e12a087a8a22336035",
+    "docs/paul-landmark-critical-review.md": "32943d12aee631c436dd5a0743ef8c21254b286db46de6c681283bd6065bfb4f",
+    "docs/paul-landmark-reference.json": "b74a0579e1ba7c4b35ae735802b355ded2f847e3c52c9ba574536f15cd75f8f0",
+    "docs/paul-landmark-restore.json": "096f71b872306b093d74ceb767c2dea048d3355bab9cd42d526111e3a79c5852",
+    "docs/pbmc3k-frozen.json": "f9ee20b15e36265e5cb0c395e34345e5113ed9ece9839fa8edd209d7a8f87581",
+    "docs/pbmc3k-frozen.md": "179fc496ad3687a4a8f36818640acb059da1574e5cf0bbeee74127c7b9655dbc",
+    "docs/pbmc3k-graph-stress.json": "764b0596348707fffbae7e4e57d2eed99fc8c3b19133c5d763fb660502181e99",
+    "docs/pbmc3k-graph-stress.md": "7503468496fd43179b024f97dece0e35336b11240746982fda2e555e3bc0346c",
+    "docs/pbmc3k-independent-probe.json": "043c0887a072c773743dc44997eea141b41c03bd09c55878148fa1acffb25a72",
+    "docs/pbmc3k-local-budget-probe.json": "c669a2432b883bf356c48ebc2e55f8b3e8d6c5f40aa0ad1c170fa79d718c8f2e",
+    "docs/planaria-label-inventory.json": "1d6bc7b297a2c76611e0e03a24b9bc61da82e44e728a1e3f7331d98aa3d436e2",
+    "docs/planaria-label-inventory.md": "f1bd5c9e10d8e6737aa0024231407438ea9a5ef21f47c6a418403ddbd413b0d4",
+    "docs/publication-readiness-review.md": "b6c86a32bca44866d718d1044378e6eb3305fcc5b8eff11366e32c46883a41e6",
+    "docs/rare-population-diagonal.json": "695738ab71e43b12caef9b624117a7571f21be3c94018e72299851620b4ca775",
+    "docs/rare-population-diagonal.md": "2f750bd883e7067af2d7568693c90eace4769f19ed8bd7247aa8b541bf9cd665",
+    "docs/reference-parity.md": "de255ff4497e3e46ddb5ccc915d4f9e5c391cb2d4566626ae921808c6dfddfb3",
+    "docs/research-containment.md": "307b32f07cf1809445ad21a05b61ea8153684b6431bb30d46f591db426da4265",
+    "docs/root-pseudotime.json": "7ed2f2fa294dae17d19ec74ba26e2c294da48de3af2b3362d0de000a0c7b1ebb",
+    "docs/root-pseudotime.md": "fd59a2480a41ee6e5c5c5a5a402eafc8e3506b2c6f6206c2f180dd1facbf239f",
+    "docs/spectral-init-quality.json": "c349015a8770e647848b0ca65c7a818335f394af8ebfd6caad663dac3b1c25a9",
+    "docs/spectral-init-quality.md": "2ff71b97fbcde005ddbac357941bbb525cc0eed0fe1ff1f461dc5f832fd2196d",
+    "docs/stress-validation-34.md": "9517eddb07df8775294a02ca0b0786c1a7e97951d67a59769331b5aafca15584",
+    "docs/toggle-evaluation.json": "0ed165ea4d4f10e5cfd4f682cb7b417fff07fa09a77e3ee5cdab0fc4e2ed12db",
+    "docs/toggle-evaluation.md": "688394a4512470c45a6eff5accb2895bf54a2a7b5bb657f70c8a680be51df3dc",
+    "docs/tradeoff-decision.md": "9b719227573ad55879cac649cd968c88bfe157706c2aeb3330099d4dee929b7c",
+    "docs/validation-readiness-audit.md": "bbd772cdab386d8ccb4ca6263d75e6550f352ef9d640122ad053a4c4afe18ae7"
+  },
+  "saved_record_verification": {
+    "record": "moignard-lorentz-factorial-2026-11-03.json",
+    "checks": [
+      {
+        "condition": "disk_stable__corrected",
+        "status": "completed",
+        "cross_objective_absolute_errors": {
+          "disk_stable": 0.0,
+          "acosh_exact": 0.0,
+          "acosh_masked": 0.0
+        },
+        "population_metrics_exact": true,
+        "stability_and_trace_exact": true
+      },
+      {
+        "condition": "disk_stable__legacy",
+        "status": "completed",
+        "cross_objective_absolute_errors": {
+          "disk_stable": 0.0,
+          "acosh_exact": 0.0,
+          "acosh_masked": 0.0
+        },
+        "population_metrics_exact": true,
+        "stability_and_trace_exact": true
+      },
+      {
+        "condition": "acosh_exact__corrected",
+        "status": "completed",
+        "cross_objective_absolute_errors": {
+          "disk_stable": 0.0,
+          "acosh_exact": 0.0,
+          "acosh_masked": 0.0
+        },
+        "population_metrics_exact": true,
+        "stability_and_trace_exact": true
+      },
+      {
+        "condition": "acosh_exact__legacy",
+        "status": "completed",
+        "cross_objective_absolute_errors": {
+          "disk_stable": 0.0,
+          "acosh_exact": 0.0,
+          "acosh_masked": 0.0
+        },
+        "population_metrics_exact": true,
+        "stability_and_trace_exact": true
+      },
+      {
+        "condition": "acosh_masked__corrected",
+        "status": "completed",
+        "cross_objective_absolute_errors": {
+          "disk_stable": 0.0,
+          "acosh_exact": 0.0,
+          "acosh_masked": 0.0
+        },
+        "population_metrics_exact": true,
+        "stability_and_trace_exact": true
+      },
+      {
+        "condition": "acosh_masked__legacy",
+        "status": "completed",
+        "cross_objective_absolute_errors": {
+          "disk_stable": 0.0,
+          "acosh_exact": 0.0,
+          "acosh_masked": 0.0
+        },
+        "population_metrics_exact": true,
+        "stability_and_trace_exact": true
+      }
+    ],
+    "historical_preflight_checked": true
+  },
+  "historical_archive_final_loss": 1.0378667202542602,
+  "historical_full_replay_final_loss_absolute_error": 6.682694397852629e-10,
+  "historical_full_replay_population_and_aggregate_metrics_exact": true,
+  "tests": {
+    "focused": {
+      "passed": 40,
+      "failed": 0
+    },
+    "full_with_psutil": {
+      "passed": 767,
+      "failed": 4,
+      "skipped": 0,
+      "warnings": 2
+    },
+    "unchanged_main_full_with_psutil": {
+      "passed": 743,
+      "failed": 1,
+      "skipped": 0,
+      "warnings": 2
+    },
+    "full_before_psutil_install": {
+      "passed": 753,
+      "failed": 0,
+      "skipped": 18,
+      "warnings": 2
+    },
+    "environment_note": "Python os.getpid and /proc/self/stat expose different PID namespaces; psutil may fail to resolve or may resolve an unrelated process. Three local full-suite failures are psutil.NoSuchProcess. The supervisor zero-RSS failure also reproduces on unchanged main. Targeted main tests do not reproduce the three NoSuchProcess failures.",
+    "compileall_passed": true,
+    "diff_check_passed": true
+  },
+  "biological_validation": false,
+  "promoted": false,
+  "initial_vs_october_30": {
+    "byte_identical": false,
+    "max_absolute_difference": 5.456572693685047e-15
+  },
+  "historical_full_vs_chunked": {
+    "max_final_coordinate_absolute_difference": 1.5946108248843238e-06,
+    "max_loss_trace_absolute_difference": 7.469536100757068e-10,
+    "final_loss_absolute_difference": 3.6300162875591013e-10
+  },
+  "published_source_commit": "ceb03f4140b3d5a1c4c58db633515c25a9d5a3b7",
+  "published_source_matches_execution_fingerprints": true,
+  "execution_commit_note": "The recorded execution commit is local. Published source contains identical fitting/verification files, as checked by all recorded source hashes; only portable test handling was subsequently adjusted."
+}
