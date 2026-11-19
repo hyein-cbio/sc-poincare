@@ -178,6 +178,9 @@ fixed-canvas marker-center crowding/width from intrinsic separation.
 
 - [MU scale-up study](docs/mu-scaleup-study.md): both bandwidth rules, RFA and
   native Euclidean controls, full 2,730/3,934-cell results and explicit resource stops.
+- [Full Planaria, 1,500 updates](docs/planaria-mu-fixed-1500-2026-11-19.md):
+  21,612-cell exact MU fixed, single-seed comparison with published coordinates
+  under an explicit dense-array budget; not an atlas-scale claim.
 - [MU default / compatibility](docs/mu-default-migration.md): intentional default
   change, exact RFA path and verified AnnData checkpoint examples.
 - [Astra adoption and remaining work](docs/astra-adoption-status.md): implemented,
@@ -212,8 +215,7 @@ marker continuity or general superiority over the authors' implementation.
 are **deprecated** display layouts. They remain callable with a visible FutureWarning and live in one
 [removable legacy module](docs/display-layout-deprecation.md), outside core
 geometry/fitting. Initialization `GraphStressConfig.jitter` remains unchanged.
-Do not score artificial layouts
-as learned embeddings. Exact few-thousand-cell results are not full Planaria validation.
+Do not score artificial layouts as learned embeddings.
 
 Legacy APIs and old probability wrappers are explicitly contained; old selected
 recipes live only under `examples/historical/`. Completed local experiments are
@@ -230,6 +232,7 @@ coordinates/results remain readable. See the deprecation guide for the boundary.
 python -m pytest tests
 ```
 
-The [Actions workflow](.github/workflows/tests.yml) configures CPU-Torch full tests,
-a Torch-free path and installed-wheel smoke checks without private datasets.
+The [Actions workflow](.github/workflows/tests.yml) runs the pinned
+[Python/Scanpy CPU matrix](docs/ci-compatibility.md), a Torch-free path, and
+installed-wheel integration and numerical checks without private datasets.
 See the [roadmap](docs/development-roadmap.md) for research gates and follow-ups.

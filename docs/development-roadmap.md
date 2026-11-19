@@ -42,7 +42,8 @@ the current baseline or research gates.
 - [x] Record method/graph semantics, effective parameters and raw/display provenance.
   Preserve old files; never fabricate freshness for missing provenance.
 - [x] Configure [CPU-Torch / Torch-free / wheel CI](../.github/workflows/tests.yml)
-  and local install/serialization tests. Consult workflow results for actual CI status.
+  and install/serialization checks. The pinned [Python/Scanpy matrix](ci-compatibility.md)
+  passed its first Linux run; consult Actions for later results.
 - [x] Complete the bounded MU study and its separately budgeted optimizer-state
   continuation; keep initial resource stops as history, not failed geometry evidence.
 - [x] Expose experimental scalar forest tau and bounded spectral controls without
@@ -217,8 +218,10 @@ have not been satisfied merely by selecting MU as the new provisional default.
   MU. A 2-epoch Moignard run with 32 landmarks is a different objective
   ([moignard-landmark-column-fit.json](moignard-landmark-column-fit.json));
   it is not promoted. `max_dense_bytes=None` is rejected.
-- [x] Keep full Planaria on a separate protocol. The default dense guard rejects
-  21,612 cells, and no exact large-data claim is made from n<=3934 runs.
+- [x] Complete a [separate exact MU fixed Planaria run](planaria-mu-fixed-1500-2026-11-19.md)
+  at 21,612 cells, seed 0, and 1,500 updates. The default 512 MiB dense guard
+  still rejects this size; the run used an explicit bounded override. It is
+  not part of the original n<=3934 study or a seed-robustness claim.
 - [x] Keep the exact dense guard enabled. The landmark-column fitter records
   separate preparation, fitting, evaluation, and checkpoint RSS samples and
   rejects a disabled budget. On exact Moignard those current-RSS samples were
@@ -235,6 +238,43 @@ have not been satisfied merely by selecting MU as the new provisional default.
   8.3e-17). That match is the exact objective, not a smaller approximation,
   and it is not promoted. Record:
   [landmark-gradient-tolerance.json](landmark-gradient-tolerance.json).
+
+### Beyond Planaria (deferred)
+
+Exact MU fixed is the reference for near-term validation, not an atlas-scale
+implementation. The [completed Planaria run](planaria-mu-fixed-1500-2026-11-19.md)
+used a 16 GiB dense-array budget and a separate watchdog on a 48 GiB Mac.
+The 500–1,500 continuation took 2 h 48 min 11 s with 13.87 GiB peak RSS.
+This is a single-seed comparison and a bounded feasibility result, not a
+convergence or general scalability claim.
+
+- **Memory and work are different limits.** The input kNN graph and local
+  teacher can be represented sparsely. The current exact implementation
+  stores dense all-pairs shortest-path targets and uses dense classical
+  scaling for initialization. Fitting already computes embedding distances
+  in row chunks, but global stress and the exact local softmax denominator
+  still visit all pairs, so each update does O(N²) work. Streaming exact
+  rows can reduce resident storage without removing that work.
+- **A GPU is not a drop-in scale-up.** The current four-float64-array guard
+  estimates about 47.7 GiB at 40,000 cells and 510.6 GiB at 130,887 cells,
+  before other process memory. All-pairs shortest paths and dense scaling
+  currently run on the CPU. Keep the guard enabled; do not infer that either
+  full atlas is practical on the Planaria machine.
+- **Future research only.** Consider sparse/matrix-free initialization and
+  sampled or landmark global pairs under a separately frozen protocol.
+  Distinguish exact storage changes from changes to the objective. No tested
+  partial landmark count passed the frozen gradient check above. Before
+  adoption, compare with exact MU on feasible inputs for local neighbor
+  preservation and global distance rank, alongside wall time, peak RSS, and
+  seed stability; a lower own-objective loss is not enough.
+- **Validation is separate from scale-up.** To test whether the Planaria
+  result transfers, use the existing exact method on prespecified cohorts
+  of roughly 20,000 cells, with explicit resource limits. Candidate
+  datasets are the *C. elegans* embryo atlas used in the original
+  [Poincaré Maps study](https://pmc.ncbi.nlm.nih.gov/articles/PMC7290024/) and
+  [LARRY](validation-readiness-audit.md#readiness-decision) for time/clone
+  evaluation after resolving its row-order and protocol gates. Neither
+  dataset, cohort rule, nor a full-size run is authorized by this note.
 
 ## P3 — Research mechanisms, not dataset-specific patches
 
@@ -307,6 +347,6 @@ the exact `global_mean` are used by the diagnostic. The matrix-free
 mean, even at N−1. The measured partial sets do not establish a
 validated approximation or a performance improvement. The
 1,500-update Adam-versus-RMSProp seed-0 screen missed every guardrail; seeds
-1–4 were not run. Full Planaria remains over the dense guard, LARRY stays
-unfitted, and publication checks wait for submission. No further item on
-this list is executable in the environment that recorded these results.
+1–4 were not run. Full Planaria remains over the **default** dense budget;
+see the [bounded run and deferred work](#beyond-planaria-deferred). LARRY stays
+unfitted, and publication checks wait for submission.

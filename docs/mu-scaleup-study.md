@@ -321,9 +321,10 @@ This exact implementation provides an interpretable reference at a few thousand
 cells, not an atlas-scale claim. Targets remain dense O(N²); dense classical
 scaling is super-quadratic work. At 21,612 cells a float64 matrix alone is
 about 3.74 GB, and the four-array preflight is about 14.95 GB, well above the
-unchanged 512 MiB budget. No full Planaria result is inferred or attempted.
-Further scale-up requires separately validated approximation/matrix-free or
-landmark work against this exact reference, not simply disabling the guard.
+unchanged 512 MiB budget. No full Planaria run was part of this study. The
+later [1,500-update exact Planaria run](planaria-mu-fixed-1500-2026-11-19.md)
+is a separate bounded result; see the [roadmap](development-roadmap.md#beyond-planaria-deferred)
+for deferred work beyond that scale.
 
 ## Software validation and provenance
 

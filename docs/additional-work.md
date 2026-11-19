@@ -89,8 +89,10 @@ The 1,000-update corrected-versus-conditional comparison is specified in
 inventory are attached. Rare labels are those with at most 50 cells. The
 default dense guard still refuses 21,612 cells. On this host the estimate is
 13.92 GiB against the 0.50 GiB limit, with about 4.4 GiB available and no
-swap. The fit has not started. Run it only where that guard can pass without
-being disabled.
+swap at the time of this record. The frozen KL comparison has not started.
+Run it only where that guard can pass without being disabled. The later
+[full Planaria MU fixed run](planaria-mu-fixed-1500-2026-11-19.md) is a
+different objective and does not close this KL comparison.
 
 ## 6. External review of `494367a`
 
@@ -111,6 +113,6 @@ The tested partial-landmark counts do not establish a performance improvement;
 they miss the declared gradient tolerance. That observation is not a theorem
 about all partial counts (N−1 is an exact-pair counterexample). The other items
 were closed for the environment that recorded these results: the RMSProp seed-0 screen missed every guardrail, so seeds
-1–4 stay unrun; Planaria still exceeds the dense guard; LARRY stays unfitted;
+1–4 stay unrun; Planaria still exceeds the default dense guard; LARRY stays unfitted;
 CodeRabbit is not installed here; publication checks wait for submission. No
 further run from this list is executable here.

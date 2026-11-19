@@ -89,7 +89,7 @@ These integrations do not redesign the low-level objectives or optimizers:
 | Matrix-free / row-solve / sparse / landmark scale-up | Landmark-column fits avoid a stored N-by-N target and match exact MU when every cell is a landmark. Exact Moignard 3934 was checked; Paul PCA20 hash does not reproduce here, and the partial objective is not promoted |
 | Intrinsic adaptive optimizers, Lorentz/chart changes | Numerical range and optimization/biology are different questions |
 | Curvature, dimension, temperature/global scale | Not established universal improvements; avoid data-name-specific tuning |
-| Full Planaria cold-start result | Exact default guard still refuses it; lost warm-start observations are not validated evidence |
+| Full Planaria | The default guard still refuses it. A later [separate, bounded exact MU run](planaria-mu-fixed-1500-2026-11-19.md) completed 1,500 updates with exact continuations; it does not validate the earlier lost warm-start observations |
 | Coordinate-only MU warm starts in the AnnData API | Full state resume is supported; a new arbitrary initializer is a separately testable condition |
 | Durable external storage / forced environment replacement | Local atomic checkpoints and successful directory restores do not guarantee survival of container loss |
 | Publication readiness | Successful main CI is not biological validation, historical-scope review or publication eligibility |
