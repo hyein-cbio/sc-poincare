@@ -74,6 +74,12 @@ def _run_provenance():
     }
 
 
+def _pooled_distance_rank(reference_distances, embedding_distances):
+    """Spearman over pooled nonself pairs; undefined correlations become JSON null."""
+    rank = float(spearmanr(reference_distances, embedding_distances).statistic)
+    return rank if np.isfinite(rank) else None
+
+
 def _neighbor_purity(coordinates, labels, k):
     """Post-fit chart neighbor agreement. Labels do not enter the fit."""
     nn = NearestNeighbors(n_neighbors=k + 1).fit(coordinates)
@@ -208,9 +214,9 @@ def main():
                 hn=np.argsort(ranked,axis=1)[:,:min(15,len(features)-1)]
                 scores={}
                 for k,(g,gn) in evaluations.items():
-                    scores[str(k)]={'global_distance_rank':float(spearmanr(g[mask],h[mask]).statistic),
+                    scores[str(k)]={'global_distance_rank':_pooled_distance_rank(g[mask],h[mask]),
                         'local_overlap_at15':float(np.mean([len(set(a)&set(b))/len(a) for a,b in zip(gn,hn)]))}
-                scores['feature']={'global_distance_rank':float(spearmanr(feature_d[mask],h[mask]).statistic)}
+                scores['feature']={'global_distance_rank':_pooled_distance_rank(feature_d[mask],h[mask])}
                 rss=resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
                 if sys.platform!='darwin':rss*=1024
                 purity_k=min(args.evaluation_k[0],len(features)-1)
@@ -225,7 +231,7 @@ def main():
                 np.savez(args.output.with_name(f'{args.output.stem}_{mode}_seed{seed}.npz'),
                          coordinates=xy,current_coordinates=current,initial_coordinates=initial,
                          labels=labels,loss_trace=np.asarray(trace,dtype=float))
-                print(json.dumps(row),flush=True)
+                print(json.dumps(row,allow_nan=False),flush=True)
     config={k:str(v) if isinstance(v,Path) else v for k,v in vars(args).items()}
     result={'input_sha256':input_hash,
         'script_sha256':hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
@@ -237,12 +243,13 @@ def main():
                  'Epoch limits do not imply convergence. Losses differ across objectives.',
                  'coordinates is the lowest training loss. current_coordinates is the final evaluated state.',
                  'Evaluation graph/anchors are diagnostic, not blinded biological holdouts.',
+                 'Distance ranks pool nonself pairs; undefined Spearman correlations are null.',
                  'feature.global_distance_rank compares embedding distances with direct feature distances on the same anchors.',
                  'Label counts and neighbor purity are recorded after fitting and do not select the checkpoint.',
                  'No labels or reference coordinates enter fitting.',
                  'provenance is the import path, Git revision, diff hash, and versions before the first fit.',
                  'Dense-array budget is not an RSS cap. High-water RSS includes earlier modes/imports/evaluation.']}
-    args.output.write_text(json.dumps(result,indent=2))
+    args.output.write_text(json.dumps(result,indent=2,allow_nan=False))
 
 
 if __name__=='__main__':main()

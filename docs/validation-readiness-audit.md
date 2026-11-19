@@ -135,7 +135,7 @@ Before any fit:
    before loading/extracting the count matrix. Do not disable guards.
 5. Identify an authorized off-machine backup destination before long/unique runs.
 
-## Revised immediate action
+## Recommended action at the time of the audit
 
 Gene metadata is now ready for interpretation of the existing study; no H5
 positional guess or extra training was required. The remaining immediate task
@@ -157,3 +157,23 @@ frozen, because choosing one from the annotated cell-type counts would use
 those labels to design the sample. No LARRY extract was copied off this
 machine. A later fit needs a separate protocol that closes row order, subset
 size, and backup before loading the count matrix for training.
+
+## Follow-up dataset candidates
+
+This shortlist is for prospective review only; no data were downloaded, no
+subsets were selected, and no models were fitted for it. Pancreas and Nestorowa
+are development data, including the [historical five-seed RFA gamma comparison](objective-validation.md#historical-rfa-gamma-comparison-pancreas-and-nestorowa).
+The earlier usage audit above does not establish that any candidate is a blind
+holdout. Check accessible experiment records before assigning holdout status.
+
+| Priority | Dataset and source | Proposed check or constraint |
+|---|---|---|
+| 1 | Negretti et al. (2021), mouse lung development — [GSE165063](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE165063), [paper](https://doi.org/10.1242/dev.199512) | Distinct from the 198-cell Treutlein dataset. Consider prespecified developmental time points and alveolar epithelial AT1/AT2 marker continuity. |
+| 2 | Clark et al. (2019), developing mouse retina — [GSE118614](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE118614), [paper](https://doi.org/10.1016/j.neuron.2019.04.010) | Ten developmental time points and retinal progenitors; plan a fixed subset. |
+| 3 | Dahlin et al. (2018), mouse bone marrow HSPCs — [GSE107727](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE107727), [paper](https://doi.org/10.1182/blood-2017-12-821413) | Eight reported hematopoietic trajectories and rare populations; define the cohort without pooling wild-type and mutant animals. |
+| 4 | Weinreb et al. (2020), LARRY in vitro — [GSE140802](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE140802), [paper](https://doi.org/10.1126/science.aaw3381) | Previously downloaded, not fit in the inspected records. Time and clone measurements may support independent evaluation, but do not give a complete parent–child tree. Resolve row order, data-use terms, a fixed subset, resource limits and backup first. |
+| 5 | Farrell et al. (2018), wild-type zebrafish embryo Drop-seq — [GSE106474](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE106474), [paper](https://doi.org/10.1126/science.aar3131) | The 39,505-cell local version did not yield a completed full exact fit under the available memory; distinguish it from the 38,731-cell post-QC version in the paper. Consider only a fixed subset in a separate protocol. |
+
+For any later study, freeze the cohort and sampling rule before fitting. Keep
+annotation, time and clone labels out of fitting and initialization, and retain
+the exact dense memory guard.

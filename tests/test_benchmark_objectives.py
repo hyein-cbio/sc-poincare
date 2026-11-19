@@ -123,25 +123,57 @@ def test_pbmc_drivers_reuse_feature_distances_without_downloading(script, tmp_pa
     assert calls == [(20, 3)]
 
 
+def _strict_json(text):
+    def reject_constant(token):
+        raise ValueError(f'Non-JSON numeric constant: {token}')
+
+    return json.loads(text, parse_constant=reject_constant)
+
+
+def test_benchmark_writes_null_for_undefined_distance_ranks(tmp_path, monkeypatch, capsys):
+    source = tmp_path / 'coincident.csv'
+    source.write_text('x,y,label\n' + '0,0,A\n' * 4)
+    output = tmp_path / 'report.json'
+    monkeypatch.setattr(sys, 'argv', [
+        'benchmark', str(source), '--sigma', '1', '--epochs', '1', '--burn-in', '0',
+        '--anchors', '4', '--seeds', '0', '--evaluation-k', '2', '--output', str(output),
+    ])
+    _module().main()
+
+    report = _strict_json(output.read_text())
+    stdout = [_strict_json(line) for line in capsys.readouterr().out.splitlines()]
+    assert stdout == report['records']
+    assert [r['objective'] for r in stdout] == ['symmetric_kl', 'conditional_symmetric_kl']
+    for record in stdout:
+        assert record['evaluation']['2']['global_distance_rank'] is None
+        assert record['evaluation']['feature']['global_distance_rank'] is None
+        assert record['evaluation']['2']['local_overlap_at15'] == 1.
+
+
 def test_benchmark_uses_common_initialization_and_never_fits_labels(tmp_path,monkeypatch):
     pytest.importorskip('torch')
     data=pd.DataFrame(np.random.default_rng(4).normal(size=(12,3)),columns=['a','b','c'])
     data['label']=['one']*12
     source=tmp_path/'input.csv';data.to_csv(source,index=False)
     module=_module();modes=['legacy_floor_1e-12','symmetric_kl','conditional_symmetric_kl']
+    features = pd.read_csv(source)[['a', 'b', 'c']].to_numpy()
+    off_diagonal = ~np.eye(len(features), dtype=bool)  # every cell is an anchor
+    graph_distances = {}
+    for k in (4, 5):
+        _, edge_lengths = module.local_affinity(features, k, 2*np.linalg.norm(features, axis=1).max()+1)
+        graph_distances[str(k)] = module.dijkstra(edge_lengths, directed=False)
+    feature_distances = module.cdist(features, features)
     outputs=[]
     for i in [0,1]:
         if i:data['label']=['different']*12;data.to_csv(source,index=False)
         out=tmp_path/f'run{i}.json';outputs.append(out)
         monkeypatch.setattr(sys,'argv',['benchmark',str(source),'--output',str(out),
             '--seeds','0','--epochs','2','--n-neighbors','4','--evaluation-k','4','5',
-            '--threads','1','--include-legacy-floor'])
+            '--anchors','12','--threads','1','--include-legacy-floor'])
         module.main()
-        report=json.loads(out.read_text());assert len(report['records'])==3
+        report=_strict_json(out.read_text());assert len(report['records'])==3
         assert [r['objective'] for r in report['records']]==modes
         for record in report['records']:
-            feature_rank=record['evaluation']['feature']['global_distance_rank']
-            assert np.isfinite(feature_rank)
             assert set(record['evaluation'])=={'4','5','feature'}
             if record['objective']=='legacy_floor_1e-12':
                 assert record['gradient_norm_trace'] is None
@@ -161,11 +193,15 @@ def test_benchmark_uses_common_initialization_and_never_fits_labels(tmp_path,mon
         assert all(r['label_neighbor_purity'][label]==1 for r in report['records'])
         assert all(r['epochs_run']==2 for r in report['records'])
         arrays=[np.load(out.with_name(f'{out.stem}_{mode}_seed0.npz')) for mode in modes]
-        for z in arrays:
+        for record, z in zip(report['records'], arrays):
             np.testing.assert_array_equal(z['initial_coordinates'],arrays[0]['initial_coordinates'])
             assert np.isfinite(z['coordinates']).all()
             assert z['current_coordinates'].shape==z['coordinates'].shape
             assert np.isfinite(z['current_coordinates']).all()
+            learned = module.pairwise_disk_length(z['coordinates'])
+            for key, distances in {**graph_distances, 'feature': feature_distances}.items():
+                expected = module.spearmanr(distances[off_diagonal], learned[off_diagonal]).statistic
+                assert record['evaluation'][key]['global_distance_rank'] == pytest.approx(expected)
     for mode in modes:
         a=np.load(outputs[0].with_name(f'run0_{mode}_seed0.npz'))
         b=np.load(outputs[1].with_name(f'run1_{mode}_seed0.npz'))

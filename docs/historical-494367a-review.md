@@ -43,8 +43,9 @@ legacy floor's chunk size does not change its two-epoch trajectory.
   dense budget is not an RSS cap.
 - `spearmanr(...).statistic` is written through `float` with no finite check.
   A constant distance vector becomes `NaN` in the JSON. The smoke test does not
-  cover that input. This remains in the maintained driver; it is a reporting
-  failure on a degenerate evaluation graph, not a change to the fitting objective.
+  cover that input. This was a reporting failure, not a change to the fitting
+  objective. The maintained driver now writes undefined graph and feature
+  ranks as `null` and enforces strict JSON; the pooled metric is unchanged.
 - Labels are stored in the NPZ and are not arguments to `fit_disk_embedding`
   or the legacy loop. The label-swap test locks that for a 12-by-3 synthetic CSV.
 

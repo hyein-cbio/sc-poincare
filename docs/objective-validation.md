@@ -127,7 +127,99 @@ is kept locally in `data/publish_validation/production_parity.json`. This checks
 package/prototype agreement under those conditions, not independent biological
 validation or byte-identical reproduction in arbitrary environments.
 
-## Reproduce comparisons on your own inputs
+## Historical RFA gamma comparison: pancreas and Nestorowa
+
+This is a separate fixed-budget comparison from research source `9b05bc6`.
+It used corrected **self-inclusive** symmetric KL, which corresponds to
+`method="rfa"` in today's API. These results were not verified on current code
+or on the current provisional MU default.
+
+Both arms used the same frozen float64 PCA50 features and cell order, exact RFA
+with mutual k=15, median positive edge-length sigma and `tau=1`, two embedding
+dimensions, learning rate .01, 30 burn-in updates at .001, Riemannian gradient
+norm cap 2.5, and a 256-row workspace. Each pair used identical spectral
+initial coordinates and ran 400 updates with early stopping disabled. Only
+gamma changed: **2.0 → 1.725**. The candidate came from the seed 0 discovery
+screen and was frozen before confirmation on seeds 10–14. Within each fit, the
+checkpoint was selected by its own training loss (including initialization),
+never by graph scores or labels.
+
+The primary evaluation used shortest paths on a fixed mutual k=20 input graph
+with Euclidean edge lengths and 128 label-free anchors (seed 714). Local is
+mean 15-neighbor overlap; global is mean **per-anchor** Spearman against learned
+hyperbolic distances, excluding self by index. This is not the single pooled
+Spearman reported by `examples/benchmark_objectives.py`.
+
+| Dataset | Local overlap: 2.0 → 1.725 | Relative local gain | Global rank: 2.0 → 1.725 | Global change |
+|---|---:|---:|---:|---:|
+| Pancreas E15.5 (3,696 cells) | .2103125 → .2390625 | +13.67% | .9447529 → .9405696 | −.0041834 |
+| Nestorowa (1,645 cells) | .2796875 → .3159375 | +12.96% | .8716030 → .8765696 | +.0049666 |
+
+Both five-seed means passed the prespecified local-gain gate (at least 10%
+gain and at most .005 global loss); neither gained .02 in global rank. Local
+means improved on every sensitivity view: k=15 and k=30 graphs, k=20 with
+anchor seed 716, and direct PCA distances with both anchor sets. Pancreas
+lost global rank on all those views (largest loss .005436, direct PCA with
+seed 714, within the .01 sensitivity tolerance). Nestorowa gained global rank
+on all of them.
+
+Macro label purity rose from .813486 to .816623 in pancreas and from .312233
+to .315293 in Nestorowa. Pancreas terminal-group purity changes were Alpha
++.007512, Beta −.005821, Delta +.021143 and Epsilon +.010235. Nestorowa GMP
+(−.007030) and ST-HSC (−.001852) declined despite the macro gain. Labels were
+used only after fitting; overlapping FACS gates are not fate ground truth.
+
+The pancreas input was the E15.5 public scVelo subset ([Figshare, CC BY 4.0](https://doi.org/10.6084/m9.figshare.16656991.v4)
+from [Bastidas-Ponce et al.](https://doi.org/10.1242/dev.173849)), not the full
+[GSE132188](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE132188) series.
+The frozen PCA came from the earlier normalized, log1p-transformed counts;
+the originally supplied PCA had substantially different neighbors and was
+checked separately. Nestorowa PCA came from the [authors' corrected log2
+expression matrix](https://blood.stemcells.cam.ac.uk/data/), with their FACS
+gate table used for evaluation ([paper](https://doi.org/10.1182/blood-2016-05-716480),
+[GSE81682](https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE81682)). The
+results apply to the frozen representations, not to a change in preprocessing.
+Source data keep their original terms and are not distributed with the package.
+
+The exploratory 128-row adaptive entropy calibration worsened global rank in
+both the implicit-gradient and stop-gradient screens. Matching entropy on the
+calibration rows did not guarantee a match across all rows. Separate seed 0
+screens of geodesic initialization, burn-in removal, tighter clipping, linear
+learning-rate decay, a 600-update budget and loss-based early stopping were
+exploratory, not five-seed confirmations. Tighter clipping and linear decay
+reduced local overlap on both datasets; 600 updates changed the compute budget
+and reduced global rank in pancreas despite better local overlap.
+
+Training loss was still decreasing in the 400-update diagnostics. Five
+initialization seeds on two development datasets are not independent biological
+validation of markers, branching, pseudotime or lineage. The [1,500-update
+Planaria MU run](planaria-mu-fixed-1500-2026-11-19.md) is a separate seed 0 study;
+it does not complete the [1,000-update corrected-versus-conditional KL
+protocol](frozen-conditional-kl-protocol.md). See the [candidate shortlist](validation-readiness-audit.md#follow-up-dataset-candidates)
+for prospective biological checks.
+
+To request the study settings with the **current** API, supply the same frozen
+PCA scores and cell order in `adata.obsm["X_pca"]`, and use the same seed and
+`initial_coordinates` in both arms. This is a call pattern, not a current-code
+parity claim. `patience=401` prevents early stopping within the 400-update
+budget. Neither gamma in this comparison is a new default recommendation.
+
+```python
+from sc_poincare import tl
+
+for gamma in (2.0, 1.725):
+    tl.poincare_map(
+        adata, method="rfa", use_rep="X_pca", n_pcs=50,
+        objective="symmetric_kl", graph_mode="mutual", n_neighbors=15,
+        sigma="median", forest_tau=1.0, n_components=2, gamma=gamma,
+        learning_rate=.01, burn_in_epochs=30, max_grad_norm=2.5,
+        batch_size=256, n_epochs=400, patience=401, min_delta=0.0,
+        random_state=seed, initial_coordinates=paired_initial,
+        key_added=f"rfa_gamma_{gamma}",
+    )
+```
+
+## Reproduce objective ablations on your own inputs
 
 Install `pip install -e '.[torch,benchmark]'`. The driver takes numeric feature
 columns and one label column; labels are removed before any PCA, graph or fit.
@@ -146,7 +238,10 @@ optional historical reference is isolated in the benchmark, not a production
 runtime override; it replicates this package's old numerical floor, **not the
 Facebook implementation**. The driver saves raw NPZ embeddings and loss traces,
 input/script hashes, initial-source provenance and fixed-budget diagnostics.
-Initial coordinates are shared per seed. Results are never chosen by graph score.
+Its graph and direct-feature distance ranks each use one pooled Spearman over
+nonself anchor-to-cell pairs. Undefined correlations are `null` in stdout JSON
+and the report file. Initial coordinates are shared per seed. Results are never
+chosen by graph score.
 
 For full21612 cells explicitly opt into, for example, `--max-dense-mib 16384`.
 The default512MiB work-array guard is not disabled. This budget is not a process
