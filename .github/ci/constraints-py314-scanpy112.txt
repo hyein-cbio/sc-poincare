@@ -1,0 +1,2 @@
+# Match every dependency in the Python 3.12 baseline.
+-c constraints-py312-scanpy112.txt

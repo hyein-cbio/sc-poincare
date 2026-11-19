@@ -1,0 +1,5 @@
+# CI-only build/test requirements; resolve alongside pyproject.toml extras.
+build
+hatchling
+pytest
+torch==2.14.1+cpu

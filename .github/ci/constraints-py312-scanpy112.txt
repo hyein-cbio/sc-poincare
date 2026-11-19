@@ -1,0 +1,2 @@
+-c constraints-modern.txt
+scanpy==1.12.4
