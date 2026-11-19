@@ -1,8 +1,10 @@
 # Frozen protocol: corrected KL versus conditional KL
 
-This protocol was written before any new fit. It does not authorize execution
-on the machine that recorded it, and it does not change the public default.
-The default remains corrected, self-inclusive `symmetric_kl`.
+This historical protocol was written before any new fit and does not authorize
+execution on the machine that recorded it. Its RFA comparison baseline is the
+corrected, self-inclusive `symmetric_kl`, not the current public default.
+Today's AnnData API defaults to [MU fixed](mu-default-migration.md); select
+`method="rfa"` explicitly for the RFA comparison.
 
 ## Starting point
 
